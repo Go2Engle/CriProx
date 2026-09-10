@@ -45,10 +45,11 @@ import { DEFAULT_SETTINGS, EMPTY_PROJECT, PRINT_DPI_OPTIONS } from './lib/types'
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
 import { resolveDeck, variants } from './lib/scryfall';
-import { download, exportBundle } from './lib/export';
+import { exportBundle } from './lib/export';
+import { saveProjectAs } from './lib/save-project';
 import { validateProject } from './lib/project';
 import sampleCards from './sample.json';
-import { formatDimensions, formatMeasurement } from './lib/units';
+import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 
 // The original Design Space ZIP export remains available for a future workflow,
@@ -1150,12 +1151,13 @@ export default function App() {
           <button
             className="secondary compact"
             disabled={!loaded}
-            onClick={() => {
-              download(
-                new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }),
-                `${project.name.replace(/[^a-z0-9_-]+/gi, '-') || 'project'}.criprox.json`,
-              );
-              setToast('Project backup saved.');
+            onClick={async () => {
+              try {
+                const saved = await saveProjectAs(project);
+                setToast(saved ? 'Project backup saved.' : 'Save cancelled.');
+              } catch (error) {
+                setToast(errorText(error));
+              }
             }}
           >
             <ArrowDownToLine size={16} /> Save project
@@ -1486,30 +1488,6 @@ export default function App() {
                       : `${formatDimensions(180, 220, project.settings.units)} candidate area. Verify in Design Space before printing.`}
                   </p>
                 </div>
-                <div className="setting-group slider-group">
-                  <label htmlFor="gap">
-                    Card spacing{' '}
-                    <strong>
-                      {formatMeasurement(project.settings.gap, project.settings.units)}
-                    </strong>
-                  </label>
-                  <input
-                    id="gap"
-                    type="range"
-                    min="1"
-                    max="10"
-                    step="0.5"
-                    value={project.settings.gap}
-                    onChange={(e) => {
-                      const gap = Number(e.target.value);
-                      settings({ gap, bleed: Math.min(project.settings.bleed, gap / 2) });
-                    }}
-                  />
-                  <div className="range-labels">
-                    <span>{formatMeasurement(1, project.settings.units)}</span>
-                    <span>{formatMeasurement(10, project.settings.units)}</span>
-                  </div>
-                </div>
                 <div className="settings-divider" />
                 <div className="section-label">
                   <Settings2 size={14} /> PRINT DETAILS
@@ -1606,16 +1584,6 @@ export default function App() {
                     </button>
                   </div>
                 )}
-              </div>
-              <div className="setup-note">
-                <ShieldCheck size={18} />
-                <div>
-                  <strong>Registration, captured from Cricut.</strong>
-                  <p>Reuse your verified template when printing from CriProx.</p>
-                  <button className="text-button" onClick={() => setModal('guide')}>
-                    See the workflow <ArrowRight size={12} />
-                  </button>
-                </div>
               </div>
             </aside>
           </div>

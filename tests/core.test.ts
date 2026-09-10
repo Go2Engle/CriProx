@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { parseDeck } from '../src/lib/deck';
 import { envelope, grid, layout, mmToPx, templateSvg } from '../src/lib/layout';
 import { formatDimensions, formatMeasurement } from '../src/lib/units';
+import { projectFilename } from '../src/lib/save-project';
 import { DEFAULT_SETTINGS, PRINT_DPI_OPTIONS, type Entry } from '../src/lib/types';
 import { validateProject } from '../src/lib/project';
 import { withDpi } from '../src/lib/png';
@@ -84,8 +85,8 @@ test('layout preserves requested quantity over full and partial sheets without s
     pages.map((p) => p.placements.length),
     [4, 4, 1],
   );
-  assert.equal(pages[0].width, 129);
-  assert.equal(pages[0].height, 179);
+  assert.equal(pages[0].width, 127);
+  assert.equal(pages[0].height, 177);
   assert.equal(pages[2].width, 63);
   assert.equal(pages[2].height, 88);
   assert.equal(pages.flatMap((s) => s.placements).length, 9);
@@ -96,15 +97,16 @@ test('default layout uses TCG dimensions and six rounded cut slots', () => {
   const pages = layout([{ ...entry, quantity: 6 }], settings);
   assert.equal(grid(settings).capacity, 6);
   assert.equal(pages.length, 1);
-  assert.equal(pages[0].width, 179);
-  assert.equal(pages[0].height, 195);
+  assert.equal(pages[0].width, 177);
+  assert.equal(pages[0].height, 191);
   assert.ok(pages[0].placements.every((p) => p.rotated));
   const svg = templateSvg(pages[0], settings);
   assert.equal((svg.match(/<rect /g) || []).length, 6);
-  assert.match(svg, /width="179mm" height="195mm"/);
+  assert.match(svg, /width="177mm" height="191mm"/);
   assert.equal(settings.width, 63);
   assert.equal(settings.height, 88);
   assert.equal(settings.radius, 3);
+  assert.equal(settings.gap, 1);
   assert.equal(settings.bleed, 0.5);
   assert.match(svg, /rx="3" ry="3"/);
   assert.ok(!/image|clipPath|stroke/.test(svg));
@@ -144,13 +146,17 @@ test('all supported settings place cards inside the planning envelope, without o
 });
 test('PNG quantization stays within half a pixel in physical units', () => {
   for (const dpi of PRINT_DPI_OPTIONS)
-    for (const mm of [63, 88, 88.9, 129, 179, 195])
+    for (const mm of [63, 88, 88.9, 127, 177, 191])
       assert.ok(Math.abs((mmToPx(mm, dpi) * 25.4) / dpi - mm) <= 25.4 / dpi / 2);
 });
 test('display units convert labels without changing millimeter geometry', () => {
   assert.equal(formatDimensions(63.5, 88.9, 'in'), '2.5 × 3.5 in');
   assert.equal(formatDimensions(63.5, 88.9, 'mm'), '63.5 × 88.9 mm');
   assert.equal(formatMeasurement(3, 'in'), '0.1181 in');
+});
+test('project Save As names are portable across desktop platforms', () => {
+  assert.equal(projectFilename('My Commander: Deck / 2026'), 'My-Commander-Deck-2026.criprox.json');
+  assert.equal(projectFilename('...'), 'project.criprox.json');
 });
 test('PNG metadata contains one correctly ordered physical density chunk', () => {
   const source = new Uint8Array(

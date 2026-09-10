@@ -22,6 +22,7 @@ declare global {
     criprox?: {
       platform?: 'darwin' | 'win32' | 'linux';
       mpcRequest: (path: string, method: 'GET' | 'POST', body?: unknown) => Promise<unknown>;
+      saveProject?: (defaultName: string, data: string) => Promise<boolean>;
       windowControls?: {
         minimize: () => Promise<boolean>;
         toggleMaximize: () => Promise<boolean>;

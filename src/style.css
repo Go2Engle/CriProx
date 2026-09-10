@@ -865,7 +865,7 @@ h1 > span {
 .card-front > img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
 }
 .proxy-label {
@@ -1178,33 +1178,6 @@ h1 > span {
   outline: 3px solid #c3ade7;
   outline-offset: 2px;
 }
-.setup-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 5px 13px 14px;
-  padding: 13px 10px;
-  border-radius: 7px;
-  background: #f7f4fc;
-  color: #ae9bc6;
-}
-.setup-note strong {
-  font-size: 9px;
-  font-weight: 550;
-  color: #8b75a4;
-}
-.setup-note p {
-  font-size: 8px;
-  line-height: 1.7;
-  margin-top: 5px;
-  color: #ac9dbc;
-}
-.setup-note .text-button {
-  font-size: 8px;
-  margin-top: 6px;
-  color: #9d81bb;
-  gap: 4px;
-}
 .selection-details {
   border: 1px solid #e8dff4;
   background: #fcfaff;
@@ -1288,6 +1261,24 @@ h1 > span {
 }
 .modal.wide {
   width: min(810px, calc(100vw - 36px));
+}
+.registered-modal {
+  overflow: hidden;
+}
+.registered-modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+.registered-modal .modal-heading,
+.registered-modal .modal-footer {
+  flex-shrink: 0;
+}
+.registered-modal .registered-content {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #d7cde5 transparent;
 }
 .modal::backdrop {
   background: #26213266;
@@ -1958,9 +1949,6 @@ h1 > span {
   .settings-content .setting-group {
     margin: 0;
   }
-  .setup-note {
-    margin: 0 20px 20px;
-  }
   .settings-content .switch-row {
     align-self: center;
   }
@@ -2211,7 +2199,6 @@ h1 > span {
     overflow: auto;
   }
   .panel-heading,
-  .setup-note,
   .preview-toolbar,
   .preview-footer,
   .library-footer {
@@ -2226,12 +2213,8 @@ h1 > span {
   .paper-stage {
     flex: 1;
   }
-  .settings-panel .setup-note {
-    margin-top: 10px;
-  }
 }
 .field-note,
-.setup-note p,
 .switch-row small,
 .range-labels,
 .card-select span,
@@ -2240,7 +2223,6 @@ h1 > span {
   color: #857c94;
 }
 .field-note,
-.setup-note p,
 .switch-row small {
   font-size: 9px;
 }
@@ -2254,9 +2236,6 @@ h1 > span {
 .page-caption,
 .paper-bottom {
   color: #8f859b;
-}
-.setup-note strong {
-  color: #7a6493;
 }
 .preview-canvas {
   scrollbar-width: thin;

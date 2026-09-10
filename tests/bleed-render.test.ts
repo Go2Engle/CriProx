@@ -191,7 +191,7 @@ test('white bleed copies the white edge without reflecting nearby colored artwor
     ],
   };
   const image = await decode(
-    await renderSheet(sheet, { ...DEFAULT_SETTINGS, proxyLabel: false }, false, 1.5),
+    await renderSheet(sheet, { ...DEFAULT_SETTINGS, gap: 3, proxyLabel: false }, false, 1.5),
   );
   for (let y = 1; y < image.height - 1; y++)
     for (let x = 1; x < image.width - 1; x++) {
@@ -270,7 +270,7 @@ test('transparent rounded white source corners remain white through the bleed', 
     ],
   };
   const image = await decode(
-    await renderSheet(sheet, { ...DEFAULT_SETTINGS, proxyLabel: false }, false, 1.5),
+    await renderSheet(sheet, { ...DEFAULT_SETTINGS, gap: 3, proxyLabel: false }, false, 1.5),
   );
   for (let i = 0; i < image.data.length; i++)
     assert.equal(image.data[i], 255, `White/alpha defect at channel ${i}`);

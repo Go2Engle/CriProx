@@ -46,7 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
   profile: 'expanded',
   width: 63,
   height: 88,
-  gap: 3,
+  gap: 1,
   radius: 3,
   bleed: 0.5,
   backBleedEnabled: true,

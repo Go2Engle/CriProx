@@ -24,7 +24,7 @@ Windows and Linux installers should be built/tested on their respective platform
 - Printing selection with pagination and loaded-result filtering by set/collector number. Double-faced cards expose a face selector when inspecting a card.
 - MPC Autofill community-art lookup from the card inspector, plus a browser for its dedicated card-back collection. Full-resolution selections use MPC Autofill's official image CDN.
 - Local PNG, JPEG, and WebP artwork imports; the full source is contained inside an opaque rounded card silhouette.
-- Standard 63 × 88 mm cards or 2.5 × 3.5 in (63.5 × 88.9 mm), adjustable card spacing/corner radius, Letter/A4 planning, and 300/600/900/1200 DPI export.
+- Standard 63 × 88 mm cards with a 3 mm corner radius and 1 mm spacing, Letter/A4 planning, and 300/600/900/1200 DPI export.
 - A conservative 171.45 × 234.95 mm planning rectangle (four standard cards with default settings), plus an **experimental** 180 × 220 mm candidate area (six rotated cards with default settings). The expanded area is not a certified Cricut profile.
 - Transparent artwork PNGs, matched vector-only SVG silhouettes, a dimensions manifest, and a plain-text Design Space guide in a ZIP.
 - Size-check card export with a 5 mm grid, for measuring printer scale and the resulting cut.
