@@ -178,12 +178,14 @@ function Modal({
   children,
   close,
   wide = false,
+  className = '',
 }: {
   title: string;
   subtitle?: string;
   children: ReactNode;
   close: () => void;
   wide?: boolean;
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -192,7 +194,7 @@ function Modal({
   return (
     <dialog
       ref={ref}
-      className={wide ? 'modal wide' : 'modal'}
+      className={`modal${wide ? ' wide' : ''}${className ? ` ${className}` : ''}`}
       onCancel={close}
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
@@ -321,117 +323,6 @@ function ImportModal({
         <button className="primary" disabled={!!busy || !text.trim()} onClick={importCards}>
           {busy ? <LoaderCircle className="spin" size={17} /> : <Plus size={17} />}{' '}
           {busy || 'Add to project'}
-        </button>
-      </div>
-    </Modal>
-  );
-}
-function VariantsModal({
-  entry,
-  choose,
-  close,
-}: {
-  entry: Entry;
-  choose: (card: Card) => void;
-  close: () => void;
-}) {
-  const [cards, setCards] = useState<Card[]>([]),
-    [next, setNext] = useState<string>(),
-    [busy, setBusy] = useState(true),
-    [error, setError] = useState(''),
-    [filter, setFilter] = useState('');
-  useEffect(() => {
-    let active = true;
-    variants(entry.card)
-      .then((r) => {
-        if (active) {
-          setCards(r.cards);
-          setNext(r.next);
-        }
-      })
-      .catch((e) => {
-        if (active) setError(errorText(e));
-      })
-      .finally(() => {
-        if (active) setBusy(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [entry.card]);
-  async function more() {
-    setBusy(true);
-    setError('');
-    try {
-      const result = await variants(entry.card, next);
-      setCards((c) => [...c, ...result.cards]);
-      setNext(result.next);
-    } catch (e) {
-      setError(errorText(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  const shown = cards.filter((c) =>
-    `${c.setName} ${c.set} ${c.collector}`.toLowerCase().includes(filter.toLowerCase()),
-  );
-  return (
-    <Modal wide title={`Choose a printing`} subtitle={entry.card.name} close={close}>
-      <div className="variant-content">
-        <div className="search-field">
-          <Search size={17} />
-          <input
-            aria-label="Filter loaded printings"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter loaded printings by set or number…"
-          />
-        </div>
-        {error && (
-          <div role="alert" className="error-box">
-            {error}
-            <button className="text-button" onClick={more}>
-              Retry
-            </button>
-          </div>
-        )}
-        <div className="variant-grid">
-          {shown.map((card) => (
-            <button
-              key={card.id}
-              className={`variant-card ${entry.card.id === card.id ? 'chosen' : ''}`}
-              onClick={() => {
-                choose(card);
-                close();
-              }}
-            >
-              <img src={card.faces[0].preview} alt={card.name} loading="lazy" />
-              <strong>{card.setName}</strong>
-              <span>
-                {card.set.toUpperCase()} · #{card.collector}
-                {entry.card.id === card.id && ' · Selected'}
-              </span>
-            </button>
-          ))}
-        </div>
-        {!busy && !shown.length && !error && (
-          <p className="empty-message">No loaded printings match this filter.</p>
-        )}
-        {busy && (
-          <div className="loading">
-            <LoaderCircle className="spin" size={20} /> Finding printings…
-          </div>
-        )}
-        {next && !busy && (
-          <button className="secondary load-more" onClick={more}>
-            Load more printings
-          </button>
-        )}
-      </div>
-      <div className="modal-footer">
-        <span className="muted">{cards.length} printings loaded · Scryfall</span>
-        <button className="secondary" onClick={close}>
-          Done
         </button>
       </div>
     </Modal>
@@ -694,7 +585,7 @@ function ArtworkInspector({
   customArt: Card[];
   proxyLabel: boolean;
   close: () => void;
-  choosePrinting: () => void;
+  choosePrinting: (card: Card) => void;
   chooseCustomArt: (card: Card) => void;
   uploadCustomArt: (file: File) => Promise<void>;
   chooseMpcArt: (card: Card) => void;
@@ -702,7 +593,56 @@ function ArtworkInspector({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [source, setSource] = useState<'scryfall' | 'mpc'>('scryfall'),
+    [cards, setCards] = useState<Card[]>([]),
+    [next, setNext] = useState<string>(),
+    [loadingPrintings, setLoadingPrintings] = useState(false),
+    [printingError, setPrintingError] = useState(''),
+    [filter, setFilter] = useState('');
+  useEffect(() => {
+    // Each card opens on Scryfall, while changing the artwork source for the
+    // current card keeps that source selected after an artwork is applied.
+    setSource('scryfall');
+  }, [entry.id]);
+  useEffect(() => {
+    let active = true;
+    setCards([]);
+    setNext(undefined);
+    setFilter('');
+    setPrintingError('');
+    if (!entry.card.oracleId) return;
+    setLoadingPrintings(true);
+    variants(entry.card)
+      .then((result) => {
+        if (!active) return;
+        setCards(result.cards);
+        setNext(result.next);
+      })
+      .catch((reason) => {
+        if (active) setPrintingError(errorText(reason));
+      })
+      .finally(() => {
+        if (active) setLoadingPrintings(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [entry.card]);
+  async function loadMorePrintings() {
+    if (!next) return;
+    setLoadingPrintings(true);
+    setPrintingError('');
+    try {
+      const result = await variants(entry.card, next);
+      setCards((current) => [...current, ...result.cards]);
+      setNext(result.next);
+    } catch (reason) {
+      setPrintingError(errorText(reason));
+    } finally {
+      setLoadingPrintings(false);
+    }
+  }
   async function upload(file?: File) {
     if (!file) return;
     setBusy(true);
@@ -719,6 +659,7 @@ function ArtworkInspector({
   return (
     <Modal
       wide
+      className="artwork-modal"
       title={entry.card.name}
       subtitle={`${entry.card.setName}${entry.card.collector ? ` · #${entry.card.collector}` : ''}`}
       close={close}
@@ -746,33 +687,111 @@ function ArtworkInspector({
               </select>
             </label>
           )}
-          <div className="inspector-actions">
-            {entry.card.oracleId && (
-              <button className="secondary" onClick={choosePrinting}>
-                <Layers3 size={16} /> Choose another printing
-              </button>
-            )}
-            <button className="primary" disabled={busy} onClick={() => input.current?.click()}>
-              {busy ? <LoaderCircle className="spin" size={16} /> : <ImagePlus size={16} />}
-              {busy ? 'Reading artwork…' : 'Upload custom art'}
+          <div className="art-source-toggle" role="tablist" aria-label="Artwork source">
+            <button
+              role="tab"
+              aria-selected={source === 'scryfall'}
+              className={source === 'scryfall' ? 'selected' : ''}
+              onClick={() => setSource('scryfall')}
+            >
+              Scryfall
+            </button>
+            <button
+              role="tab"
+              aria-selected={source === 'mpc'}
+              className={source === 'mpc' ? 'selected' : ''}
+              onClick={() => setSource('mpc')}
+            >
+              MPC Autofill
             </button>
           </div>
-          <MpcArtworkSearch
-            type="CARD"
-            initialQuery={entry.card.name}
-            choose={(artwork) => chooseMpcArt(mpcArtworkAsCard(artwork, entry.card.name))}
-          />
+          {source === 'scryfall' ? (
+            <div className="art-source-panel">
+              <div className="search-field">
+                <Search size={16} />
+                <input
+                  aria-label="Filter Scryfall printings"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  placeholder="Filter by set or collector number…"
+                />
+              </div>
+              {printingError && (
+                <div role="alert" className="error-box">
+                  {printingError}
+                  <button className="text-button" onClick={() => void loadMorePrintings()}>
+                    Retry
+                  </button>
+                </div>
+              )}
+              <div className="variant-grid inspector-variant-grid">
+                {cards
+                  .filter((card) =>
+                    `${card.setName} ${card.set} ${card.collector}`
+                      .toLowerCase()
+                      .includes(filter.toLowerCase()),
+                  )
+                  .map((card) => (
+                    <button
+                      key={card.id}
+                      className={`variant-card ${entry.card.id === card.id ? 'chosen' : ''}`}
+                      onClick={() => choosePrinting(card)}
+                    >
+                      <img src={card.faces[0].preview} alt={card.name} loading="lazy" />
+                      <strong>{card.setName}</strong>
+                      <span>
+                        {card.set.toUpperCase()} · #{card.collector}
+                        {entry.card.id === card.id && ' · Selected'}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+              {!loadingPrintings && !printingError && !cards.length && (
+                <p className="empty-message">
+                  {entry.card.oracleId
+                    ? 'No Scryfall printings found for this card.'
+                    : 'Scryfall printings are unavailable for local artwork.'}
+                </p>
+              )}
+              {loadingPrintings && (
+                <div className="loading">
+                  <LoaderCircle className="spin" size={18} /> Finding Scryfall printings…
+                </div>
+              )}
+              {next && !loadingPrintings && (
+                <button className="secondary load-more" onClick={() => void loadMorePrintings()}>
+                  Load more printings
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="art-source-panel">
+              <MpcArtworkSearch
+                type="CARD"
+                initialQuery={entry.card.name}
+                openByDefault
+                hideTrigger
+                choose={(artwork) => chooseMpcArt(mpcArtworkAsCard(artwork, entry.card.name))}
+              />
+            </div>
+          )}
           {error && (
             <div className="error-box" role="alert">
               {error}
             </div>
           )}
-          {customArt.length > 0 && (
-            <div className="project-artwork">
+          <div className="custom-art-panel">
+            <div className="custom-art-heading">
               <div>
-                <strong>Artwork already in this project</strong>
-                <span>Select an image to use for this card.</span>
+                <strong>Custom artwork</strong>
+                <span>Upload your own image or reuse artwork already in this project.</span>
               </div>
+              <button className="secondary" disabled={busy} onClick={() => input.current?.click()}>
+                {busy ? <LoaderCircle className="spin" size={15} /> : <ImagePlus size={15} />}
+                {busy ? 'Reading…' : 'Upload art'}
+              </button>
+            </div>
+            {customArt.length > 0 && (
               <div className="project-art-grid">
                 {customArt.map((card) => (
                   <button key={card.id} onClick={() => chooseCustomArt(card)}>
@@ -781,8 +800,8 @@ function ArtworkInspector({
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       <input
@@ -906,8 +925,7 @@ export default function App() {
     [saved, setSaved] = useState('Opening workspace…');
   const [modal, setModal] = useState<
       'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
-    >(null),
-    [variantEntry, setVariantEntry] = useState<Entry | null>(null);
+    >(null);
   const [selected, setSelected] = useState<string | null>(null),
     [inspecting, setInspecting] = useState<string | null>(null),
     [search, setSearch] = useState(''),
@@ -1247,11 +1265,9 @@ export default function App() {
                     <div className="card-bottom">
                       <button
                         className="printing-button"
-                        onClick={() =>
-                          entry.card.oracleId ? setVariantEntry(entry) : setSelected(entry.id)
-                        }
+                        onClick={() => inspect(entry.id)}
                       >
-                        {entry.card.oracleId ? 'Change printing' : 'Local artwork'}{' '}
+                        {entry.card.oracleId ? 'Change artwork' : 'Local artwork'}{' '}
                         <ChevronDown size={12} />
                       </button>
                       <div className="quantity">
@@ -1701,7 +1717,6 @@ export default function App() {
                 setProject((current) => ({ ...current, entries: [] }));
                 setSelected(null);
                 setInspecting(null);
-                setVariantEntry(null);
                 setPage(0);
                 setSearch('');
                 setModal(null);
@@ -1719,7 +1734,10 @@ export default function App() {
           customArt={customArt}
           proxyLabel={project.settings.proxyLabel}
           close={() => setInspecting(null)}
-          choosePrinting={() => setVariantEntry(inspectedEntry)}
+          choosePrinting={(card) => {
+            editEntry(inspectedEntry.id, { card, face: 0 });
+            setToast('Scryfall printing applied.');
+          }}
           chooseCustomArt={(card) => {
             applyArtwork(inspectedEntry, card);
             setToast('Custom artwork applied.');
@@ -1733,13 +1751,6 @@ export default function App() {
             setToast('MPC Autofill artwork applied.');
           }}
           changeFace={(face) => editEntry(inspectedEntry.id, { face })}
-        />
-      )}
-      {variantEntry && (
-        <VariantsModal
-          entry={variantEntry}
-          choose={(card) => editEntry(variantEntry.id, { card, face: 0 })}
-          close={() => setVariantEntry(null)}
         />
       )}
     </div>

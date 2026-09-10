@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ExternalLink, LoaderCircle, Search } from 'lucide-react';
 import { searchMpcArtwork, type MpcArtwork } from '../lib/mpc';
 
@@ -6,12 +6,16 @@ export default function MpcArtworkSearch({
   type,
   initialQuery = '',
   choose,
+  openByDefault = false,
+  hideTrigger = false,
 }: {
   type: 'CARD' | 'CARDBACK';
   initialQuery?: string;
   choose: (artwork: MpcArtwork) => void;
+  openByDefault?: boolean;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(openByDefault),
     [query, setQuery] = useState(initialQuery),
     [items, setItems] = useState<MpcArtwork[]>([]),
     [page, setPage] = useState(0),
@@ -36,10 +40,18 @@ export default function MpcArtworkSearch({
     }
   }
 
+  useEffect(() => {
+    if (openByDefault) void search();
+    // The initial query is intentionally searched once when this source tab opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function reveal() {
     setOpen(true);
     if (!items.length) void search();
   }
+
+  if (!open && hideTrigger) return null;
 
   if (!open)
     return (
@@ -60,7 +72,7 @@ export default function MpcArtworkSearch({
         </a>
       </div>
       <form
-        className="mpc-search"
+        className="search-field mpc-search"
         onSubmit={(event) => {
           event.preventDefault();
           void search();
