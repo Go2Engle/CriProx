@@ -1,0 +1,337 @@
+import JSZip from 'jszip';
+import { get, set } from 'idb-keyval';
+import type { Settings, Project } from './types';
+import { mmToPx, templateSvg, type Sheet } from './layout';
+import { withDpi } from './png';
+import { drawBleedTile, repairTransparentCorners, replicateBorder } from './bleed';
+import { formatDimensions, formatMeasurement } from './units';
+
+type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
+type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+function renderCanvas(width: number, height: number): RenderCanvas {
+  const canvas =
+    typeof document === 'undefined'
+      ? new OffscreenCanvas(width, height)
+      : document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+async function pngBlob(canvas: RenderCanvas) {
+  if ('convertToBlob' in canvas) return canvas.convertToBlob({ type: 'image/png' });
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('PNG encoding failed.'))),
+      'image/png',
+    ),
+  );
+}
+
+export function fitArtwork(
+  sourceWidth: number,
+  sourceHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+  mode: 'contain' | 'cover',
+) {
+  const scale =
+    mode === 'cover'
+      ? Math.max(targetWidth / sourceWidth, targetHeight / sourceHeight)
+      : Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
+  const width = sourceWidth * scale,
+    height = sourceHeight * scale;
+  return {
+    x: (targetWidth - width) / 2,
+    y: (targetHeight - height) / 2,
+    width,
+    height,
+  };
+}
+
+function drawFinishedArtwork(
+  ctx: RenderContext,
+  bitmap: ImageBitmap,
+  width: number,
+  height: number,
+  physicalHeight: number,
+  proxyLabel: boolean,
+) {
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, width, height);
+  const fit = fitArtwork(bitmap.width, bitmap.height, width, height, 'cover');
+  ctx.drawImage(bitmap, fit.x, fit.y, fit.width, fit.height);
+  if (proxyLabel) {
+    const unit = height / physicalHeight;
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, height - 2.6 * unit, width, 2.6 * unit);
+    ctx.fillStyle = '#eee';
+    ctx.textAlign = 'center';
+    ctx.font = `${1.35 * unit}px sans-serif`;
+    ctx.fillText('PLAYTEST • NOT FOR SALE', width / 2, height - 0.85 * unit);
+  }
+}
+
+function drawBleedCardArtwork(
+  ctx: RenderContext,
+  bitmap: ImageBitmap,
+  width: number,
+  height: number,
+  physicalHeight: number,
+  proxyLabel: boolean,
+) {
+  const fit = fitArtwork(bitmap.width, bitmap.height, width, height, 'cover');
+  ctx.drawImage(bitmap, fit.x, fit.y, fit.width, fit.height);
+
+  const image = ctx.getImageData(0, 0, width, height);
+  repairTransparentCorners(image.data, width, height);
+  ctx.putImageData(image, 0, 0);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+
+  if (proxyLabel) {
+    const unit = height / physicalHeight;
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, height - 2.6 * unit, width, 2.6 * unit);
+    ctx.fillStyle = '#eee';
+    ctx.textAlign = 'center';
+    ctx.font = `${1.35 * unit}px sans-serif`;
+    ctx.fillText('PLAYTEST • NOT FOR SALE', width / 2, height - 0.85 * unit);
+  }
+}
+
+function bleedTile(bitmap: ImageBitmap, settings: Settings, bleed: number) {
+  const width = mmToPx(settings.width, settings.dpi),
+    height = mmToPx(settings.height, settings.dpi),
+    pad = Math.max(1, mmToPx(bleed, settings.dpi)),
+    card = renderCanvas(width, height);
+  drawBleedCardArtwork(
+    card.getContext('2d') as RenderContext,
+    bitmap,
+    width,
+    height,
+    settings.height,
+    settings.proxyLabel,
+  );
+
+  const tile = renderCanvas(width + pad * 2, height + pad * 2);
+  const ctx = tile.getContext('2d') as RenderContext;
+  const source = (card.getContext('2d') as RenderContext).getImageData(0, 0, width, height);
+  const padded = ctx.createImageData(tile.width, tile.height);
+  padded.data.set(replicateBorder(source.data, width, height, pad));
+  ctx.putImageData(padded, 0, 0);
+  card.width = card.height = 0;
+  return tile;
+}
+
+export function download(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob),
+    a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+async function imageBitmap(source: string): Promise<ImageBitmap> {
+  // Embedded artwork is already local. Decode it without a network request or
+  // putting the entire base64 image into an IndexedDB cache key.
+  if (source.startsWith('data:')) {
+    const match = source.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/s);
+    if (!match) throw new Error('Unsupported local image format.');
+    const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
+    return createImageBitmap(new Blob([bytes], { type: match[1] }));
+  }
+  let blob = await get<Blob>(`image:${source}`).catch(() => undefined);
+  if (!blob) {
+    const response = await fetch(source, { signal: AbortSignal.timeout(30000) });
+    if (!response.ok) throw new Error(`Image download failed (${response.status}).`);
+    blob = await response.blob();
+    if (source.startsWith('https:')) await set(`image:${source}`, blob).catch(() => {});
+  }
+  return createImageBitmap(blob);
+}
+
+export function artworkSourceAtDpi(source: string, dpi: Settings['dpi']) {
+  if (!source.startsWith('https://cdn.mpcautofill.com/images/google_drive/full/')) return source;
+  const url = new URL(source),
+    current = Number(url.searchParams.get('dpi')) || 0;
+  // Projects created by earlier CriProx versions stored MPC URLs capped at
+  // 600 DPI. A higher export should request a matching source from the CDN.
+  if (current < dpi) url.searchParams.set('dpi', String(dpi));
+  return url.toString();
+}
+
+export async function renderSheet(
+  sheet: Sheet,
+  settings: Settings,
+  calibration = false,
+  artworkBleedMm = 0,
+): Promise<Uint8Array> {
+  const canvas = renderCanvas(
+    mmToPx(sheet.width, settings.dpi),
+    mmToPx(sheet.height, settings.dpi),
+  );
+  const ctx = canvas.getContext('2d') as RenderContext | null;
+  if (!ctx) throw new Error('Could not create the export canvas.');
+  ctx.scale(canvas.width / sheet.width, canvas.height / sheet.height);
+  try {
+    for (const p of sheet.placements) {
+      let bitmap: ImageBitmap | undefined;
+      const artworkSource = artworkSourceAtDpi(
+        p.entry.card.faces[p.entry.face].image,
+        settings.dpi,
+      );
+      if (!calibration) {
+        try {
+          bitmap = await imageBitmap(artworkSource);
+        } catch {
+          throw new Error(
+            `Could not load artwork for ${p.entry.card.name}. Check your connection and retry. No partial sheet was exported.`,
+          );
+        }
+      }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      if (p.rotated) {
+        ctx.translate(p.width, 0);
+        ctx.rotate(Math.PI / 2);
+      }
+      const w = settings.width,
+        h = settings.height;
+      if (p.artworkRotation === 180) {
+        ctx.translate(w, h);
+        ctx.rotate(Math.PI);
+      }
+      const bleed = Math.max(0, Math.min(artworkBleedMm, settings.gap / 2));
+      if (bitmap && bleed > 0) {
+        const tile = bleedTile(bitmap, settings, bleed);
+        drawBleedTile(ctx, tile, w, h, bleed);
+        tile.width = tile.height = 0;
+      } else {
+        ctx.beginPath();
+        ctx.roundRect(0, 0, w, h, settings.radius);
+        ctx.clip();
+      }
+      if (calibration) {
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#f0efe9';
+        ctx.fillRect(0.5, 0.5, w - 1, h - 1);
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 0.15;
+        for (let x = 5; x < w; x += 5) {
+          ctx.beginPath();
+          ctx.moveTo(x, 3);
+          ctx.lineTo(x, h - 3);
+          ctx.stroke();
+        }
+        for (let y = 5; y < h; y += 5) {
+          ctx.beginPath();
+          ctx.moveTo(3, y);
+          ctx.lineTo(w - 3, y);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#f0efe9';
+        ctx.fillRect(3, h / 2 - 12, w - 6, 24);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 4px sans-serif';
+        ctx.fillText('CriProx · size check', w / 2, h / 2 - 3);
+        ctx.font = '3px sans-serif';
+        ctx.fillText(formatDimensions(w, h, settings.units), w / 2, h / 2 + 3);
+        ctx.fillText(
+          `Grid: ${formatMeasurement(5, settings.units)} · measure after cutting`,
+          w / 2,
+          h / 2 + 8,
+        );
+      } else if (bleed === 0) {
+        // Card artwork fills the trim shape. Standard card images already match this
+        // ratio; full-bleed and custom sources are cropped evenly at the outer edges.
+        drawFinishedArtwork(ctx, bitmap!, w, h, h, settings.proxyLabel);
+      }
+      ctx.restore();
+      bitmap?.close();
+    }
+    const blob = await pngBlob(canvas);
+    return withDpi(new Uint8Array(await blob.arrayBuffer()), settings.dpi);
+  } finally {
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+}
+export function instructions(project: Project, sheets: Sheet[], calibration: boolean) {
+  return (
+    `CRIPROX — ${calibration ? 'PHYSICAL SIZE CHECK' : project.name}\n\n` +
+    `This package contains transparent artwork PNGs and matching vector-only SVG silhouettes. It contains no Cricut sensor marks and is not a native Design Space project. Design Space generates the marks for the actual print-and-cut job.\n\n` +
+    `RECOMMENDED PRINT THEN CUT WORKFLOW\n1. Select your actual machine and ${project.settings.paper === 'letter' ? 'US Letter' : 'A4'} paper in Design Space. Calibrate Print Then Cut using Cricut's own calibration flow.\n2. Upload a sheet PNG as a flat / single-layer Print Then Cut image, preserving transparency. Do not remove its background or add an offset. Preview the cut contours: expect exactly one rounded rectangle per card, with no internal holes.\n3. On the Canvas, set that sheet's WIDTH and HEIGHT to the exact values below. Raster DPI metadata alone is not sufficient. Unlock the aspect ratio if needed to correct subpixel rounding. Never auto-resize to fit: that changes the card size.\n4. Make the project. Design Space adds registration marks. The selected paper must accept the design at its original size. If it does not, return to CriProx and use the conservative layout or smaller batch. The expanded area is experimental and not machine-validated.\n5. Enable Design Space bleed. The CriProx bleed setting applies to registered PDFs made through Print from CriProx. Print from Design Space at actual size, with printer scaling/fit-to-page disabled.\n6. Load the sheet as Design Space instructs and finish the cut from the same device in the same session. Do not separately print this PNG from an image viewer.\n7. Measure a test card in both directions before printing a deck. Target: ${formatDimensions(project.settings.width, project.settings.height, project.settings.units)}; corner radius ${formatMeasurement(project.settings.radius, project.settings.units)}. This is a size-check card, not a replacement for Cricut's sensor calibration.\n\n` +
+    `SHEET SIZES (set both dimensions on the Design Space Canvas)\n` +
+    sheets
+      .map(
+        (s) =>
+          `Sheet ${s.index + 1}: ${formatDimensions(s.width, s.height, project.settings.units)}; ${s.placements.length} cards; ${mmToPx(s.width, project.settings.dpi)} × ${mmToPx(s.height, project.settings.dpi)} px at ${project.settings.dpi} DPI.`,
+      )
+      .join('\n') +
+    `\n\nSVG TEMPLATE\nThe SVG has the same origin, dimensions, card positions and corner radii as the PNG. It contains only filled cut silhouettes, with no artwork. It is a geometry reference / separate Basic Cut template; it does not independently register a printed page. Uploading the PNG already supplies cut contours through its alpha silhouette. Do not enable both PNG contours and SVG cuts in the same job, or you may cut twice. Vector reference precision does not imply identical Design Space raster tracing.\n\nLIMITS\nPhysical alignment depends on Design Space tracing, machine calibration, printer scaling and media. No hardware cut has been certified. Back faces can be selected independently; automatic duplex front/back alignment is not implemented. The selected DPI controls the export raster; it does not add detail to lower-resolution source art. 900 and 1200 DPI use substantially more memory and create larger files.\n\nOfficial workflow: https://help.cricut.com/hc/en-us/articles/360009387274-How-to-Print-Then-Cut-in-Design-Space\nArea limits: https://help.cricut.com/hc/en-us/articles/360009429814-How-large-can-I-Print-Then-Cut\nCalibration: https://help.cricut.com/hc/en-us/articles/360009424974-Calibrating-your-machine-for-Print-Then-Cut\nCard data and artwork: Scryfall. CriProx is not affiliated with Cricut or Wizards of the Coast.\n`
+  );
+}
+export async function exportBundle(
+  project: Project,
+  sheets: Sheet[],
+  progress: (message: string) => void,
+  calibration = false,
+) {
+  if (!sheets.length) throw new Error('Add at least one card to export.');
+  if (sheets.length > 24)
+    throw new Error(
+      'Export up to 24 sheets at a time. Choose the current sheet for a larger project.',
+    );
+  const zip = new JSZip();
+  for (const [i, sheet] of sheets.entries()) {
+    progress(`Rendering sheet ${i + 1} of ${sheets.length}…`);
+    const name = `sheet-${String(sheet.index + 1).padStart(2, '0')}`;
+    zip.file(`${name}-artwork.png`, await renderSheet(sheet, project.settings, calibration));
+    zip.file(`${name}-cut-template.svg`, templateSvg(sheet, project.settings));
+  }
+  zip.file('START-HERE.txt', instructions(project, sheets, calibration));
+  zip.file(
+    'manifest.json',
+    JSON.stringify(
+      {
+        version: 1,
+        registration: 'Generated by Cricut Design Space, not included',
+        settings: project.settings,
+        sheets: sheets.map((s) => ({
+          number: s.index + 1,
+          widthMm: s.width,
+          heightMm: s.height,
+          widthPx: mmToPx(s.width, project.settings.dpi),
+          heightPx: mmToPx(s.height, project.settings.dpi),
+          cards: s.placements.map((p) => ({
+            name: p.entry.card.name,
+            face: p.entry.face,
+            source: calibration ? 'size-check' : p.entry.card.id,
+            xMm: p.x,
+            yMm: p.y,
+            widthMm: p.width,
+            heightMm: p.height,
+            rotated: p.rotated,
+            radiusMm: project.settings.radius,
+          })),
+        })),
+      },
+      null,
+      2,
+    ),
+  );
+  progress('Packing your export…');
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+  download(
+    blob,
+    `${calibration ? 'criprox-size-check' : project.name.replace(/[^a-z0-9_-]+/gi, '-').slice(0, 60) || 'criprox'}.zip`,
+  );
+}
