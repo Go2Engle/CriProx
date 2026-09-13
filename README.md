@@ -25,7 +25,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and release details. Mai
 
 ## License
 
-CriProx is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may use, study, modify, and share it for permitted noncommercial purposes. Commercial use—including selling CriProx or using it in an anticipated commercial application—is not licensed without separate permission from the copyright holder. See [NOTICE](NOTICE) for the required copyright notice.
+CriProx is free and open-source software licensed under the [GNU General Public License v3.0 only](LICENSE). Anyone may use, study, modify, and redistribute it. Distributed copies and derivative works must remain under the GPL, and their corresponding source must remain available under the license terms. The GPL permits charging for distribution; recipients retain the same rights to copy, modify, and redistribute the software. See [NOTICE](NOTICE) for the copyright notice.
 
 ## Included
 
