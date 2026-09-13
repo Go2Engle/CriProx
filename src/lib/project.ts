@@ -1,4 +1,4 @@
-import { PRINT_DPI_OPTIONS, SEVEN_CARD_GAP_MM, type Project } from './types';
+import { PRINT_DPI_OPTIONS, type Project } from './types';
 const supportedImage = (url: unknown) =>
   typeof url === 'string' &&
   /^(https:\/\/(cards\.scryfall\.io\/|cdn\.mpcautofill\.com\/images\/google_drive\/(full|large)\/)|data:image\/(png|jpeg|webp);base64,)/.test(
@@ -43,7 +43,7 @@ export function validateProject(value: unknown): Project {
   for (const [n, min, max] of [
     [s.width, 40, 100],
     [s.height, 40, 120],
-    [s.gap, s.profile === 'seven' ? SEVEN_CARD_GAP_MM : 1, 10],
+    [s.gap, s.profile === 'seven' ? 0.1 : 1, 10],
     [s.radius, 0, 6],
     [s.bleed, 0, 1.5],
     [s.backOffsetX, -5, 5],
@@ -60,11 +60,11 @@ export function validateProject(value: unknown): Project {
       s.machine === 'joy-xtra' ||
       s.width !== 63 ||
       s.height !== 88 ||
-      s.gap !== SEVEN_CARD_GAP_MM ||
+      s.gap !== 0.1 ||
       s.radius !== 3)
   )
     throw new Error(
-      `The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, ${SEVEN_CARD_GAP_MM} mm spacing, and 3 mm corners.`,
+      'The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, 0.1 mm spacing, and 3 mm corners.',
     );
   if (
     p.backArtwork &&

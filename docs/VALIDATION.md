@@ -14,8 +14,8 @@
 - Visual review at desktop and 390 px mobile widths, with no horizontal page overflow at mobile width.
 - Unsigned macOS arm64 package builds. Packaged app launches with context isolation, renderer sandboxing, and no renderer Node access. Native size-check and local-artwork exports succeed with no renderer exceptions.
 - npm dependency audit reports zero known vulnerabilities for the installed dependency set.
-- Experimental seven-card geometry: the current 189.5 × 214.5 mm 2–3–2 template paginates at seven cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 0.25 mm spacing, US Letter output, and Maker/Explore targets.
-- A user-supplied Design Space capture of the preceding 0.1 mm-gap template was confirmed as a single, unrotated 612 × 792 point US Letter PDF. Its rendered magenta 2–3–2 pattern passed the production detector at 300 DPI with all four surrounding marks present. The 0.25 mm-gap revision still requires a new capture.
+- Experimental seven-card geometry: the 189.2 × 214.2 mm 2–3–2 template paginates at seven cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 0.1 mm spacing, US Letter output, and Maker/Explore targets.
+- A user-supplied Design Space capture was confirmed as a single, unrotated 612 × 792 point US Letter PDF. Its rendered magenta 2–3–2 pattern passed the production detector at 300 DPI with all four surrounding marks present.
 
 Browser checks caught a local-image bug: fetching a data URL was blocked by the renderer CSP. The final export code directly decodes embedded artwork without making a fetch request. The fixed browser export was validated at pixel level.
 

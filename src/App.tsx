@@ -41,7 +41,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
-import { DEFAULT_SETTINGS, EMPTY_PROJECT, PRINT_DPI_OPTIONS, SEVEN_CARD_GAP_MM } from './lib/types';
+import { DEFAULT_SETTINGS, EMPTY_PROJECT, PRINT_DPI_OPTIONS } from './lib/types';
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
 import { resolveDeck, variants } from './lib/scryfall';
@@ -49,7 +49,7 @@ import { exportBundle } from './lib/export';
 import { saveProjectAs } from './lib/save-project';
 import { validateProject } from './lib/project';
 import sampleCards from './sample.json';
-import { formatDimensions, formatMeasurement } from './lib/units';
+import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 
 // The original Design Space ZIP export remains available for a future workflow,
@@ -1572,7 +1572,7 @@ export default function App() {
                               paper: 'letter',
                               width: 63,
                               height: 88,
-                              gap: SEVEN_CARD_GAP_MM,
+                              gap: 0.1,
                               radius: 3,
                               bleed: Math.min(project.settings.bleed, 0.05),
                             }
@@ -1594,7 +1594,7 @@ export default function App() {
                     {project.settings.profile === 'conservative'
                       ? `A conservative ${formatDimensions(171.45, 234.95, project.settings.units)} planning area.`
                       : project.settings.profile === 'seven'
-                        ? `${formatDimensions(189.5, 214.5, project.settings.units)} 2–3–2 layout with ${formatMeasurement(SEVEN_CARD_GAP_MM, project.settings.units)} spacing. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
+                        ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
                         : `${formatDimensions(180, 220, project.settings.units)} candidate area. Verify in Design Space before printing.`}
                   </p>
                 </div>

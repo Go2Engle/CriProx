@@ -12,7 +12,6 @@ export type Card = {
   demo?: boolean;
 };
 export type Entry = { id: string; card: Card; quantity: number; face: number };
-export const SEVEN_CARD_GAP_MM = 0.25;
 export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';

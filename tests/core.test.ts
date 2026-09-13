@@ -4,12 +4,7 @@ import { parseDeck } from '../src/lib/deck';
 import { envelope, grid, layout, mmToPx, templateSvg } from '../src/lib/layout';
 import { formatDimensions, formatMeasurement } from '../src/lib/units';
 import { projectFilename } from '../src/lib/save-project';
-import {
-  DEFAULT_SETTINGS,
-  PRINT_DPI_OPTIONS,
-  SEVEN_CARD_GAP_MM,
-  type Entry,
-} from '../src/lib/types';
+import { DEFAULT_SETTINGS, PRINT_DPI_OPTIONS, type Entry } from '../src/lib/types';
 import { validateProject } from '../src/lib/project';
 import { withDpi } from '../src/lib/png';
 import { mpcArtworkAsCard, normalizeMpcArtwork } from '../src/lib/mpc';
@@ -116,11 +111,11 @@ test('default layout uses TCG dimensions and six rounded cut slots', () => {
   assert.match(svg, /rx="3" ry="3"/);
   assert.ok(!/image|clipPath|stroke/.test(svg));
 });
-test('experimental seven-card layout uses the 2-3-2 spacing-test geometry', () => {
+test('experimental seven-card layout uses the proven 2-3-2 Letter geometry', () => {
   const settings = {
     ...DEFAULT_SETTINGS,
     profile: 'seven' as const,
-    gap: SEVEN_CARD_GAP_MM,
+    gap: 0.1,
     bleed: 0.05,
   };
   const pages = layout([{ ...entry, quantity: 17 }], settings);
@@ -129,28 +124,28 @@ test('experimental seven-card layout uses the 2-3-2 spacing-test geometry', () =
     pages.map((page) => page.placements.length),
     [7, 7, 3],
   );
-  assert.ok(pages.every((page) => page.width === 189.5 && page.height === 214.5));
+  assert.ok(pages.every((page) => page.width === 189.2 && page.height === 214.2));
   assert.deepEqual(
     pages[0].placements.map(({ x, y, width, height, rotated }) => ({
-      x: Number(x.toFixed(3)),
-      y: Number(y.toFixed(3)),
+      x: Number(x.toFixed(2)),
+      y: Number(y.toFixed(2)),
       width,
       height,
       rotated,
     })),
     [
-      { x: 6.625, y: 0, width: 88, height: 63, rotated: true },
-      { x: 94.875, y: 0, width: 88, height: 63, rotated: true },
-      { x: 0, y: 63.25, width: 63, height: 88, rotated: false },
-      { x: 63.25, y: 63.25, width: 63, height: 88, rotated: false },
-      { x: 126.5, y: 63.25, width: 63, height: 88, rotated: false },
-      { x: 6.625, y: 151.5, width: 88, height: 63, rotated: true },
-      { x: 94.875, y: 151.5, width: 88, height: 63, rotated: true },
+      { x: 6.55, y: 0, width: 88, height: 63, rotated: true },
+      { x: 94.65, y: 0, width: 88, height: 63, rotated: true },
+      { x: 0, y: 63.1, width: 63, height: 88, rotated: false },
+      { x: 63.1, y: 63.1, width: 63, height: 88, rotated: false },
+      { x: 126.2, y: 63.1, width: 63, height: 88, rotated: false },
+      { x: 6.55, y: 151.2, width: 88, height: 63, rotated: true },
+      { x: 94.65, y: 151.2, width: 88, height: 63, rotated: true },
     ],
   );
   const svg = templateSvg(pages[0], settings);
   assert.equal((svg.match(/<rect /g) || []).length, 7);
-  assert.match(svg, /width="189\.5mm" height="214\.5mm"/);
+  assert.match(svg, /width="189\.2mm" height="214\.2mm"/);
 });
 test('all supported settings place cards inside the planning envelope, without overlaps', () => {
   for (const profile of ['conservative', 'expanded'] as const)
@@ -187,7 +182,7 @@ test('all supported settings place cards inside the planning envelope, without o
 });
 test('PNG quantization stays within half a pixel in physical units', () => {
   for (const dpi of PRINT_DPI_OPTIONS)
-    for (const mm of [63, 88, 88.9, 127, 177, 189.5, 191, 214.5])
+    for (const mm of [63, 88, 88.9, 127, 177, 189.2, 191, 214.2])
       assert.ok(Math.abs((mmToPx(mm, dpi) * 25.4) / dpi - mm) <= 25.4 / dpi / 2);
 });
 test('display units convert labels without changing millimeter geometry', () => {
@@ -252,7 +247,7 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   const seven = {
     ...DEFAULT_SETTINGS,
     profile: 'seven' as const,
-    gap: SEVEN_CARD_GAP_MM,
+    gap: 0.1,
     bleed: 0.05,
   };
   assert.equal(validateProject({ ...good, settings: seven }).settings.profile, 'seven');

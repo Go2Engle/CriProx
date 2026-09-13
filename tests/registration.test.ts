@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PDFDocument } from 'pdf-lib';
-import { DEFAULT_SETTINGS, SEVEN_CARD_GAP_MM, type Entry } from '../src/lib/types';
+import { DEFAULT_SETTINGS, type Entry } from '../src/lib/types';
 import { buildBackAlignmentPdfs } from '../src/lib/registered-pdf';
 import {
   alignmentArtworkDirection,
@@ -52,7 +52,7 @@ test('capture identity follows cutting geometry and target, not artwork output o
     { paper: 'a4' as const },
     { machine: 'explore' as const },
     { profile: 'conservative' as const },
-    { profile: 'seven' as const, gap: SEVEN_CARD_GAP_MM, bleed: 0.05 },
+    { profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
   ])
     assert.notEqual(key, registrationKey({ ...DEFAULT_SETTINGS, ...change }));
 });
@@ -90,12 +90,7 @@ test('alignment arrows follow the final sheet artwork direction', () => {
     alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'expanded', backRotation: 0 }, true),
     'right',
   );
-  const seven = {
-    ...DEFAULT_SETTINGS,
-    profile: 'seven' as const,
-    gap: SEVEN_CARD_GAP_MM,
-    bleed: 0.05,
-  };
+  const seven = { ...DEFAULT_SETTINGS, profile: 'seven' as const, gap: 0.1, bleed: 0.05 };
   assert.equal(alignmentArtworkDirection(seven), 'up');
   assert.equal(alignmentArtworkDirection(seven, true), 'down');
 });
@@ -170,7 +165,7 @@ test('capture recognizes the seven-card 2-3-2 pattern on Letter', () => {
   const settings = {
       ...DEFAULT_SETTINGS,
       profile: 'seven' as const,
-      gap: SEVEN_CARD_GAP_MM,
+      gap: 0.1,
       bleed: 0.05,
     },
     f = fixture(1, false, true, false, settings, 13, 32),
