@@ -17,6 +17,16 @@ npm run package   # Build an installer for the current OS into release/
 
 Windows and Linux installers should be built/tested on their respective platforms. Published releases include a universal macOS DMG, a Windows x64 NSIS installer, and a Linux x64 AppImage. The macOS and Windows builds are currently unsigned, and automatic installation of updates is not configured. The desktop app checks GitHub for the latest stable release at launch and shows a dismissible notice when a newer installer is available. Design Space is a separate application: CriProx on Linux can prepare exports, but the actual Cricut job requires a platform supported by Design Space.
 
+### Open the unsigned app on macOS
+
+After downloading CriProx from the official GitHub release and moving it to **Applications**, macOS may block it because the app is not yet signed. Run this command in Terminal, then open CriProx again:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/CriProx.app"
+```
+
+Only remove the quarantine attribute from a copy downloaded from the official CriProx repository.
+
 ## Releases and contributions
 
 Commits and pull request titles use [Conventional Commits](https://www.conventionalcommits.org/). Release Please maintains a release pull request containing the generated changelog and automatic `package.json` / `package-lock.json` version bump. Merging that pull request builds all three native installers, attaches them to a draft GitHub release, and publishes the release only after every installer succeeds.
