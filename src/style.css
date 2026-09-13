@@ -1937,6 +1937,53 @@ h1 > span {
   margin-left: 12px;
   padding: 0;
 }
+.release-notice {
+  position: fixed;
+  top: 78px;
+  right: 20px;
+  z-index: 20;
+  width: min(520px, calc(100vw - 40px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #dcd3ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 12px 38px #2b1c451f;
+}
+.release-notice-icon {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--purple-light);
+  color: var(--purple);
+}
+.release-notice > div {
+  min-width: 0;
+  flex: 1;
+}
+.release-notice strong,
+.release-notice > div > span {
+  display: block;
+}
+.release-notice strong {
+  color: #5e526d;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.release-notice > div > span {
+  color: #8b8298;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.release-notice > .icon-button {
+  flex-shrink: 0;
+}
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -2142,6 +2189,18 @@ h1 > span {
   .top-actions {
     margin-left: auto;
     gap: 4px;
+  }
+  .release-notice {
+    top: 72px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    flex-wrap: wrap;
+  }
+  .release-notice > div {
+    flex-basis: calc(100% - 82px);
+  }
+  .release-notice > .primary {
+    margin-left: 47px;
   }
   .top-action-divider,
   .top-help-action {

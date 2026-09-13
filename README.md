@@ -15,7 +15,17 @@ npm run build     # Type-check and create the production renderer
 npm run package   # Build an installer for the current OS into release/
 ```
 
-Windows and Linux installers should be built/tested on their respective platforms. The macOS build is unsigned; signing/notarization and automatic updates are not configured. Design Space is a separate application: CriProx on Linux can prepare exports, but the actual Cricut job requires a platform supported by Design Space.
+Windows and Linux installers should be built/tested on their respective platforms. Published releases include a universal macOS DMG, a Windows x64 NSIS installer, and a Linux x64 AppImage. The macOS and Windows builds are currently unsigned, and automatic installation of updates is not configured. The desktop app checks GitHub for the latest stable release at launch and shows a dismissible notice when a newer installer is available. Design Space is a separate application: CriProx on Linux can prepare exports, but the actual Cricut job requires a platform supported by Design Space.
+
+## Releases and contributions
+
+Commits and pull request titles use [Conventional Commits](https://www.conventionalcommits.org/). Release Please maintains a release pull request containing the generated changelog and automatic `package.json` / `package-lock.json` version bump. Merging that pull request builds all three native installers, attaches them to a draft GitHub release, and publishes the release only after every installer succeeds.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and release details. Maintainers must enable **Allow GitHub Actions to create and approve pull requests** under **Settings → Actions → General** for the Release Please workflow.
+
+## License
+
+CriProx is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may use, study, modify, and share it for permitted noncommercial purposes. Commercial use—including selling CriProx or using it in an anticipated commercial application—is not licensed without separate permission from the copyright holder. See [NOTICE](NOTICE) for the required copyright notice.
 
 ## Included
 

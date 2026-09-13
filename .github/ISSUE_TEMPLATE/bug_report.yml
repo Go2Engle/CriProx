@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a reproducible problem in CriProx.
+title: 'fix: '
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve CriProx. Please remove private card artwork from attachments and logs.
+  - type: checkboxes
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I can reproduce this on the latest CriProx release.
+          required: true
+  - type: input
+    attributes:
+      label: CriProx version
+      description: Shown at the bottom of the app, for example 0.2.0.
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Select …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Add screenshots, logs, printer/cutter details, or a minimal project file if useful.

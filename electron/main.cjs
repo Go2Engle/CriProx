@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.cjs');
 
 const mpcPaths = new Set(['/2/sources/', '/2/exploreSearch/']);
 ipcMain.handle('mpc-request', async (_event, request) => {
@@ -40,6 +41,17 @@ ipcMain.handle('window-control', (event, action) => {
 });
 
 ipcMain.handle('window-is-maximized', (event) => senderWindow(event).isMaximized());
+
+let releaseCheck;
+ipcMain.handle('release-check', () => {
+  releaseCheck ??= findAvailableRelease(app.getVersion()).catch(() => null);
+  return releaseCheck;
+});
+
+ipcMain.handle('open-release-page', (_event, releaseUrl) => {
+  if (!isTrustedReleaseUrl(releaseUrl)) throw new Error('Unsupported release URL.');
+  return shell.openExternal(releaseUrl);
+});
 
 ipcMain.handle('save-project', async (event, request) => {
   const data = request?.data;

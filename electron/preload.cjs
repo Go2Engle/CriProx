@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld(
     platform: process.platform,
     mpcRequest: (path, method, body) => ipcRenderer.invoke('mpc-request', { path, method, body }),
     saveProject: (defaultName, data) => ipcRenderer.invoke('save-project', { defaultName, data }),
+    releases: Object.freeze({
+      check: () => ipcRenderer.invoke('release-check'),
+      open: (releaseUrl) => ipcRenderer.invoke('open-release-page', releaseUrl),
+    }),
     windowControls: Object.freeze({
       minimize: () => ipcRenderer.invoke('window-control', 'minimize'),
       toggleMaximize: () => ipcRenderer.invoke('window-control', 'maximize'),

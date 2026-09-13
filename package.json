@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "description": "A local card-sheet studio for Cricut Print Then Cut",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": "Go2Engle",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Go2Engle/CriProx.git"
+  },
+  "homepage": "https://github.com/Go2Engle/CriProx",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -11,7 +18,10 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --import tsx --test tests/*.test.ts",
     "desktop": "npm run build && electron .",
-    "package": "npm run build && electron-builder",
+    "package": "npm run build && electron-builder --publish never",
+    "package:mac": "npm run build && electron-builder --mac --universal --publish never",
+    "package:windows": "npm run build && electron-builder --win --x64 --publish never",
+    "package:linux": "npm run build && electron-builder --linux --x64 --publish never",
     "format": "prettier --write src tests electron vite.config.ts"
   },
   "dependencies": {
@@ -39,10 +49,15 @@
   "build": {
     "appId": "com.criprox.studio",
     "productName": "CriProx",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "LICENSE",
+      "NOTICE",
+      "!node_modules/@napi-rs/canvas{,/**/*}",
+      "!node_modules/@napi-rs/canvas-*/**/*"
     ],
     "directories": {
       "output": "release"

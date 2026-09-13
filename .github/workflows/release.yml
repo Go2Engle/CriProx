@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      created: ${{ steps.release.outputs.release_created }}
+      sha: ${{ steps.release.outputs.sha }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - name: Create or update the release pull request
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build-installers:
+    name: Build ${{ matrix.name }} installer
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS universal
+            runner: macos-latest
+            script: package:mac
+            artifact: release/*.dmg
+            bundle: installer-macos
+          - name: Windows x64
+            runner: windows-latest
+            script: package:windows
+            artifact: release/*.exe
+            bundle: installer-windows
+          - name: Linux x64
+            runner: ubuntu-latest
+            script: package:linux
+            artifact: release/*.AppImage
+            bundle: installer-linux
+    steps:
+      - name: Check out the released revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.sha }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+      - name: Build installer
+        run: npm run ${{ matrix.script }}
+      - name: Stage installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.bundle }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  publish-release:
+    name: Attach installers and publish release
+    needs:
+      - release-please
+      - build-installers
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: release-assets
+          merge-multiple: true
+      - name: Attach installers to the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.tag }}
+        run: gh release upload "$RELEASE_TAG" release-assets/* --clobber
+      - name: Publish the completed release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.tag }}
+        run: gh release edit "$RELEASE_TAG" --draft=false

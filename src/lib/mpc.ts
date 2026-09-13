@@ -17,23 +17,6 @@ type MpcResult = {
   dpi: number;
 };
 
-declare global {
-  interface Window {
-    criprox?: {
-      platform?: 'darwin' | 'win32' | 'linux';
-      mpcRequest: (path: string, method: 'GET' | 'POST', body?: unknown) => Promise<unknown>;
-      saveProject?: (defaultName: string, data: string) => Promise<boolean>;
-      windowControls?: {
-        minimize: () => Promise<boolean>;
-        toggleMaximize: () => Promise<boolean>;
-        close: () => Promise<boolean>;
-        isMaximized: () => Promise<boolean>;
-        onMaximizedChange: (callback: (maximized: boolean) => void) => () => void;
-      };
-    };
-  }
-}
-
 let sources: Promise<MpcSource[]> | undefined;
 
 async function request<T>(

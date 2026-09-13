@@ -924,8 +924,8 @@ export default function App() {
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
   const [modal, setModal] = useState<
-      'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
-    >(null);
+    'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
+  >(null);
   const [selected, setSelected] = useState<string | null>(null),
     [inspecting, setInspecting] = useState<string | null>(null),
     [search, setSearch] = useState(''),
@@ -933,6 +933,7 @@ export default function App() {
     [mode, setMode] = useState('art'),
     [zoom, setZoom] = useState(100),
     [toast, setToast] = useState(''),
+    [releaseUpdate, setReleaseUpdate] = useState<ReleaseUpdate | null>(null),
     [uploading, setUploading] = useState(false);
   const imageInput = useRef<HTMLInputElement>(null),
     projectInput = useRef<HTMLInputElement>(null);
@@ -952,6 +953,26 @@ export default function App() {
       .finally(() => {
         if (active) setLoaded(true);
       });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    const releases = window.criprox?.releases;
+    if (!releases) return;
+    let active = true;
+    releases
+      .check()
+      .then((update) => {
+        if (
+          active &&
+          update &&
+          localStorage.getItem('criprox-dismissed-release') !== update.latestVersion
+        ) {
+          setReleaseUpdate(update);
+        }
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -1106,6 +1127,12 @@ export default function App() {
       if (projectInput.current) projectInput.current.value = '';
     }
   }
+  function dismissRelease() {
+    if (releaseUpdate) {
+      localStorage.setItem('criprox-dismissed-release', releaseUpdate.latestVersion);
+    }
+    setReleaseUpdate(null);
+  }
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -1182,6 +1209,34 @@ export default function App() {
           </button>
         </div>
       </header>
+      {releaseUpdate && (
+        <aside className="release-notice" role="status" aria-live="polite">
+          <span className="release-notice-icon">
+            <Download size={19} />
+          </span>
+          <div>
+            <strong>CriProx {releaseUpdate.latestVersion} is available</strong>
+            <span>You’re using {releaseUpdate.currentVersion}. Download the latest installer.</span>
+          </div>
+          <button
+            className="primary compact"
+            onClick={() => {
+              void window.criprox?.releases
+                ?.open(releaseUpdate.releaseUrl)
+                .catch(() => setToast('Could not open the GitHub release.'));
+            }}
+          >
+            View release <ExternalLink size={13} />
+          </button>
+          <button
+            className="icon-button"
+            aria-label="Dismiss release notice"
+            onClick={dismissRelease}
+          >
+            <X size={16} />
+          </button>
+        </aside>
+      )}
       <div className="app-body">
         <main>
           <div className="studio-grid">
@@ -1263,10 +1318,7 @@ export default function App() {
                       </div>
                     </button>
                     <div className="card-bottom">
-                      <button
-                        className="printing-button"
-                        onClick={() => inspect(entry.id)}
-                      >
+                      <button className="printing-button" onClick={() => inspect(entry.id)}>
                         {entry.card.oracleId ? 'Change artwork' : 'Local artwork'}{' '}
                         <ChevronDown size={12} />
                       </button>
@@ -1612,7 +1664,8 @@ export default function App() {
               {count} cards <i /> {sheets.length} sheets <i /> {g.capacity} cards per full sheet
             </span>
             <span>
-              Made for playtesting <span className="little-spark">✧</span>
+              CriProx v{__APP_VERSION__} · Made for playtesting{' '}
+              <span className="little-spark">✧</span>
             </span>
           </div>
           {sheet && (

@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement or a new workflow.
+title: 'feat: '
+labels:
+  - enhancement
+body:
+  - type: checkboxes
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched existing issues for a similar request.
+          required: true
+  - type: textarea
+    attributes:
+      label: Problem
+      description: What is difficult or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed solution
+      description: Describe the experience you would like CriProx to provide.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Alternatives and context
+      description: Include alternatives, mockups, or relevant device details.
