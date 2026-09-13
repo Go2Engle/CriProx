@@ -46,7 +46,7 @@ CriProx is free and open-source software licensed under the [GNU General Public 
 - Local PNG, JPEG, and WebP artwork imports; the full source is contained inside an opaque rounded card silhouette.
 - Standard 63 × 88 mm cards with a 3 mm corner radius, Letter/A4 planning, and 300/600/900/1200 DPI export. Standard profiles use 1 mm spacing.
 - A conservative 171.45 × 234.95 mm planning rectangle (four standard cards with default settings), plus an **experimental** 180 × 220 mm candidate area (six rotated cards with default settings). The expanded area is not a certified Cricut profile.
-- An **experimental** seven-card 2–3–2 layout for Maker and Explore. It uses 0.1 mm spacing and a 189.2 × 214.2 mm template, declares Tabloid inside Design Space, then outputs to US Letter at actual size through the system print dialog. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
+- An **experimental** seven-card 2–3–2 layout for Maker and Explore. The current spacing test uses 0.25 mm gaps and a 189.5 × 214.5 mm template, declares Tabloid inside Design Space, then outputs to US Letter at actual size through the system print dialog. The original 0.1 mm version produced a one-page PDF capture; the new spacing, sensor acquisition, and physical cutting remain unverified.
 - Transparent artwork PNGs, matched vector-only SVG silhouettes, a dimensions manifest, and a plain-text Design Space guide in a ZIP.
 - Size-check card export with a 5 mm grid, for measuring printer scale and the resulting cut.
 - Reusable registered printing from a captured Design Space PDF, with print-only bleed and unchanged cut geometry.

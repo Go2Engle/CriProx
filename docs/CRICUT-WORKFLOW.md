@@ -13,10 +13,10 @@ This is the remaining hardware acceptance test. It cannot be completed by a brow
 
 ## Experimental seven-card test
 
-The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 3 mm, the spacing at 0.1 mm, and the complete template at 189.2 × 214.2 mm. Do not modify those values.
+The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 3 mm, the spacing at 0.25 mm, and the complete template at 189.5 × 214.5 mm. Do not modify those values. The earlier 0.1 mm template produced a successful one-page PDF; this slightly wider version requires a fresh capture.
 
 1. Download the reusable setup template from **Print from CriProx** and upload the magenta PNG as one flat Print Then Cut image.
-2. Set both Canvas dimensions to 189.2 × 214.2 mm and confirm seven rounded contours.
+2. Set both Canvas dimensions to 189.5 × 214.5 mm and confirm seven rounded contours.
 3. Choose **Tabloid (11 × 17 in)** as the Print Then Cut page size in Design Space. A4 is too narrow for the middle row.
 4. Choose Make → Send to Printer, disable bleed, and open the system print dialog. Change the printer paper to **US Letter**, portrait, at **100% / Actual size**.
 5. Continue only if the preview remains one page with all seven magenta slots and all four sensor marks. Cancel if it clips a mark or creates a second page.
@@ -45,7 +45,8 @@ The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is s
 | Maximum edge displacement         | Pending                      |
 | Repeatability across three sheets | Pending                      |
 | Conservative / expanded result    | Pending                      |
-| Seven-card one-page PDF capture   | Passed; physical cut pending |
+| Seven-card 0.1 mm PDF capture     | Passed; physical cut pending |
+| Seven-card 0.25 mm PDF capture    | Pending                      |
 | Seven-card sensor / cut result    | Pending                      |
 
 Until this record is filled in with real measurements, the application is a software-tested prototype, not a guarantee of perfect Cricut alignment.
