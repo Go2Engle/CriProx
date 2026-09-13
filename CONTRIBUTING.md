@@ -30,7 +30,7 @@ Use `feat!:` or a `BREAKING CHANGE:` footer when a change is incompatible. `feat
 
 Pull requests should describe the implementation, validation, and any user-facing or compatibility impact. A maintainer may squash-merge a pull request, so its title must also be a valid Conventional Commit.
 
-By submitting a contribution, you agree to license it under the project's PolyForm Noncommercial License 1.0.0 and confirm that you have the right to do so.
+By submitting a contribution, you agree to license it under the project's GNU General Public License v3.0 only and confirm that you have the right to do so.
 
 ## Releases
 
