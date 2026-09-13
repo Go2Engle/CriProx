@@ -11,6 +11,19 @@ This is the remaining hardware acceptance test. It cannot be completed by a brow
 7. Repeat using a full conservative sheet and measure every card, including diagonal position differences. Use three sheets to check repeatability. Decide your own acceptable tolerance before committing a full deck (for example, target at most 0.25 mm edge displacement if your equipment supports it).
 8. If testing Expanded, import its PNG into Design Space before printing. The 180 × 220 mm planning envelope is a candidate, not a validated Cricut area. Do not use Auto-Resize if rejected. Return to Conservative or a smaller batch. Recheck the rotated card dimensions.
 
+## Experimental seven-card test
+
+The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 3 mm, the spacing at 0.1 mm, and the complete template at 189.2 × 214.2 mm. Do not modify those values.
+
+1. Download the reusable setup template from **Print from CriProx** and upload the magenta PNG as one flat Print Then Cut image.
+2. Set both Canvas dimensions to 189.2 × 214.2 mm and confirm seven rounded contours.
+3. Choose **Tabloid (11 × 17 in)** as the Print Then Cut page size in Design Space. A4 is too narrow for the middle row.
+4. Choose Make → Send to Printer, disable bleed, and open the system print dialog. Change the printer paper to **US Letter**, portrait, at **100% / Actual size**.
+5. Continue only if the preview remains one page with all seven magenta slots and all four sensor marks. Cancel if it clips a mark or creates a second page.
+6. Import the resulting one-page Letter PDF into CriProx. Prepare a size-check page before using a full artwork sheet.
+7. Reopen the same saved Design Space project and mat for the cut. Design Space may require a 12 × 24 in mat because the declared page is Tabloid, even though the printed sheet is Letter.
+8. Record sensor acquisition, every cut dimension, edge displacement, and repeatability. The successful one-page PDF capture confirms only the software geometry—not that a physical machine will read or cut it accurately.
+
 ## Exact SVG template
 
 Each PNG is accompanied by an SVG with the same dimensions, origin, card positions, rotation and rounded corners. It contains only opaque vector shapes, with no page background, strokes, registration marks, embedded images or clipping paths.
@@ -19,18 +32,20 @@ The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is s
 
 ## Physical acceptance record
 
-| Field | Value |
-| --- | --- |
-| Machine / firmware | Pending |
-| Design Space / OS | Pending |
-| Printer / driver | Pending |
-| Paper / material / mat | Pending |
-| Export settings / manifest | Pending |
-| Import dimensions confirmed | Pending |
-| Outer contour count confirmed | Pending |
-| Card dimensions after cutting | Pending |
-| Maximum edge displacement | Pending |
-| Repeatability across three sheets | Pending |
-| Conservative / expanded result | Pending |
+| Field                             | Value                        |
+| --------------------------------- | ---------------------------- |
+| Machine / firmware                | Pending                      |
+| Design Space / OS                 | Pending                      |
+| Printer / driver                  | Pending                      |
+| Paper / material / mat            | Pending                      |
+| Export settings / manifest        | Pending                      |
+| Import dimensions confirmed       | Pending                      |
+| Outer contour count confirmed     | Pending                      |
+| Card dimensions after cutting     | Pending                      |
+| Maximum edge displacement         | Pending                      |
+| Repeatability across three sheets | Pending                      |
+| Conservative / expanded result    | Pending                      |
+| Seven-card one-page PDF capture   | Passed; physical cut pending |
+| Seven-card sensor / cut result    | Pending                      |
 
 Until this record is filled in with real measurements, the application is a software-tested prototype, not a guarantee of perfect Cricut alignment.

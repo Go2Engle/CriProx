@@ -521,6 +521,12 @@ function ExportModal({
             without resizing.
           </div>
         )}
+        {project.settings.profile === 'seven' && (
+          <div className="warning-box">
+            Seven-card layout is an experimental Tabloid-to-Letter workaround. Confirm one page, all
+            four sensor marks, and a measured test cut before using card stock.
+          </div>
+        )}
         {error && (
           <div className="error-box" role="alert">
             {error}
@@ -1492,7 +1498,15 @@ export default function App() {
                     <select
                       id="machine"
                       value={project.settings.machine}
-                      onChange={(e) => settings({ machine: e.target.value as Settings['machine'] })}
+                      onChange={(e) => {
+                        const machine = e.target.value as Settings['machine'];
+                        settings({
+                          machine,
+                          ...(project.settings.profile === 'seven' && machine === 'joy-xtra'
+                            ? { profile: 'expanded' as const, gap: 1 }
+                            : {}),
+                        });
+                      }}
                     >
                       <option value="maker">Cricut Maker series</option>
                       <option value="explore">Cricut Explore series</option>
@@ -1514,7 +1528,14 @@ export default function App() {
                     </button>
                     <button
                       className={project.settings.paper === 'a4' ? 'chosen' : ''}
-                      onClick={() => settings({ paper: 'a4' })}
+                      onClick={() =>
+                        settings({
+                          paper: 'a4',
+                          ...(project.settings.profile === 'seven'
+                            ? { profile: 'expanded' as const, gap: 1 }
+                            : {}),
+                        })
+                      }
                     >
                       <span className="paper-mini a4" />
                       <strong>A4</strong>
@@ -1543,17 +1564,38 @@ export default function App() {
                     id="profile"
                     value={project.settings.profile}
                     onChange={(e) => {
-                      settings({ profile: e.target.value as Settings['profile'] });
+                      const profile = e.target.value as Settings['profile'];
+                      settings(
+                        profile === 'seven'
+                          ? {
+                              profile,
+                              paper: 'letter',
+                              width: 63,
+                              height: 88,
+                              gap: 0.1,
+                              radius: 3,
+                              bleed: Math.min(project.settings.bleed, 0.05),
+                            }
+                          : {
+                              profile,
+                              ...(project.settings.profile === 'seven' ? { gap: 1 } : {}),
+                            },
+                      );
                       setPage(0);
                     }}
                   >
                     <option value="expanded">6 slots · default</option>
                     <option value="conservative">4 slots · conservative area</option>
+                    <option value="seven" disabled={project.settings.machine === 'joy-xtra'}>
+                      7 slots · experimental Letter hack
+                    </option>
                   </select>
                   <p className="field-note">
                     {project.settings.profile === 'conservative'
                       ? `A conservative ${formatDimensions(171.45, 234.95, project.settings.units)} planning area.`
-                      : `${formatDimensions(180, 220, project.settings.units)} candidate area. Verify in Design Space before printing.`}
+                      : project.settings.profile === 'seven'
+                        ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
+                        : `${formatDimensions(180, 220, project.settings.units)} candidate area. Verify in Design Space before printing.`}
                   </p>
                 </div>
                 <div className="settings-divider" />

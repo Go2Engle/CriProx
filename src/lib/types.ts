@@ -16,7 +16,7 @@ export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
   machine: 'maker' | 'explore' | 'joy-xtra';
-  profile: 'conservative' | 'expanded';
+  profile: 'conservative' | 'expanded' | 'seven';
   width: number;
   height: number;
   gap: number;

@@ -58,7 +58,8 @@ export default function RegisteredPrint({
     [verticalDirection, setVerticalDirection] = useState<'up' | 'down'>('down');
   const key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
-    id = templateId(project.settings);
+    id = templateId(project.settings),
+    seven = project.settings.profile === 'seven';
   useEffect(() => {
     dialog.current?.showModal();
     let active = true;
@@ -543,6 +544,13 @@ export default function RegisteredPrint({
               image, preserve transparency, and set both dimensions to{' '}
               <strong>{formatDimensions(full.width, full.height, project.settings.units)}</strong>.
               Save the project as <strong>{id}</strong>.
+              {seven && (
+                <>
+                  {' '}
+                  Before Make, choose <strong>Tabloid (11 × 17 in)</strong> as the Print Then Cut
+                  page size in Design Space.
+                </>
+              )}
             </p>
             <button className="secondary" disabled={!!busy} onClick={setup}>
               <Download size={15} /> Download setup template
@@ -555,8 +563,17 @@ export default function RegisteredPrint({
             <h3>Capture the actual sensor marks</h3>
             <p>
               In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>, use
-              the system print dialog, and save a full-page, portrait PDF at actual size. Import
-              that PDF here. We check the slot pattern and size before storing it locally.
+              the system print dialog, and{' '}
+              {seven ? (
+                <>
+                  change the printer paper to <strong>US Letter</strong>. Save a{' '}
+                  <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it becomes
+                  two pages or clips any of the four sensor marks.
+                </>
+              ) : (
+                <>save a full-page, portrait PDF at actual size.</>
+              )}{' '}
+              Import that PDF here. We check the slot pattern and size before storing it locally.
             </p>
             <button className="secondary" disabled={!!busy} onClick={() => input.current?.click()}>
               <FileUp size={15} />

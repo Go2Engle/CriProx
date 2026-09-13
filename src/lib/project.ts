@@ -30,7 +30,7 @@ export function validateProject(value: unknown): Project {
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
     !['maker', 'explore', 'joy-xtra'].includes(s.machine) ||
-    !['conservative', 'expanded'].includes(s.profile) ||
+    !['conservative', 'expanded', 'seven'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.backBleedEnabled !== 'boolean' ||
     typeof s.backsEnabled !== 'boolean' ||
@@ -43,7 +43,7 @@ export function validateProject(value: unknown): Project {
   for (const [n, min, max] of [
     [s.width, 40, 100],
     [s.height, 40, 120],
-    [s.gap, 1, 10],
+    [s.gap, s.profile === 'seven' ? 0.1 : 1, 10],
     [s.radius, 0, 6],
     [s.bleed, 0, 1.5],
     [s.backOffsetX, -5, 5],
@@ -54,6 +54,18 @@ export function validateProject(value: unknown): Project {
   }
   if (s.bleed > s.gap / 2)
     throw new Error('Artwork bleed must fit within half of the card spacing.');
+  if (
+    s.profile === 'seven' &&
+    (s.paper !== 'letter' ||
+      s.machine === 'joy-xtra' ||
+      s.width !== 63 ||
+      s.height !== 88 ||
+      s.gap !== 0.1 ||
+      s.radius !== 3)
+  )
+    throw new Error(
+      'The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, 0.1 mm spacing, and 3 mm corners.',
+    );
   if (
     p.backArtwork &&
     (typeof p.backArtwork.name !== 'string' ||

@@ -83,8 +83,9 @@ export default function FrontBleedControl({
             }}
           />
           <p id={`${id}-hint`} className="field-note">
-            Default: {formatMeasurement(0.5, settings.units)}. Maximum:{' '}
-            {formatMeasurement(maximum, settings.units)}, limited by card spacing.
+            Maximum: {formatMeasurement(maximum, settings.units)}, limited by card spacing.
+            {settings.profile !== 'seven' &&
+              ` Standard default: ${formatMeasurement(0.5, settings.units)}.`}
           </p>
           {error && (
             <p id={`${id}-error`} role="alert">
