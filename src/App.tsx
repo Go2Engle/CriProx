@@ -329,7 +329,87 @@ function ImportModal({
     </Modal>
   );
 }
+function GuideVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !reducedMotion.matches) {
+          void video.play().catch(() => undefined);
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.65 },
+    );
+    const handleMotionPreference = () => {
+      if (reducedMotion.matches) video.pause();
+    };
+    observer.observe(video);
+    reducedMotion.addEventListener('change', handleMotionPreference);
+    return () => {
+      observer.disconnect();
+      reducedMotion.removeEventListener('change', handleMotionPreference);
+    };
+  }, []);
+  return (
+    <div className="guide-video-shell">
+      <video
+        ref={ref}
+        aria-label={label}
+        controls
+        loop
+        muted
+        playsInline
+        poster={poster}
+        preload="metadata"
+      >
+        <source src={src} type="video/mp4" />
+      </video>
+    </div>
+  );
+}
 function Guide({ close }: { close: () => void }) {
+  const steps = [
+    {
+      title: 'Download the reusable template',
+      description:
+        'Open Print from CriProx, choose your machine and paper, then download the one-time setup image. Keep the exact dimensions shown with that template.',
+      video: {
+        src: './tutorials/download-template.mp4',
+        poster: './tutorials/download-template.jpg',
+        label: 'Walkthrough: download the reusable template from CriProx',
+      },
+    },
+    {
+      title: 'Set it up in Design Space',
+      description:
+        'Upload the setup image as a flat Print Then Cut image, preserve its transparency, and set both dimensions to the exact values supplied by CriProx.',
+      video: {
+        src: './tutorials/design-space-setup.mp4',
+        poster: './tutorials/design-space-setup.jpg',
+        label: 'Walkthrough: upload and size the template in Design Space',
+      },
+    },
+    {
+      title: 'Capture Cricut’s print',
+      description:
+        'Make the project and save Cricut’s print as a one-page portrait PDF at actual size. Import that PDF into CriProx so the app can verify and save its registration marks.',
+      video: {
+        src: './tutorials/capture-registration.mp4',
+        poster: './tutorials/capture-registration.jpg',
+        label: 'Walkthrough: print the setup from Design Space and capture it in CriProx',
+      },
+    },
+    {
+      title: 'Print and run the saved cut',
+      description:
+        'Print card sheets from CriProx at 100% with no fit or shrink scaling. Return to the same saved Design Space project, choose Already Printed or skip printing when available, and cut the sheet.',
+    },
+  ];
   return (
     <Modal
       title="Print from CriProx"
@@ -348,29 +428,13 @@ function Guide({ close }: { close: () => void }) {
             </p>
           </div>
         </div>
-        {[
-          [
-            'Create the reusable template',
-            'Open Print from CriProx and download its one-time setup image. Upload it into Design Space as a flat Print Then Cut image and set the exact dimensions shown.',
-          ],
-          [
-            'Capture Cricut’s print',
-            'Print that setup project from Design Space to a PDF at actual size. Import the PDF back into Print from CriProx so the app can verify and save its registration marks.',
-          ],
-          [
-            'Print your card sheets',
-            'Print from CriProx at 100% with no fit or shrink scaling. Artwork bleed and optional card backs are added here without changing the captured cut geometry.',
-          ],
-          [
-            'Run the saved Cricut cut',
-            'Return to the same saved Design Space project, choose Already Printed or skip printing when available, and cut the CriProx sheet. Measure a test card before printing a full deck.',
-          ],
-        ].map(([title, description], i) => (
+        {steps.map(({ title, description, video }, i) => (
           <div className="guide-step" key={title}>
             <span>{i + 1}</span>
-            <div>
+            <div className="guide-step-body">
               <h3>{title}</h3>
               <p>{description}</p>
+              {video && <GuideVideo {...video} />}
             </div>
           </div>
         ))}
@@ -1768,6 +1832,7 @@ export default function App() {
         <RegisteredPrint
           project={project}
           close={() => setModal(null)}
+          openGuide={() => setModal('guide')}
           notify={setToast}
           updateSettings={settings}
           updateBackArtwork={uploadBackArtwork}
