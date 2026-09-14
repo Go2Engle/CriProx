@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/Go2Engle/CriProx/compare/v0.3.0...v0.4.0) (2026-09-14)
+
+
+### Features
+
+* **guide:** add print workflow video walkthroughs ([bdcbe49](https://github.com/Go2Engle/CriProx/commit/bdcbe49184091f8fd2d9ca93f1f1e5c01742ccda))
+* **guide:** add print workflow video walkthroughs ([90e25ac](https://github.com/Go2Engle/CriProx/commit/90e25ac60e4e13e39845766d668f59505265fd7b))
+
 ## [0.3.0](https://github.com/Go2Engle/CriProx/compare/v0.2.1...v0.3.0) (2026-09-14)
 
 
