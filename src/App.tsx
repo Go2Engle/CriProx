@@ -41,7 +41,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
-import { DEFAULT_SETTINGS, EMPTY_PROJECT, PRINT_DPI_OPTIONS } from './lib/types';
+import { DEFAULT_SETTINGS, EMPTY_PROJECT, fixedBleedMm, PRINT_DPI_OPTIONS } from './lib/types';
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
 import { resolveDeck, variants } from './lib/scryfall';
@@ -51,6 +51,7 @@ import { validateProject } from './lib/project';
 import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
+import { paperWorkflow } from './lib/paper-workflow';
 
 // The original Design Space ZIP export remains available for a future workflow,
 // but Print from CriProx is the only export action shown in the interface.
@@ -517,8 +518,9 @@ function ExportModal({
         </div>
         {project.settings.profile === 'expanded' && (
           <div className="warning-box">
-            Expanded layout is experimental. Confirm it fits your machine and paper in Design Space
-            without resizing.
+            {project.settings.paper === 'letter'
+              ? 'Six-card Letter layout uses the experimental Tabloid-to-Letter workaround. Confirm one page and all four sensor marks before printing.'
+              : 'Six-card layout is experimental. Confirm it fits your machine and paper in Design Space without resizing.'}
           </div>
         )}
         {project.settings.profile === 'seven' && (
@@ -1503,7 +1505,14 @@ export default function App() {
                         settings({
                           machine,
                           ...(project.settings.profile === 'seven' && machine === 'joy-xtra'
-                            ? { profile: 'expanded' as const, gap: 1 }
+                            ? {
+                                profile: 'expanded' as const,
+                                gap: 1,
+                                bleed:
+                                  project.settings.bleed > 0
+                                    ? fixedBleedMm({ profile: 'expanded' })
+                                    : 0,
+                              }
                             : {}),
                         });
                       }}
@@ -1532,7 +1541,14 @@ export default function App() {
                         settings({
                           paper: 'a4',
                           ...(project.settings.profile === 'seven'
-                            ? { profile: 'expanded' as const, gap: 1 }
+                            ? {
+                                profile: 'expanded' as const,
+                                gap: 1,
+                                bleed:
+                                  project.settings.bleed > 0
+                                    ? fixedBleedMm({ profile: 'expanded' })
+                                    : 0,
+                              }
                             : {}),
                         })
                       }
@@ -1574,28 +1590,33 @@ export default function App() {
                               height: 88,
                               gap: 0.1,
                               radius: 3,
-                              bleed: Math.min(project.settings.bleed, 0.05),
+                              bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
                             }
                           : {
                               profile,
-                              ...(project.settings.profile === 'seven' ? { gap: 1 } : {}),
+                              ...(project.settings.profile === 'seven'
+                                ? {
+                                    gap: 1,
+                                    bleed:
+                                      project.settings.bleed > 0
+                                        ? fixedBleedMm({ profile: 'expanded' })
+                                        : 0,
+                                  }
+                                : {}),
                             },
                       );
                       setPage(0);
                     }}
                   >
                     <option value="expanded">6 slots · default</option>
-                    <option value="conservative">4 slots · conservative area</option>
                     <option value="seven" disabled={project.settings.machine === 'joy-xtra'}>
                       7 slots · experimental Letter hack
                     </option>
                   </select>
                   <p className="field-note">
-                    {project.settings.profile === 'conservative'
-                      ? `A conservative ${formatDimensions(171.45, 234.95, project.settings.units)} planning area.`
-                      : project.settings.profile === 'seven'
-                        ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
-                        : `${formatDimensions(180, 220, project.settings.units)} candidate area. Verify in Design Space before printing.`}
+                    {project.settings.profile === 'seven'
+                      ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
+                      : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
                   </p>
                 </div>
                 <div className="settings-divider" />

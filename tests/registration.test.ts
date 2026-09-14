@@ -51,7 +51,6 @@ test('capture identity follows cutting geometry and target, not artwork output o
     { width: 63.5, height: 88.9 },
     { paper: 'a4' as const },
     { machine: 'explore' as const },
-    { profile: 'conservative' as const },
     { profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
   ])
     assert.notEqual(key, registrationKey({ ...DEFAULT_SETTINGS, ...change }));
@@ -76,11 +75,6 @@ test('alignment square measurements move backs opposite the observed error', () 
   assert.deepEqual(backAlignmentCorrection(0.5, 'left', 3, 'up'), { x: 0.5, y: 3 });
 });
 test('alignment arrows follow the final sheet artwork direction', () => {
-  assert.equal(alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'conservative' }), 'up');
-  assert.equal(
-    alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'conservative' }, true),
-    'down',
-  );
   assert.equal(alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'expanded' }), 'right');
   assert.equal(
     alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'expanded' }, true),

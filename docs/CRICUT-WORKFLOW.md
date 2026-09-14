@@ -4,12 +4,12 @@ This is the remaining hardware acceptance test. It cannot be completed by a brow
 
 1. Record the Cricut model, Design Space version, OS, printer/driver, paper size, material, and mat. Choose the corresponding machine in Design Space and CriProx.
 2. Calibrate Print Then Cut using Cricut's built-in calibration flow.
-3. In CriProx, leave the layout on Conservative and select your desired card size. Open Export and download a size-check card. This package contains a single card with a 5 mm grid, not a sensor calibration page.
+3. In CriProx, leave the layout on **6 slots · default** and select your desired card size. Open Export and download a size-check card. This package contains a single card with a 5 mm grid, not a sensor calibration page.
 4. Upload the PNG as a flat/single-layer Print Then Cut image. Preserve transparency. Inspect its contour: exactly one rounded rectangle, with no interior holes. Set both Canvas dimensions to the values in START-HERE.txt. Confirm that Design Space accepts those dimensions without resizing.
-5. Print through Design Space with bleed enabled and with printer fit-to-page/shrink-to-fit disabled. Complete cutting in the same session from the same device. Follow the model-specific mat-loading instructions.
-6. Measure width and height of the cut card and its internal 5 mm grid. A consistent scale error suggests printer scaling or incorrect Canvas dimensions. Correctly sized grid with displaced edges suggests calibration/alignment. Record the error; do not change the physical card dimensions to conceal a sensor alignment issue.
-7. Repeat using a full conservative sheet and measure every card, including diagonal position differences. Use three sheets to check repeatability. Decide your own acceptable tolerance before committing a full deck (for example, target at most 0.25 mm edge displacement if your equipment supports it).
-8. If testing Expanded, import its PNG into Design Space before printing. The 180 × 220 mm planning envelope is a candidate, not a validated Cricut area. Do not use Auto-Resize if rejected. Return to Conservative or a smaller batch. Recheck the rotated card dimensions.
+5. For US Letter output, choose **Tabloid (11 × 17 in)** in Design Space, then change the system print dialog to **US Letter**, portrait, at **100% / Actual size**. Continue only if all six slots and all four sensor marks remain on one page. For native A4 output, choose A4 in both Design Space and the system dialog.
+6. Print through Design Space with bleed enabled and with printer fit-to-page/shrink-to-fit disabled. Complete cutting in the same session from the same device. Follow the model-specific mat-loading instructions.
+7. Measure width and height of the cut card and its internal 5 mm grid. A consistent scale error suggests printer scaling or incorrect Canvas dimensions. Correctly sized grid with displaced edges suggests calibration/alignment. Record the error; do not change the physical card dimensions to conceal a sensor alignment issue.
+8. Repeat using a full six-card sheet and measure every card, including diagonal position differences. Use three sheets to check repeatability. Decide your own acceptable tolerance before committing a full deck (for example, target at most 0.25 mm edge displacement if your equipment supports it). The 180 × 220 mm planning envelope is a candidate, not a validated Cricut area. Do not use Auto-Resize if rejected; use a smaller batch instead. Recheck the rotated card dimensions.
 
 ## Experimental seven-card test
 
@@ -25,6 +25,8 @@ The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fi
 8. Record sensor acquisition, every cut dimension, edge displacement, and repeatability. The successful one-page PDF capture confirms only the software geometry—not that a physical machine will read or cut it accurately.
 
 ## Exact SVG template
+
+Front and back bleed controls are independent on/off toggles. Their amounts are fixed: 0.5 mm for the six-card profile and 0.05 mm for the tightly spaced seven-card profile.
 
 Each PNG is accompanied by an SVG with the same dimensions, origin, card positions, rotation and rounded corners. It contains only opaque vector shapes, with no page background, strokes, registration marks, embedded images or clipping paths.
 
@@ -44,7 +46,7 @@ The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is s
 | Card dimensions after cutting     | Pending                      |
 | Maximum edge displacement         | Pending                      |
 | Repeatability across three sheets | Pending                      |
-| Conservative / expanded result    | Pending                      |
+| Six-card result                   | Pending                      |
 | Seven-card one-page PDF capture   | Passed; physical cut pending |
 | Seven-card sensor / cut result    | Pending                      |
 

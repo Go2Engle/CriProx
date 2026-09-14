@@ -45,11 +45,11 @@ CriProx is free and open-source software licensed under the [GNU General Public 
 - MPC Autofill community-art lookup from the card inspector, plus a browser for its dedicated card-back collection. Full-resolution selections use MPC Autofill's official image CDN.
 - Local PNG, JPEG, and WebP artwork imports; the full source is contained inside an opaque rounded card silhouette.
 - Standard 63 × 88 mm cards with a 3 mm corner radius, Letter/A4 planning, and 300/600/900/1200 DPI export. Standard profiles use 1 mm spacing.
-- A conservative 171.45 × 234.95 mm planning rectangle (four standard cards with default settings), plus an **experimental** 180 × 220 mm candidate area (six rotated cards with default settings). The expanded area is not a certified Cricut profile.
+- An **experimental** 180 × 220 mm candidate area producing six rotated cards with default settings. For Letter output, it declares Tabloid inside Design Space, then outputs to US Letter at actual size through the system print dialog. It is not a certified Cricut profile.
 - An **experimental** seven-card 2–3–2 layout for Maker and Explore. It uses 0.1 mm spacing and a 189.2 × 214.2 mm template, declares Tabloid inside Design Space, then outputs to US Letter at actual size through the system print dialog. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
 - Transparent artwork PNGs, matched vector-only SVG silhouettes, a dimensions manifest, and a plain-text Design Space guide in a ZIP.
 - Size-check card export with a 5 mm grid, for measuring printer scale and the resulting cut.
-- Reusable registered printing from a captured Design Space PDF, with print-only bleed and unchanged cut geometry.
+- Reusable registered printing from a captured Design Space PDF, with independently toggleable front/back bleed and unchanged cut geometry. Bleed is fixed at 0.5 mm for six-card sheets and 0.05 mm for seven-card sheets.
 - Optional shared card backs, disabled by default, with separate manual-refeed PDFs or alternating duplex pages, long/short-edge orientation, and X/Y alignment adjustment. Back pages contain artwork only.
 - IndexedDB autosave and portable JSON project backups. Successful API responses are cached for a day; fetched export artwork is cached for reuse. No account or hosted backend.
 
@@ -72,7 +72,7 @@ See [the physical validation procedure](docs/CRICUT-WORKFLOW.md) before printing
 ## Current limits
 
 - Registered printing depends on a captured Design Space PDF for the exact saved cut job. It does not emulate sensor marks and must be tested with the user's printer and Cricut.
-- The seven-card profile relies on an unsupported Tabloid-to-Letter paper-size workaround and extremely narrow spacing. Confirm all seven slots and all four marks on one page, then complete a measured test cut before using card stock.
+- Letter output for both six- and seven-card profiles relies on an unsupported Tabloid-to-Letter paper-size workaround. Confirm every slot and all four marks on one page, then complete a measured test cut before using card stock. The seven-card profile also has extremely narrow spacing.
 - Duplex alignment depends on printer feed accuracy. The included guide and X/Y offsets compensate for repeatable shifts, but cannot correct inconsistent paper feed.
 - Up to 500 cards per project, 100 copies per entry, 20 MB per local image, and 24 sheets per ZIP. Export the current sheet for larger projects. High-resolution batches can use substantial memory.
 - Browser storage can be cleared or reach its quota; save a project backup to keep your work. JSON backups include local artwork and selected remote URLs, not copies of remote images.

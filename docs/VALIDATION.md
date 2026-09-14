@@ -22,7 +22,7 @@ Browser checks caught a local-image bug: fetching a data URL was blocked by the 
 ## Still requires external validation
 
 - Actual Cricut sensor acquisition, Design Space contour tracing, physical scale, alignment, and repeatability.
-- Acceptance of the experimental expanded layout on each model/paper configuration.
+- Acceptance of the experimental six-card layout on each model/paper configuration, including the Tabloid-to-Letter print workaround for Letter output.
 - Seven-card sensor acquisition, physical dimensions, edge alignment, 12 × 24 in mat behavior, and repeatability after the Tabloid-to-Letter print workaround.
 - Windows and Linux installer builds and runtime checks.
 - macOS signing/notarization for distribution.

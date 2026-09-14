@@ -10,8 +10,7 @@ import {
   Ruler,
   X,
 } from 'lucide-react';
-import type { Project, Settings } from '../lib/types';
-import type { CardFace } from '../lib/types';
+import { fixedBleedMm, type CardFace, type Project, type Settings } from '../lib/types';
 import { formatDimensions, formatMeasurement } from '../lib/units';
 import {
   BACK_ALIGNMENT_SQUARE_MM,
@@ -27,6 +26,7 @@ import { download } from '../lib/export';
 import MpcArtworkSearch from './MpcArtworkSearch';
 import FrontBleedControl from './FrontBleedControl';
 import PdfPagePreview from './PdfPagePreview';
+import { paperWorkflow } from '../lib/paper-workflow';
 export default function RegisteredPrint({
   project,
   close,
@@ -59,7 +59,7 @@ export default function RegisteredPrint({
   const key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
     id = templateId(project.settings),
-    seven = project.settings.profile === 'seven';
+    printPaper = paperWorkflow(project.settings);
   useEffect(() => {
     dialog.current?.showModal();
     let active = true;
@@ -342,9 +342,9 @@ export default function RegisteredPrint({
                 <span>
                   Bleed on card backs
                   <small>
-                    {project.settings.bleed === 0
-                      ? 'Set the front bleed amount above to choose the shared amount.'
-                      : `Uses ${formatMeasurement(project.settings.bleed, project.settings.units)} without changing the cut pattern.`}
+                    {project.settings.backBleedEnabled ? 'On' : 'Off'} · fixed{' '}
+                    {formatMeasurement(fixedBleedMm(project.settings), project.settings.units)}{' '}
+                    extension
                   </small>
                 </span>
                 <input
@@ -544,11 +544,11 @@ export default function RegisteredPrint({
               image, preserve transparency, and set both dimensions to{' '}
               <strong>{formatDimensions(full.width, full.height, project.settings.units)}</strong>.
               Save the project as <strong>{id}</strong>.
-              {seven && (
+              {printPaper.usesLetterHack && (
                 <>
                   {' '}
-                  Before Make, choose <strong>Tabloid (11 × 17 in)</strong> as the Print Then Cut
-                  page size in Design Space.
+                  Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the Print
+                  Then Cut page size in Design Space.
                 </>
               )}
             </p>
@@ -564,9 +564,9 @@ export default function RegisteredPrint({
             <p>
               In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>, use
               the system print dialog, and{' '}
-              {seven ? (
+              {printPaper.usesLetterHack ? (
                 <>
-                  change the printer paper to <strong>US Letter</strong>. Save a{' '}
+                  change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save a{' '}
                   <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it becomes
                   two pages or clips any of the four sensor marks.
                 </>

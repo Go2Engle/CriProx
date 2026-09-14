@@ -16,11 +16,9 @@ const sevenCardGeometry = (settings: Settings) => ({
 });
 export function envelope(settings: Settings) {
   if (settings.profile === 'seven') return sevenCardGeometry(settings);
-  // Deliberately conservative legacy rectangle. Expanded is an unvalidated candidate,
-  // not the product of multiplying Cricut's nonrectangular maximum extents.
-  return settings.profile === 'conservative'
-    ? { width: 171.45, height: 234.95 }
-    : { width: 180, height: 220 };
+  // This is an unvalidated candidate, not the product of multiplying Cricut's
+  // nonrectangular maximum extents.
+  return { width: 180, height: 220 };
 }
 export function grid(settings: Settings) {
   if (settings.profile === 'seven')

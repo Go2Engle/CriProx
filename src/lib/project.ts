@@ -1,4 +1,4 @@
-import { PRINT_DPI_OPTIONS, type Project } from './types';
+import { fixedBleedMm, PRINT_DPI_OPTIONS, type Project } from './types';
 const supportedImage = (url: unknown) =>
   typeof url === 'string' &&
   /^(https:\/\/(cards\.scryfall\.io\/|cdn\.mpcautofill\.com\/images\/google_drive\/(full|large)\/)|data:image\/(png|jpeg|webp);base64,)/.test(
@@ -16,9 +16,12 @@ export function validateProject(value: unknown): Project {
   )
     throw new Error('This is not a supported CriProx project.');
   const s = p.settings;
-  // Projects saved before display units and artwork bleed were added stay valid.
+  // Older projects stay valid. The removed four-slot profile migrates to the
+  // six-slot layout, and any enabled custom bleed amount becomes the fixed amount.
+  if ((s.profile as string) === 'conservative') s.profile = 'expanded';
   s.units ??= s.paper === 'letter' ? 'in' : 'mm';
   s.bleed ??= 0;
+  if (Number.isFinite(s.bleed) && s.bleed > 0) s.bleed = fixedBleedMm(s);
   s.backBleedEnabled ??= true;
   s.backsEnabled ??= false;
   s.backPrintMode ??= 'manual';
@@ -30,7 +33,7 @@ export function validateProject(value: unknown): Project {
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
     !['maker', 'explore', 'joy-xtra'].includes(s.machine) ||
-    !['conservative', 'expanded', 'seven'].includes(s.profile) ||
+    !['expanded', 'seven'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.backBleedEnabled !== 'boolean' ||
     typeof s.backsEnabled !== 'boolean' ||

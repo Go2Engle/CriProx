@@ -16,7 +16,7 @@ export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
   machine: 'maker' | 'explore' | 'joy-xtra';
-  profile: 'conservative' | 'expanded' | 'seven';
+  profile: 'expanded' | 'seven';
   width: number;
   height: number;
   gap: number;
@@ -32,6 +32,12 @@ export type Settings = {
   dpi: PrintDpi;
   proxyLabel: boolean;
 };
+export const fixedBleedMm = (settings: Pick<Settings, 'profile'>) =>
+  settings.profile === 'seven' ? 0.05 : 0.5;
+export const frontBleedMm = (settings: Pick<Settings, 'profile' | 'bleed'>) =>
+  settings.bleed > 0 ? fixedBleedMm(settings) : 0;
+export const backBleedMm = (settings: Pick<Settings, 'profile' | 'backBleedEnabled'>) =>
+  settings.backBleedEnabled ? fixedBleedMm(settings) : 0;
 export type Project = {
   version: 1;
   name: string;
