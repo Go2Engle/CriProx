@@ -51,7 +51,7 @@ test('capture identity follows cutting geometry and target, not artwork output o
     { width: 63.5, height: 88.9 },
     { paper: 'a4' as const },
     { machine: 'explore' as const },
-    { profile: 'conservative' as const },
+    { profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
   ])
     assert.notEqual(key, registrationKey({ ...DEFAULT_SETTINGS, ...change }));
 });
@@ -75,11 +75,6 @@ test('alignment square measurements move backs opposite the observed error', () 
   assert.deepEqual(backAlignmentCorrection(0.5, 'left', 3, 'up'), { x: 0.5, y: 3 });
 });
 test('alignment arrows follow the final sheet artwork direction', () => {
-  assert.equal(alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'conservative' }), 'up');
-  assert.equal(
-    alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'conservative' }, true),
-    'down',
-  );
   assert.equal(alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'expanded' }), 'right');
   assert.equal(
     alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'expanded' }, true),
@@ -89,6 +84,9 @@ test('alignment arrows follow the final sheet artwork direction', () => {
     alignmentArtworkDirection({ ...DEFAULT_SETTINGS, profile: 'expanded', backRotation: 0 }, true),
     'right',
   );
+  const seven = { ...DEFAULT_SETTINGS, profile: 'seven' as const, gap: 0.1, bleed: 0.05 };
+  assert.equal(alignmentArtworkDirection(seven), 'up');
+  assert.equal(alignmentArtworkDirection(seven, true), 'down');
 });
 test('front-to-back alignment sheets are single-page, actual-size PDFs', async () => {
   const pages = await buildBackAlignmentPdfs({
@@ -106,21 +104,29 @@ test('front-to-back alignment sheets are single-page, actual-size PDFs', async (
   assert.match(front.getTitle() || '', /Front$/);
   assert.match(back.getTitle() || '', /Back$/);
 });
-function fixture(scale = 1, missingSlot = false, marks = true, filled = false) {
+function fixture(
+  scale = 1,
+  missingSlot = false,
+  marks = true,
+  filled = false,
+  settings = DEFAULT_SETTINGS,
+  left = 24,
+  top = 30,
+) {
   const w = 864,
     h = 1118,
     sx = w / 215.9,
     sy = h / 279.4;
   const data = new Uint8ClampedArray(w * h * 4).fill(255),
-    sheet = fullTemplate(DEFAULT_SETTINGS);
+    sheet = fullTemplate(settings);
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
-      const mx = ((x + 0.5) / sx - 24) / scale,
-        my = ((y + 0.5) / sy - 30) / scale;
+      const mx = ((x + 0.5) / sx - left) / scale,
+        my = ((y + 0.5) / sy - top) / scale;
       let inside = filled && mx >= 0 && my >= 0 && mx <= sheet.width && my <= sheet.height;
       for (const [index, p] of sheet.placements.entries()) {
         if (missingSlot && index === 3) continue;
-        const r = 3,
+        const r = settings.radius,
           qx = Math.abs(mx - p.x - p.width / 2) - (p.width / 2 - r),
           qy = Math.abs(my - p.y - p.height / 2) - (p.height / 2 - r);
         if (Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r < 0)
@@ -148,6 +154,18 @@ test('capture detects translated template within raster precision', () => {
   const p = detectTemplate(f.data, f.w, f.h, 215.9, 279.4, DEFAULT_SETTINGS);
   assert.ok(Math.abs(p.leftMm - 24) < 0.15);
   assert.ok(Math.abs(p.topMm - 30) < 0.15);
+});
+test('capture recognizes the seven-card 2-3-2 pattern on Letter', () => {
+  const settings = {
+      ...DEFAULT_SETTINGS,
+      profile: 'seven' as const,
+      gap: 0.1,
+      bleed: 0.05,
+    },
+    f = fixture(1, false, true, false, settings, 13, 32),
+    p = detectTemplate(f.data, f.w, f.h, 215.9, 279.4, settings);
+  assert.ok(Math.abs(p.leftMm - 13) < 0.15);
+  assert.ok(Math.abs(p.topMm - 32) < 0.15);
 });
 test('capture rejects scaling, missing/rearranged slots, filled gaps and absent marks', () => {
   for (const f of [

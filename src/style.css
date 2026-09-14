@@ -742,9 +742,6 @@ h1 > span {
 .unit-setting {
   margin-top: 14px;
 }
-.bleed-control .field-note {
-  margin-bottom: 0;
-}
 .back-configure {
   margin: -4px 0 14px;
   font-size: 9px;
@@ -2492,16 +2489,6 @@ h1 > span {
 .registration-preferences label strong {
   color: #8a789f;
   font-weight: 550;
-}
-.registered-bleed input {
-  width: 100%;
-}
-.registered-bleed small {
-  display: block;
-  margin-top: 5px;
-  color: #9b90a5;
-  font-size: 9px;
-  line-height: 1.5;
 }
 .back-print-panel {
   margin-top: 14px;

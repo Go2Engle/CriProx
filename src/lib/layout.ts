@@ -10,14 +10,26 @@ export type Placement = {
   artworkRotation?: 0 | 180;
 };
 export type Sheet = { index: number; width: number; height: number; placements: Placement[] };
+const sevenCardGeometry = (settings: Settings) => ({
+  width: settings.width * 3 + settings.gap * 2,
+  height: settings.width * 2 + settings.height + settings.gap * 2,
+});
 export function envelope(settings: Settings) {
-  // Deliberately conservative legacy rectangle. Expanded is an unvalidated candidate,
-  // not the product of multiplying Cricut's nonrectangular maximum extents.
-  return settings.profile === 'conservative'
-    ? { width: 171.45, height: 234.95 }
-    : { width: 180, height: 220 };
+  if (settings.profile === 'seven') return sevenCardGeometry(settings);
+  // This is an unvalidated candidate, not the product of multiplying Cricut's
+  // nonrectangular maximum extents.
+  return { width: 180, height: 220 };
 }
 export function grid(settings: Settings) {
+  if (settings.profile === 'seven')
+    return {
+      width: settings.width,
+      height: settings.height,
+      columns: 3,
+      rows: 3,
+      rotated: false,
+      capacity: 7,
+    };
   const area = envelope(settings);
   const options = [false, true].map((rotated) => {
     const width = rotated ? settings.height : settings.width;
@@ -35,6 +47,46 @@ export function layout(entries: Entry[], settings: Settings): Sheet[] {
     Array.from({ length: entry.quantity }, (_, copy) => ({ entry, copy })),
   );
   const sheets: Sheet[] = [];
+  if (settings.profile === 'seven') {
+    const bounds = sevenCardGeometry(settings),
+      rotatedWidth = settings.height,
+      rotatedHeight = settings.width,
+      topOffset = (bounds.width - (rotatedWidth * 2 + settings.gap)) / 2,
+      slots = [
+        { x: topOffset, y: 0, rotated: true },
+        { x: topOffset + rotatedWidth + settings.gap, y: 0, rotated: true },
+        { x: 0, y: rotatedHeight + settings.gap, rotated: false },
+        { x: settings.width + settings.gap, y: rotatedHeight + settings.gap, rotated: false },
+        { x: (settings.width + settings.gap) * 2, y: rotatedHeight + settings.gap, rotated: false },
+        {
+          x: topOffset,
+          y: rotatedHeight + settings.gap + settings.height + settings.gap,
+          rotated: true,
+        },
+        {
+          x: topOffset + rotatedWidth + settings.gap,
+          y: rotatedHeight + settings.gap + settings.height + settings.gap,
+          rotated: true,
+        },
+      ];
+    for (let start = 0; start < copies.length; start += g.capacity) {
+      const page = copies.slice(start, start + g.capacity);
+      sheets.push({
+        index: sheets.length,
+        ...bounds,
+        placements: page.map((copy, i) => {
+          const slot = slots[i];
+          return {
+            ...copy,
+            ...slot,
+            width: slot.rotated ? settings.height : settings.width,
+            height: slot.rotated ? settings.width : settings.height,
+          };
+        }),
+      });
+    }
+    return sheets;
+  }
   for (let start = 0; start < copies.length; start += g.capacity) {
     const page = copies.slice(start, start + g.capacity);
     const columns = Math.min(g.columns, page.length);

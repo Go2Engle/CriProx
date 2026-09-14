@@ -4,12 +4,20 @@ import { parseDeck } from '../src/lib/deck';
 import { envelope, grid, layout, mmToPx, templateSvg } from '../src/lib/layout';
 import { formatDimensions, formatMeasurement } from '../src/lib/units';
 import { projectFilename } from '../src/lib/save-project';
-import { DEFAULT_SETTINGS, PRINT_DPI_OPTIONS, type Entry } from '../src/lib/types';
+import {
+  backBleedMm,
+  DEFAULT_SETTINGS,
+  fixedBleedMm,
+  frontBleedMm,
+  PRINT_DPI_OPTIONS,
+  type Entry,
+} from '../src/lib/types';
 import { validateProject } from '../src/lib/project';
 import { withDpi } from '../src/lib/png';
 import { mpcArtworkAsCard, normalizeMpcArtwork } from '../src/lib/mpc';
 import { cardMatchesDeckLine, scryfallLookupName } from '../src/lib/scryfall';
 import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
+import { paperWorkflow } from '../src/lib/paper-workflow';
 const entry: Entry = {
   id: 'entry-1',
   quantity: 1,
@@ -79,16 +87,16 @@ test('deck parser rejects unreasonable counts and caps total', () => {
   assert.equal(parseDeck('  \n// comment').cards.length, 0);
 });
 test('layout preserves requested quantity over full and partial sheets without stretching', () => {
-  const settings = { ...DEFAULT_SETTINGS, profile: 'conservative' as const };
+  const settings = DEFAULT_SETTINGS;
   const pages = layout([{ ...entry, quantity: 9 }], settings);
   assert.deepEqual(
     pages.map((p) => p.placements.length),
-    [4, 4, 1],
+    [6, 3],
   );
-  assert.equal(pages[0].width, 127);
-  assert.equal(pages[0].height, 177);
-  assert.equal(pages[2].width, 63);
-  assert.equal(pages[2].height, 88);
+  assert.equal(pages[0].width, 177);
+  assert.equal(pages[0].height, 191);
+  assert.equal(pages[1].width, 177);
+  assert.equal(pages[1].height, 127);
   assert.equal(pages.flatMap((s) => s.placements).length, 9);
   assert.deepEqual(layout([], DEFAULT_SETTINGS), []);
 });
@@ -108,51 +116,112 @@ test('default layout uses TCG dimensions and six rounded cut slots', () => {
   assert.equal(settings.radius, 3);
   assert.equal(settings.gap, 1);
   assert.equal(settings.bleed, 0.5);
+  assert.equal(settings.proxyLabel, false);
   assert.match(svg, /rx="3" ry="3"/);
   assert.ok(!/image|clipPath|stroke/.test(svg));
 });
+test('experimental seven-card layout uses the proven 2-3-2 Letter geometry', () => {
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    profile: 'seven' as const,
+    gap: 0.1,
+    bleed: 0.05,
+  };
+  const pages = layout([{ ...entry, quantity: 17 }], settings);
+  assert.equal(grid(settings).capacity, 7);
+  assert.deepEqual(
+    pages.map((page) => page.placements.length),
+    [7, 7, 3],
+  );
+  assert.ok(pages.every((page) => page.width === 189.2 && page.height === 214.2));
+  assert.deepEqual(
+    pages[0].placements.map(({ x, y, width, height, rotated }) => ({
+      x: Number(x.toFixed(2)),
+      y: Number(y.toFixed(2)),
+      width,
+      height,
+      rotated,
+    })),
+    [
+      { x: 6.55, y: 0, width: 88, height: 63, rotated: true },
+      { x: 94.65, y: 0, width: 88, height: 63, rotated: true },
+      { x: 0, y: 63.1, width: 63, height: 88, rotated: false },
+      { x: 63.1, y: 63.1, width: 63, height: 88, rotated: false },
+      { x: 126.2, y: 63.1, width: 63, height: 88, rotated: false },
+      { x: 6.55, y: 151.2, width: 88, height: 63, rotated: true },
+      { x: 94.65, y: 151.2, width: 88, height: 63, rotated: true },
+    ],
+  );
+  const svg = templateSvg(pages[0], settings);
+  assert.equal((svg.match(/<rect /g) || []).length, 7);
+  assert.match(svg, /width="189\.2mm" height="214\.2mm"/);
+});
 test('all supported settings place cards inside the planning envelope, without overlaps', () => {
-  for (const profile of ['conservative', 'expanded'] as const)
-    for (const gap of [1, 3, 10])
-      for (const width of [63, 63.5]) {
-        const settings = {
-          ...DEFAULT_SETTINGS,
-          profile,
-          gap,
-          width,
-          height: width === 63 ? 88 : 88.9,
-        };
-        const bounds = envelope(settings);
-        for (const sheet of layout([{ ...entry, quantity: 17 }], settings)) {
-          assert.ok(sheet.width <= bounds.width && sheet.height <= bounds.height);
-          for (const p of sheet.placements) {
-            assert.ok(
-              p.x >= 0 &&
-                p.y >= 0 &&
-                p.x + p.width <= sheet.width + 1e-8 &&
-                p.y + p.height <= sheet.height + 1e-8,
-            );
-            for (const q of sheet.placements)
-              if (p !== q)
-                assert.ok(
-                  p.x + p.width <= q.x ||
-                    q.x + q.width <= p.x ||
-                    p.y + p.height <= q.y ||
-                    q.y + q.height <= p.y,
-                );
-          }
+  for (const gap of [1, 3, 10])
+    for (const width of [63, 63.5]) {
+      const settings = {
+        ...DEFAULT_SETTINGS,
+        gap,
+        width,
+        height: width === 63 ? 88 : 88.9,
+      };
+      const bounds = envelope(settings);
+      for (const sheet of layout([{ ...entry, quantity: 17 }], settings)) {
+        assert.ok(sheet.width <= bounds.width && sheet.height <= bounds.height);
+        for (const p of sheet.placements) {
+          assert.ok(
+            p.x >= 0 &&
+              p.y >= 0 &&
+              p.x + p.width <= sheet.width + 1e-8 &&
+              p.y + p.height <= sheet.height + 1e-8,
+          );
+          for (const q of sheet.placements)
+            if (p !== q)
+              assert.ok(
+                p.x + p.width <= q.x ||
+                  q.x + q.width <= p.x ||
+                  p.y + p.height <= q.y ||
+                  q.y + q.height <= p.y,
+              );
         }
       }
+    }
 });
 test('PNG quantization stays within half a pixel in physical units', () => {
   for (const dpi of PRINT_DPI_OPTIONS)
-    for (const mm of [63, 88, 88.9, 127, 177, 191])
+    for (const mm of [63, 88, 88.9, 127, 177, 189.2, 191, 214.2])
       assert.ok(Math.abs((mmToPx(mm, dpi) * 25.4) / dpi - mm) <= 25.4 / dpi / 2);
 });
 test('display units convert labels without changing millimeter geometry', () => {
   assert.equal(formatDimensions(63.5, 88.9, 'in'), '2.5 × 3.5 in');
   assert.equal(formatDimensions(63.5, 88.9, 'mm'), '63.5 × 88.9 mm');
   assert.equal(formatMeasurement(3, 'in'), '0.1181 in');
+});
+test('bleed amounts are fixed by layout profile', () => {
+  assert.equal(fixedBleedMm(DEFAULT_SETTINGS), 0.5);
+  assert.equal(fixedBleedMm({ profile: 'seven' }), 0.05);
+  assert.equal(frontBleedMm({ profile: 'expanded', bleed: 0 }), 0);
+  assert.equal(frontBleedMm({ profile: 'expanded', bleed: 1.25 }), 0.5);
+  assert.equal(backBleedMm({ profile: 'expanded', backBleedEnabled: true }), 0.5);
+  assert.equal(backBleedMm({ profile: 'expanded', backBleedEnabled: false }), 0);
+  assert.equal(backBleedMm({ profile: 'seven', backBleedEnabled: true }), 0.05);
+});
+test('paper workflow uses Tabloid for Letter hacks and native A4 for A4 output', () => {
+  assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'expanded' }), {
+    designSpacePaper: 'Tabloid (11 × 17 in)',
+    systemPaper: 'US Letter',
+    usesLetterHack: true,
+  });
+  assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'seven' }), {
+    designSpacePaper: 'Tabloid (11 × 17 in)',
+    systemPaper: 'US Letter',
+    usesLetterHack: true,
+  });
+  assert.deepEqual(paperWorkflow({ paper: 'a4', profile: 'expanded' }), {
+    designSpacePaper: 'A4',
+    systemPaper: 'A4',
+    usesLetterHack: false,
+  });
 });
 test('project Save As names are portable across desktop platforms', () => {
   assert.equal(projectFilename('My Commander: Deck / 2026'), 'My-Commander-Deck-2026.criprox.json');
@@ -201,6 +270,15 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   assert.equal(migrated.settings.backsEnabled, false);
   assert.equal(migrated.settings.backPrintMode, 'manual');
   assert.equal(migrated.settings.backRotation, 180);
+  const legacyFour = validateProject({
+    ...good,
+    settings: { ...DEFAULT_SETTINGS, profile: 'conservative' },
+  } as unknown);
+  assert.equal(legacyFour.settings.profile, 'expanded');
+  assert.equal(
+    validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, bleed: 1.25 } }).settings.bleed,
+    0.5,
+  );
   for (const dpi of PRINT_DPI_OPTIONS)
     assert.equal(
       validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, dpi } }).settings.dpi,
@@ -208,6 +286,18 @@ test('project import validates geometry, IDs, totals, image schemes and selected
     );
   assert.throws(() => validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, dpi: 1500 } }));
   assert.throws(() => validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, gap: -3 } }));
+  const seven = {
+    ...DEFAULT_SETTINGS,
+    profile: 'seven' as const,
+    gap: 0.1,
+    bleed: 0.05,
+  };
+  assert.equal(validateProject({ ...good, settings: seven }).settings.profile, 'seven');
+  assert.throws(() =>
+    validateProject({ ...good, settings: { ...seven, machine: 'joy-xtra' as const } }),
+  );
+  assert.throws(() => validateProject({ ...good, settings: { ...seven, paper: 'a4' as const } }));
+  assert.throws(() => validateProject({ ...good, settings: { ...seven, gap: 1 } }));
   assert.throws(() => validateProject({ ...good, entries: [entry, entry] }));
   assert.throws(() => validateProject({ ...good, entries: [{ ...entry, face: 2 }] }));
   assert.throws(() =>

@@ -10,8 +10,7 @@ import {
   Ruler,
   X,
 } from 'lucide-react';
-import type { Project, Settings } from '../lib/types';
-import type { CardFace } from '../lib/types';
+import { fixedBleedMm, type CardFace, type Project, type Settings } from '../lib/types';
 import { formatDimensions, formatMeasurement } from '../lib/units';
 import {
   BACK_ALIGNMENT_SQUARE_MM,
@@ -27,6 +26,7 @@ import { download } from '../lib/export';
 import MpcArtworkSearch from './MpcArtworkSearch';
 import FrontBleedControl from './FrontBleedControl';
 import PdfPagePreview from './PdfPagePreview';
+import { paperWorkflow } from '../lib/paper-workflow';
 export default function RegisteredPrint({
   project,
   close,
@@ -58,7 +58,8 @@ export default function RegisteredPrint({
     [verticalDirection, setVerticalDirection] = useState<'up' | 'down'>('down');
   const key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
-    id = templateId(project.settings);
+    id = templateId(project.settings),
+    printPaper = paperWorkflow(project.settings);
   useEffect(() => {
     dialog.current?.showModal();
     let active = true;
@@ -79,11 +80,11 @@ export default function RegisteredPrint({
     };
   }, [key]);
   async function setup() {
-    setBusy('Creating setup package…');
+    setBusy('Creating setup image…');
     setError('');
     try {
       await downloadSetup(project.settings);
-      notify('Setup package downloaded. Capture this template once in Design Space.');
+      notify('Setup PNG downloaded. Upload it once in Design Space.');
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e));
     } finally {
@@ -341,9 +342,9 @@ export default function RegisteredPrint({
                 <span>
                   Bleed on card backs
                   <small>
-                    {project.settings.bleed === 0
-                      ? 'Set the front bleed amount above to choose the shared amount.'
-                      : `Uses ${formatMeasurement(project.settings.bleed, project.settings.units)} without changing the cut pattern.`}
+                    {project.settings.backBleedEnabled ? 'On' : 'Off'} · fixed{' '}
+                    {formatMeasurement(fixedBleedMm(project.settings), project.settings.units)}{' '}
+                    extension
                   </small>
                 </span>
                 <input
@@ -543,9 +544,16 @@ export default function RegisteredPrint({
               image, preserve transparency, and set both dimensions to{' '}
               <strong>{formatDimensions(full.width, full.height, project.settings.units)}</strong>.
               Save the project as <strong>{id}</strong>.
+              {printPaper.usesLetterHack && (
+                <>
+                  {' '}
+                  Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the Print
+                  Then Cut page size in Design Space.
+                </>
+              )}
             </p>
             <button className="secondary" disabled={!!busy} onClick={setup}>
-              <Download size={15} /> Download setup template
+              <Download size={15} /> Download setup PNG
             </button>
           </div>
         </div>
@@ -555,8 +563,17 @@ export default function RegisteredPrint({
             <h3>Capture the actual sensor marks</h3>
             <p>
               In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>, use
-              the system print dialog, and save a full-page, portrait PDF at actual size. Import
-              that PDF here. We check the slot pattern and size before storing it locally.
+              the system print dialog, and{' '}
+              {printPaper.usesLetterHack ? (
+                <>
+                  change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save a{' '}
+                  <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it becomes
+                  two pages or clips any of the four sensor marks.
+                </>
+              ) : (
+                <>save a full-page, portrait PDF at actual size.</>
+              )}{' '}
+              Import that PDF here. We check the slot pattern and size before storing it locally.
             </p>
             <button className="secondary" disabled={!!busy} onClick={() => input.current?.click()}>
               <FileUp size={15} />

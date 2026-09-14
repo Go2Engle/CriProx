@@ -1,9 +1,8 @@
 import { PDFDocument, PrintScaling, rgb, StandardFonts } from 'pdf-lib';
-import type { Project, Settings } from './types';
+import { backBleedMm, frontBleedMm, type Project, type Settings } from './types';
 import { renderSheet, download } from './export';
-import { mmToPx, templateSvg, type Sheet } from './layout';
+import { mmToPx, type Sheet } from './layout';
 import { withDpi } from './png';
-import { formatDimensions } from './units';
 import {
   CAPTURE_COLOR,
   BACK_ALIGNMENT_SQUARE_MM,
@@ -17,7 +16,6 @@ import {
   templateId,
   type RegistrationProfile,
 } from './registration';
-import JSZip from 'jszip';
 export async function pdfRenderer() {
   const pdfjs = await import('pdfjs-dist');
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -47,16 +45,9 @@ export async function setupPng(settings: Settings): Promise<Uint8Array> {
   return withDpi(new Uint8Array(await blob.arrayBuffer()), dpi);
 }
 export async function downloadSetup(settings: Settings) {
-  const sheet = fullTemplate(settings),
-    id = templateId(settings),
-    zip = new JSZip();
-  zip.file(`${id}-setup.png`, await setupPng(settings));
-  zip.file(`${id}-geometry.svg`, templateSvg(sheet, settings));
-  zip.file(
-    'SETUP.txt',
-    `CriProx reusable template ${id}\n\n1. Upload the magenta setup PNG into Design Space as one flat Print Then Cut image, keeping transparency. Do not create a sticker offset or use background removal.\n2. Set BOTH dimensions on the Canvas: ${formatDimensions(sheet.width, sheet.height, settings.units)}. Confirm ${sheet.placements.length} separate rounded cut contours.\n3. Save this Design Space project as ${id}. Select your actual machine and ${settings.paper === 'letter' ? 'US Letter' : 'A4'} paper. Keep the layout and mat position fixed.\n4. Make, Send to Printer: disable bleed, enable the system print dialog, and save a one-page portrait PDF at actual size. Disable fit/shrink scaling. The PDF must contain the entire page, original sensor marks and all magenta slots.\n5. In CriProx, import that PDF under Print from CriProx. The app checks the page and slot geometry, then stores the original PDF locally for this exact setup.\n6. Print a test sheet from CriProx at 100%, with no margins or fit/shrink scaling. Reopen the SAME saved Design Space project and mat; use Already Printed / Skip printing if available, then proceed to the cut. Do not cut the SVG separately.\n7. Confirm sensor acquisition and measure each card before printing a deck. This workflow is experimental and not certified by Cricut. Recapture after relevant Design Space, machine or print settings changes.\n\nPartial sheets retain all ${sheet.placements.length} template slots. Unused slots are white and will still be cut. No artwork-specific upload is needed once the saved template is validated.\n\nCricut warns that printing outside its normal flow can change sensor-mark sizing: https://help.cricut.com/hc/en-us/articles/360009387274-How-to-Print-Then-Cut-in-Design-Space\n`,
-  );
-  download(await zip.generateAsync({ type: 'blob' }), `${id}-setup.zip`);
+  const id = templateId(settings),
+    png = await setupPng(settings);
+  download(new Blob([png.slice().buffer], { type: 'image/png' }), `${id}-setup.png`);
 }
 export async function captureProfile(
   pdf: Uint8Array,
@@ -154,7 +145,7 @@ export async function buildRegisteredPdf(
     progress(`Preparing registered sheet ${index + 1} of ${pageList.length}…`);
     const page = output.addPage([profile.pageWidthPt, profile.pageHeightPt]);
     page.drawPage(master, { x: 0, y: 0, width: profile.pageWidthPt, height: profile.pageHeightPt });
-    const bleed = calibration ? 0 : Math.min(project.settings.bleed, project.settings.gap / 2),
+    const bleed = calibration ? 0 : frontBleedMm(project.settings),
       x = profile.leftMm * PT_PER_MM,
       y = profile.pageHeightPt - (profile.topMm + full.height) * PT_PER_MM;
     const pad = 0.18 * PT_PER_MM; // Erase raster edge fuzz only; capture checks a 0.4 mm guard.
@@ -249,10 +240,7 @@ export async function buildRegisteredBackPdf(
     progress(`Preparing back sheet ${index + 1} of ${pageList.length}…`);
     const page = output.addPage([profile.pageWidthPt, profile.pageHeightPt]);
     const sheet = mirroredBackSheet(sourceSheet, full, project),
-      bleed =
-        calibration || !project.settings.backBleedEnabled
-          ? 0
-          : Math.min(project.settings.bleed, project.settings.gap / 2),
+      bleed = calibration ? 0 : backBleedMm(project.settings),
       left =
         (project.settings.backFlip === 'long-edge'
           ? pageWidthMm - profile.leftMm - full.width

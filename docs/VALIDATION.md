@@ -1,9 +1,9 @@
-# Software validation — September 8, 2026
+# Software validation — September 13, 2026
 
 ## Passed
 
 - TypeScript strict type-check and production Vite build.
-- Eight automated core tests: deck syntax and quantity limits, pagination, rotated placement, non-overlap across supported settings, raster rounding tolerance, PNG density metadata, and imported-project validation.
+- Automated tests covering deck syntax and quantity limits, pagination, mixed and uniform rotated placement, non-overlap across supported settings, raster rounding tolerance, PNG density metadata, imported-project validation, and captured-template recognition.
 - Live Scryfall collection import with valid and invalid card names. Successfully imported entries are removed from the retry list; missing entries stay editable.
 - Live variant lookup (136 Sol Ring printings), printing selection, and restoration after reload.
 - Double-faced card import and selection of Insectile Aberration.
@@ -14,13 +14,16 @@
 - Visual review at desktop and 390 px mobile widths, with no horizontal page overflow at mobile width.
 - Unsigned macOS arm64 package builds. Packaged app launches with context isolation, renderer sandboxing, and no renderer Node access. Native size-check and local-artwork exports succeed with no renderer exceptions.
 - npm dependency audit reports zero known vulnerabilities for the installed dependency set.
+- Experimental seven-card geometry: the 189.2 × 214.2 mm 2–3–2 template paginates at seven cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 0.1 mm spacing, US Letter output, and Maker/Explore targets.
+- A user-supplied Design Space capture was confirmed as a single, unrotated 612 × 792 point US Letter PDF. Its rendered magenta 2–3–2 pattern passed the production detector at 300 DPI with all four surrounding marks present.
 
 Browser checks caught a local-image bug: fetching a data URL was blocked by the renderer CSP. The final export code directly decodes embedded artwork without making a fetch request. The fixed browser export was validated at pixel level.
 
 ## Still requires external validation
 
 - Actual Cricut sensor acquisition, Design Space contour tracing, physical scale, alignment, and repeatability.
-- Acceptance of the experimental expanded layout on each model/paper configuration.
+- Acceptance of the experimental six-card layout on each model/paper configuration, including the Tabloid-to-Letter print workaround for Letter output.
+- Seven-card sensor acquisition, physical dimensions, edge alignment, 12 × 24 in mat behavior, and repeatability after the Tabloid-to-Letter print workaround.
 - Windows and Linux installer builds and runtime checks.
 - macOS signing/notarization for distribution.
 
