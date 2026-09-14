@@ -35,3 +35,5 @@ By submitting a contribution, you agree to license it under the project's GNU Ge
 ## Releases
 
 Release Please maintains the release pull request, application version, package lock, and changelog from commits on `main`. Do not bump those files by hand. When a maintainer merges the release pull request, GitHub Actions builds the macOS, Windows, and Linux installers, attaches them to a draft GitHub release, and publishes the release only after every build succeeds.
+
+Repository maintainers must enable **Allow GitHub Actions to create and approve pull requests** under **Settings → Actions → General** so Release Please can maintain its release pull request.

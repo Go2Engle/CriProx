@@ -1,4 +1,26 @@
-# Physical validation before a full deck
+# Cricut workflow and physical validation
+
+## Understand the integration boundary
+
+CriProx does **not** generate or reproduce Cricut registration marks, create native Design Space project files, or control the machine. Design Space creates the sensor marks and owns the actual Print Then Cut job. CriProx's registered-print workflow preserves marks from a PDF that Design Space produced for the exact saved job.
+
+The standard export PNG contains one opaque rounded silhouette per card and transparent gaps. Its companion SVG contains matched vector geometry, not registration data. Inspect the traced contour in Design Space before printing, and do not enable both the PNG's cut contours and the SVG paths unless you deliberately intend duplicate cuts.
+
+The layout engine works in millimeters. PNG density metadata is included, but always set **both** Canvas dimensions to the values in the supplied manifest. Do not use Auto-Resize or printer fit-to-page. Design Space tracing, paper feed, printer scaling, cutter calibration, material, and mat condition can all add error after CriProx creates the files.
+
+The dashed rectangle in the preview is a planning guide. It is not a registration mark or a certified, model-specific outline of Cricut's usable area. Machine selection records the intended target and tailors instructions; it does not emulate firmware or guarantee that a particular job will pass Design Space's checks.
+
+## Recommended handoff
+
+1. Export the transparent PNG package from CriProx.
+2. Upload the PNG to Design Space as one flat Print Then Cut image and preserve transparency.
+3. Set its width and height from the included manifest and confirm the expected number of rounded contours.
+4. Print through Design Space at 100% / Actual size with fit-to-page disabled.
+5. Complete the cut from the same saved Design Space project, mat, session, and device.
+
+For reusable registered printing, download CriProx's setup PNG, create and save the cut job in Design Space, print that job to a one-page portrait PDF at actual size, and import the PDF into CriProx. Future registered pages must be cut with that same saved job.
+
+## Physical validation before a full deck
 
 This is the remaining hardware acceptance test. It cannot be completed by a browser test or by comparing generated files.
 
@@ -30,7 +52,7 @@ Front and back bleed controls are independent on/off toggles. Their amounts are 
 
 Each PNG is accompanied by an SVG with the same dimensions, origin, card positions, rotation and rounded corners. It contains only opaque vector shapes, with no page background, strokes, registration marks, embedded images or clipping paths.
 
-The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is supplied for inspecting the intended geometry or a separate Basic Cut workflow. It does not tell Cricut where a independently printed page lies. Do not add the SVG as another enabled cut layer over the PNG unless you are deliberately testing a different, validated workflow: that can cause duplicate cuts.
+The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is supplied for inspecting the intended geometry or a separate Basic Cut workflow. It does not tell Cricut where an independently printed page lies. Do not add the SVG as another enabled cut layer over the PNG unless you are deliberately testing a different, validated workflow: that can cause duplicate cuts.
 
 ## Physical acceptance record
 

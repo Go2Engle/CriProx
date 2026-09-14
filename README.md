@@ -1,104 +1,116 @@
-# CriProx
+<div align="center">
+  <img src="build/icon.png" alt="CriProx icon" width="112" height="112">
+  <h1>CriProx</h1>
+  <p><strong>A local-first card sheet studio for Cricut Print Then Cut.</strong></p>
+  <p>Turn playtest card lists and custom artwork into precise, reusable print sheets—without an account, cloud workspace, or subscription.</p>
 
-A local card-sheet studio for preparing Magic: The Gathering playtest cards for Cricut Print Then Cut. React + TypeScript UI, a millimeter-based layout/export engine, and a sandboxed Electron desktop shell for macOS, Windows, and Linux.
+  <p>
+    <a href="https://github.com/Go2Engle/CriProx/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Go2Engle/CriProx?style=for-the-badge&logo=github&color=7656d6"></a>
+    <a href="https://github.com/Go2Engle/CriProx/actions/workflows/ci.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/Go2Engle/CriProx/ci.yml?branch=main&style=for-the-badge&label=build"></a>
+    <a href="LICENSE"><img alt="GPL-3.0-only license" src="https://img.shields.io/github/license/Go2Engle/CriProx?style=for-the-badge&color=5b8def"></a>
+    <img alt="Node.js 22 or newer" src="https://img.shields.io/badge/Node.js-22%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white">
+    <img alt="Supported platforms" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-desktop-222?style=for-the-badge">
+  </p>
 
-## Run
+  <p>
+    <a href="https://github.com/Go2Engle/CriProx/releases/latest"><strong>Download</strong></a>
+    · <a href="docs/CRICUT-WORKFLOW.md">Print guide</a>
+    · <a href="docs/FEATURES.md">Features</a>
+    · <a href="CONTRIBUTING.md">Contribute</a>
+  </p>
+</div>
 
-Requires Node.js 22+ and npm.
+![CriProx artwork preview showing six cards in the default layout](docs/assets/criprox-studio.png)
+
+<p align="center"><em>Six-card artwork preview · Demo card imagery loaded through Scryfall.</em></p>
+
+## Why CriProx?
+
+CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, preview the physical layout, and export the matched files needed to finish the job in Design Space.
+
+|                            |                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 🔒 **Local-first**         | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.             |
+| 📐 **Physical dimensions** | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.   |
+| 🃏 **Flexible artwork**    | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.    |
+| ✂️ **Reusable cuts**       | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks. |
+| 🔁 **Fronts and backs**    | Export manual-refeed or alternating duplex pages with independent bleed and alignment controls.          |
+| 💾 **Portable projects**   | IndexedDB autosave plus JSON backups that can be moved between CriProx installations.                    |
+
+> [!IMPORTANT]
+> CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
+
+## From card list to cut
+
+1. **Build the sheet.** Paste a deck list, search card printings, or add local artwork.
+2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs.
+3. **Export from CriProx.** Download transparent artwork, matched vector geometry, dimensions, and the Design Space handoff guide.
+4. **Print and cut in Design Space.** Preserve the supplied dimensions, print at 100% / Actual size, and complete the cut from the same saved job.
+
+CriProx also supports a registered-print workflow: save a one-page PDF from Design Space, import it into CriProx, and reuse those captured marks for later artwork pages while keeping the cut geometry unchanged.
+
+## Download
+
+Installers for the latest stable release are available on the [GitHub Releases page](https://github.com/Go2Engle/CriProx/releases/latest).
+
+| Platform | Package            | Notes                                                          |
+| -------- | ------------------ | -------------------------------------------------------------- |
+| macOS    | Universal DMG      | Apple Silicon and Intel; currently unsigned                    |
+| Windows  | x64 NSIS installer | Currently unsigned                                             |
+| Linux    | x64 AppImage       | Creates exports; Cricut Design Space is not available on Linux |
+
+The desktop app checks GitHub for newer stable releases and displays a notice; it does not install updates automatically. See the [installation guide](docs/INSTALLATION.md) for platform notes, the macOS quarantine command, and local-development setup.
+
+## Quick start for contributors
+
+CriProx requires Node.js 22 or newer and npm.
 
 ```sh
-npm install
-npm run dev       # Browser preview at http://127.0.0.1:5173
-npm run desktop   # Build and launch the desktop application
-npm test          # Geometry, parsing, PNG density, and project validation checks
-npm run build     # Type-check and create the production renderer
-npm run package   # Build an installer for the current OS into release/
+git clone https://github.com/Go2Engle/CriProx.git
+cd CriProx
+npm ci
+npm run dev
 ```
 
-Windows and Linux installers should be built/tested on their respective platforms. Published releases include a universal macOS DMG, a Windows x64 NSIS installer, and a Linux x64 AppImage. The macOS and Windows builds are currently unsigned, and automatic installation of updates is not configured. The desktop app checks GitHub for the latest stable release at launch and shows a dismissible notice when a newer installer is available. Design Space is a separate application: CriProx on Linux can prepare exports, but the actual Cricut job requires a platform supported by Design Space.
-
-### Open the unsigned app on macOS
-
-After downloading CriProx from the official GitHub release and moving it to **Applications**, macOS may block it because the app is not yet signed. Run this command in Terminal, then open CriProx again:
+Open `http://127.0.0.1:5173`, or run `npm run desktop` to build and launch the Electron app.
 
 ```sh
-xattr -dr com.apple.quarantine "/Applications/CriProx.app"
+npm test          # Run geometry, parsing, rendering, and validation tests
+npm run build     # Type-check and build the production renderer
+npm run package   # Build an installer for the current operating system
 ```
 
-Only remove the quarantine attribute from a copy downloaded from the official CriProx repository.
+## Documentation
 
-## Releases and contributions
+| Guide                                        | What it covers                                                                          |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [Installation](docs/INSTALLATION.md)         | Desktop packages, unsigned-app notes, development, and build commands                   |
+| [Feature reference](docs/FEATURES.md)        | Imports, layouts, output formats, project storage, limits, and experimental modes       |
+| [Cricut workflow](docs/CRICUT-WORKFLOW.md)   | The Design Space boundary, reusable registration workflow, and physical acceptance test |
+| [Software validation](docs/VALIDATION.md)    | Automated and hands-on checks already completed, plus remaining hardware validation     |
+| [Architecture](docs/ARCHITECTURE.md)         | Data flow, important modules, Electron security model, and testing strategy             |
+| [References and credits](docs/REFERENCES.md) | External workflow documentation, APIs, artwork sources, and project acknowledgements    |
+| [Contributing](CONTRIBUTING.md)              | Development expectations, Conventional Commits, pull requests, and releases             |
+| [Security](SECURITY.md)                      | Supported versions and private vulnerability reporting                                  |
+| [Changelog](CHANGELOG.md)                    | User-visible changes organized by release                                               |
 
-Commits and pull request titles use [Conventional Commits](https://www.conventionalcommits.org/). Release Please maintains a release pull request containing the generated changelog and automatic `package.json` / `package-lock.json` version bump. Merging that pull request builds all three native installers, attaches them to a draft GitHub release, and publishes the release only after every installer succeeds.
+## Project status
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and release details. Maintainers must enable **Allow GitHub Actions to create and approve pull requests** under **Settings → Actions → General** for the Release Please workflow.
+CriProx is a software-tested prototype. Its layout, export, density metadata, project validation, and registered-PDF recognition are covered by automated and manual checks. Real-world sensor acquisition, printer scaling, cutter alignment, and repeatability still depend on the exact machine, calibration, printer, paper, and mat.
+
+The default six-card layout and the seven-card 2–3–2 layout both use an experimental Tabloid-to-Letter workflow for US Letter output. Test one size-check sheet and record physical measurements before printing a full deck. The [validation record](docs/VALIDATION.md) tracks what is proven in software and what still needs hardware acceptance.
+
+## Community
+
+Bug reports, focused feature ideas, documentation fixes, and tested pull requests are welcome.
+
+- [Report a bug](https://github.com/Go2Engle/CriProx/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/Go2Engle/CriProx/issues/new?template=feature_request.yml)
+- [Review contribution guidelines](CONTRIBUTING.md)
+- [Report a vulnerability privately](https://github.com/Go2Engle/CriProx/security/advisories/new)
 
 ## License
 
-CriProx is free and open-source software licensed under the [GNU General Public License v3.0 only](LICENSE). Anyone may use, study, modify, and redistribute it. Distributed copies and derivative works must remain under the GPL, and their corresponding source must remain available under the license terms. The GPL permits charging for distribution; recipients retain the same rights to copy, modify, and redistribute the software. See [NOTICE](NOTICE) for the copyright notice.
-
-## Included
-
-- Responsive sheet studio with a searchable card library, sheet pagination, artwork/cut-path preview, and a settings inspector.
-- Deck-list import through Scryfall, batched in groups of at most 75 unique identifiers. Requests are serialized with at least 120 ms between starts; 429 responses stop the operation.
-- Printing selection with pagination and loaded-result filtering by set/collector number. Double-faced cards expose a face selector when inspecting a card.
-- MPC Autofill community-art lookup from the card inspector, plus a browser for its dedicated card-back collection. Full-resolution selections use MPC Autofill's official image CDN.
-- Local PNG, JPEG, and WebP artwork imports; the full source is contained inside an opaque rounded card silhouette.
-- Standard 63 × 88 mm cards with a 3 mm corner radius, Letter/A4 planning, and 300/600/900/1200 DPI export. Standard profiles use 1 mm spacing.
-- An **experimental** 180 × 220 mm candidate area producing six rotated cards with default settings. For Letter output, it declares Tabloid inside Design Space, then outputs to US Letter at actual size through the system print dialog. It is not a certified Cricut profile.
-- An **experimental** seven-card 2–3–2 layout for Maker and Explore. It uses 0.1 mm spacing and a 189.2 × 214.2 mm template, declares Tabloid inside Design Space, then outputs to US Letter at actual size through the system print dialog. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
-- Transparent artwork PNGs, matched vector-only SVG silhouettes, a dimensions manifest, and a plain-text Design Space guide in a ZIP.
-- Size-check card export with a 5 mm grid, for measuring printer scale and the resulting cut.
-- Reusable registered printing from a captured Design Space PDF, with independently toggleable front/back bleed and unchanged cut geometry. Bleed is fixed at 0.5 mm for six-card sheets and 0.05 mm for seven-card sheets.
-- Optional shared card backs, disabled by default, with separate manual-refeed PDFs or alternating duplex pages, long/short-edge orientation, and X/Y alignment adjustment. Back pages contain artwork only.
-- IndexedDB autosave and portable JSON project backups. Successful API responses are cached for a day; fetched export artwork is cached for reuse. No account or hosted backend.
-
-The initial project contains four example Scryfall card records. Scryfall and MPC Autofill searches require a connection. Local artwork and already-cached export artwork can be used offline. Remote preview images are not guaranteed to be available offline. The selected DPI sets export density; it does not increase source image detail. The 900 and 1200 DPI settings are intended for high-resolution MPC Autofill or custom artwork and require substantially more memory.
-
-## The Cricut integration boundary
-
-**CriProx does not generate or reproduce Cricut registration marks, produce native Design Space project files, or control the machine. The registered-print workflow preserves marks captured from a PDF produced by Design Space.**
-
-Design Space creates the sensor marks for the actual print-and-cut job. Cricut explicitly recommends completing printing and cutting in the same Design Space session and warns about incorrect sensor-mark sizing when printing outside that workflow. The supported handoff is to upload CriProx's transparent PNG, set its exact dimensions, and print/cut through Design Space.
-
-The PNG has one opaque rounded silhouette per card and transparent gaps. Check the resulting cut contour in Design Space before printing. The SVG is a matched vector geometry reference / separate Basic Cut template, not a registration mechanism. Enabling both its paths and the PNG's cut contours may cut twice. SVG imports containing embedded raster images or clipping paths are unsupported by Design Space, so these assets are deliberately separate.
-
-The layout engine uses millimeters. PNG raster rounding is at most half a pixel per overall dimension (about 0.042 mm at 300 DPI); Design Space tracing, paper feed, printer scaling and cutter calibration contribute their own errors. PNG physical-density metadata is included, but always set the width **and** height on the Design Space Canvas using the supplied manifest. Never use Auto-Resize to fit the page.
-
-The dashed preview rectangle is a planning guide, not registration artwork or a certified model-specific cuttable-area outline. Cricut's modern usable area is not rectangular. Selecting a machine records the intended target and drives instructions; it does not emulate firmware or independently certify fit. Check each job in Design Space.
-
-See [the physical validation procedure](docs/CRICUT-WORKFLOW.md) before printing a deck.
-
-## Current limits
-
-- Registered printing depends on a captured Design Space PDF for the exact saved cut job. It does not emulate sensor marks and must be tested with the user's printer and Cricut.
-- Letter output for both six- and seven-card profiles relies on an unsupported Tabloid-to-Letter paper-size workaround. Confirm every slot and all four marks on one page, then complete a measured test cut before using card stock. The seven-card profile also has extremely narrow spacing.
-- Duplex alignment depends on printer feed accuracy. The included guide and X/Y offsets compensate for repeatable shifts, but cannot correct inconsistent paper feed.
-- Up to 500 cards per project, 100 copies per entry, 20 MB per local image, and 24 sheets per ZIP. Export the current sheet for larger projects. High-resolution batches can use substantial memory.
-- Browser storage can be cleared or reach its quota; save a project backup to keep your work. JSON backups include local artwork and selected remote URLs, not copies of remote images.
-- New project / open project replaces the single autosaved workspace. Save a backup before switching.
-- No paid image-upscaling service, cloud project sync, or printer/cutter connection.
-
-## Structure
-
-- `src/lib/layout.ts`: placement and vector geometry, shared by preview and export.
-- `src/lib/export.ts`: clipped opaque card rendering, PNGs, ZIP package, and print instructions.
-- `src/lib/png.ts`: PNG physical-density metadata.
-- `src/lib/deck.ts`, `scryfall.ts`, and `mpc.ts`: list parsing, source lookup, caching, and artwork variants.
-- `src/lib/project.ts`: imported project validation.
-- `src/App.tsx` and `src/style.css`: application UI.
-- `electron/main.cjs`: desktop shell with context isolation, sandboxing, and no Node access from the renderer.
-
-## Sources
-
-Checked September 9, 2026:
-
-- [Cricut: Print Then Cut workflow](https://help.cricut.com/hc/en-us/articles/360009387274-How-to-Print-Then-Cut-in-Design-Space)
-- [Cricut: usable area depends on machine, paper, and shape](https://help.cricut.com/hc/en-us/articles/360009429814-How-large-can-I-Print-Then-Cut)
-- [Cricut: unsupported SVG items](https://help.cricut.com/hc/en-us/articles/360009553213-Image-uploads-unsupported-items)
-- [Cricut: machine calibration](https://help.cricut.com/hc/en-us/articles/360009424974-Calibrating-your-machine-for-Print-Then-Cut)
-- [Scryfall: API traffic requirements](https://scryfall.com/docs/faqs/i-m-having-trouble-accessing-the-scryfall-api-or-i-m-blocked-17)
-- [MPC Autofill](https://mpcfill.com/) and its [open-source API implementation](https://github.com/chilli-axe/mpc-autofill)
-- [Proxxied](https://proxxied.com/), the user's reference for deck import and printing selection.
+CriProx is free and open-source software licensed under the [GNU General Public License v3.0 only](LICENSE). Distributed copies and derivative works must remain under the GPL, with corresponding source made available under its terms. See [NOTICE](NOTICE) for the copyright notice.
 
 Card data and artwork are provided by Scryfall, MPC Autofill contributors, and their respective owners. CriProx is an independent playtesting utility and is not affiliated with Cricut, Wizards of the Coast, or MPC Autofill.
