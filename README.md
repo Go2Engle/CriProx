@@ -59,7 +59,7 @@ Installers for the latest stable release are available on the [GitHub Releases p
 | Windows  | x64 NSIS installer | Currently unsigned                                             |
 | Linux    | x64 AppImage       | Creates exports; Cricut Design Space is not available on Linux |
 
-The desktop app checks GitHub for newer stable releases and displays a notice; it does not install updates automatically. See the [installation guide](docs/INSTALLATION.md) for platform notes, the macOS quarantine command, and local-development setup.
+The desktop app checks GitHub for newer stable releases and displays a notice; it does not install updates automatically. New releases include a `SHA256SUMS.txt` file for installer verification. See the [installation guide](docs/INSTALLATION.md) for platform notes, the macOS quarantine command, and local-development setup.
 
 ## Quick start for contributors
 
@@ -113,4 +113,4 @@ Bug reports, focused feature ideas, documentation fixes, and tested pull request
 
 CriProx is free and open-source software licensed under the [GNU General Public License v3.0 only](LICENSE). Distributed copies and derivative works must remain under the GPL, with corresponding source made available under its terms. See [NOTICE](NOTICE) for the copyright notice.
 
-Card data and artwork are provided by Scryfall, MPC Autofill contributors, and their respective owners. CriProx is an independent playtesting utility and is not affiliated with Cricut, Wizards of the Coast, or MPC Autofill.
+Card data and artwork are provided by Scryfall, MPC Autofill contributors, and their respective owners. CriProx is unofficial fan-made software and is not approved, endorsed, sponsored by, or affiliated with Wizards of the Coast, Cricut, Scryfall, or MPC Autofill.
