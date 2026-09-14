@@ -80,11 +80,11 @@ export default function RegisteredPrint({
     };
   }, [key]);
   async function setup() {
-    setBusy('Creating setup package…');
+    setBusy('Creating setup image…');
     setError('');
     try {
       await downloadSetup(project.settings);
-      notify('Setup package downloaded. Capture this template once in Design Space.');
+      notify('Setup PNG downloaded. Upload it once in Design Space.');
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e));
     } finally {
@@ -553,7 +553,7 @@ export default function RegisteredPrint({
               )}
             </p>
             <button className="secondary" disabled={!!busy} onClick={setup}>
-              <Download size={15} /> Download setup template
+              <Download size={15} /> Download setup PNG
             </button>
           </div>
         </div>
