@@ -116,6 +116,7 @@ test('default layout uses TCG dimensions and six rounded cut slots', () => {
   assert.equal(settings.radius, 3);
   assert.equal(settings.gap, 1);
   assert.equal(settings.bleed, 0.5);
+  assert.equal(settings.proxyLabel, false);
   assert.match(svg, /rx="3" ry="3"/);
   assert.ok(!/image|clipPath|stroke/.test(svg));
 });

@@ -63,7 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   backOffsetX: 0,
   backOffsetY: 0,
   dpi: 300,
-  proxyLabel: true,
+  proxyLabel: false,
 };
 export const EMPTY_PROJECT: Project = {
   version: 1,
