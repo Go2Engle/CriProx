@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { get, set } from 'idb-keyval';
 import {
   CheckCircle2,
+  CircleHelp,
   Download,
   FileUp,
   ImagePlus,
@@ -30,6 +31,7 @@ import { paperWorkflow } from '../lib/paper-workflow';
 export default function RegisteredPrint({
   project,
   close,
+  openGuide,
   notify,
   updateSettings,
   updateBackArtwork,
@@ -37,6 +39,7 @@ export default function RegisteredPrint({
 }: {
   project: Project;
   close: () => void;
+  openGuide: () => void;
   notify: (text: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   updateBackArtwork: (file?: File) => Promise<void>;
@@ -238,6 +241,16 @@ export default function RegisteredPrint({
           <div className="registration-tag">REUSABLE TEMPLATE · EXPERIMENTAL</div>
           <h2 id="registered-title">Print from CriProx</h2>
           <p>Capture Cricut’s marks once. Change your cards whenever you like.</p>
+          <div className="registered-guide-hint">
+            <CircleHelp size={14} />
+            <span>
+              Need a hand?{' '}
+              <button className="text-button" disabled={!!busy} onClick={openGuide}>
+                Open the How To guide
+              </button>{' '}
+              for step-by-step video guidance.
+            </span>
+          </div>
         </div>
         <button
           className="icon-button"

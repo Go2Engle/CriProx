@@ -1807,7 +1807,7 @@ h1 > span {
 .guide-step {
   display: flex;
   gap: 16px;
-  margin: 23px 0;
+  margin: 26px 0 32px;
 }
 .guide-step > span {
   background: #f3eef9;
@@ -1825,10 +1825,28 @@ h1 > span {
   font-weight: 550;
   margin: 3px 0 7px;
 }
+.guide-step-body {
+  flex: 1;
+  min-width: 0;
+}
 .guide-step p {
   font-size: 12px;
   line-height: 1.8;
   color: #9c8ea7;
+}
+.guide-video-shell {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #e8e1ef;
+  border-radius: 11px;
+  background: #f5f0fb;
+  box-shadow: 0 8px 24px #3d285314;
+}
+.guide-video-shell video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  background: #f5f0fb;
 }
 .guide-limit {
   font-size: 11px;
@@ -2440,6 +2458,24 @@ h1 > span {
   letter-spacing: 1.1px;
   color: #8b73b4;
   margin-bottom: 10px;
+}
+.registered-guide-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: #9587a1;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.registered-guide-hint > svg {
+  flex-shrink: 0;
+  color: #9f82bb;
+}
+.registered-guide-hint .text-button {
+  display: inline;
+  padding: 0;
+  font-size: inherit;
 }
 .registered-content {
   padding: 22px 26px;
