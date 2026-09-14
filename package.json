@@ -34,7 +34,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@napi-rs/canvas": "^1.0.8",
+    "@napi-rs/canvas": "^1.0.9",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
