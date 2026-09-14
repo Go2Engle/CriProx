@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="176.1mm"
+  height="252.3mm"
+  viewBox="0 0 176.1 252.3"
+>
+  <title>CriProx experimental eight-card US Letter template</title>
+  <desc>
+    Eight 63 by 88 millimeter cards rotated ninety degrees, with 3 millimeter
+    corner radii and 0.1 millimeter transparent gaps.
+  </desc>
+  <g fill="#e600c8">
+    <rect x="0" y="0" width="88" height="63" rx="3" ry="3" />
+    <rect x="88.1" y="0" width="88" height="63" rx="3" ry="3" />
+    <rect x="0" y="63.1" width="88" height="63" rx="3" ry="3" />
+    <rect x="88.1" y="63.1" width="88" height="63" rx="3" ry="3" />
+    <rect x="0" y="126.2" width="88" height="63" rx="3" ry="3" />
+    <rect x="88.1" y="126.2" width="88" height="63" rx="3" ry="3" />
+    <rect x="0" y="189.3" width="88" height="63" rx="3" ry="3" />
+    <rect x="88.1" y="189.3" width="88" height="63" rx="3" ry="3" />
+  </g>
+</svg>
