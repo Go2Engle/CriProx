@@ -108,6 +108,7 @@ Bug reports, focused feature ideas, documentation fixes, and tested pull request
 - [Request a feature](https://github.com/Go2Engle/CriProx/issues/new?template=feature_request.yml)
 - [Review contribution guidelines](CONTRIBUTING.md)
 - [Report a vulnerability privately](https://github.com/Go2Engle/CriProx/security/advisories/new)
+- [Support CriProx development on Ko-fi](https://ko-fi.com/go2engle)
 
 ## License
 
