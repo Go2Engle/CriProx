@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const { constants: fsConstants } = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
@@ -8,6 +9,26 @@ const MAX_ARTWORK_BYTES = 20_000_000;
 const projectIdPattern = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
 const managedArtworkPattern = /^assets\/[a-f0-9]{24}\.(?:png|jpg|webp)$/;
 const dataImagePattern = /^data:image\/(png|jpeg|webp);base64,([a-z0-9+/=]+)$/i;
+const readOnlyNoFollow = fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW;
+
+async function readRegularFile(filePath, { minBytes = 0, maxBytes, encoding, errorMessage }) {
+  let handle;
+  try {
+    handle = await fs.open(filePath, readOnlyNoFollow);
+    const stat = await handle.stat();
+    if (!stat.isFile() || stat.size < minBytes || stat.size > maxBytes)
+      throw new Error(errorMessage);
+    const contents = await handle.readFile(encoding);
+    const bytesRead = Buffer.isBuffer(contents) ? contents.length : Buffer.byteLength(contents);
+    if (bytesRead < minBytes || bytesRead > maxBytes) throw new Error(errorMessage);
+    return { contents, stat };
+  } catch (error) {
+    if (error?.code === 'ELOOP' || error?.code === 'EMLINK') throw new Error(errorMessage);
+    throw error;
+  } finally {
+    await handle?.close();
+  }
+}
 
 function projectDirectoryName(name) {
   return (
@@ -97,13 +118,14 @@ async function hydrateProjectAssets(project, projectDirectory) {
       checkedAssetsDirectory = true;
     }
     const absolutePath = path.join(projectDirectory, ...value.split('/'));
-    const stat = await fs.lstat(absolutePath);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size < 1 || stat.size > MAX_ARTWORK_BYTES)
-      throw new Error('Managed artwork is invalid or exceeds 20 MB.');
+    const { contents: bytes, stat } = await readRegularFile(absolutePath, {
+      minBytes: 1,
+      maxBytes: MAX_ARTWORK_BYTES,
+      errorMessage: 'Managed artwork is invalid or exceeds 20 MB.',
+    });
     hydratedBytes += stat.size;
     if (hydratedBytes > MAX_PROJECT_BYTES)
       throw new Error('Managed artwork exceeds the 100 MB project limit.');
-    const bytes = await fs.readFile(absolutePath);
     const extension = path.extname(value).slice(1);
     const mime = extension === 'jpg' ? 'jpeg' : extension;
     const dataUrl = `data:image/${mime};base64,${bytes.toString('base64')}`;
@@ -169,10 +191,13 @@ function projectSummary(projectId, project, stat) {
 
 async function readProjectFile(projectDirectory) {
   const filePath = path.join(projectDirectory, PROJECT_FILE);
-  const stat = await fs.lstat(filePath);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_PROJECT_BYTES)
-    throw new Error('Project data is invalid or exceeds 100 MB.');
-  return { project: parseProjectData(await fs.readFile(filePath, 'utf8')), stat };
+  const { contents, stat } = await readRegularFile(filePath, {
+    minBytes: 1,
+    maxBytes: MAX_PROJECT_BYTES,
+    encoding: 'utf8',
+    errorMessage: 'Project data is invalid or exceeds 100 MB.',
+  });
+  return { project: parseProjectData(contents), stat };
 }
 
 async function listProjects(root) {
@@ -219,10 +244,11 @@ async function saveProject(root, request) {
       await fs.writeFile(target, bytes, { flag: 'wx' });
     } catch (error) {
       if (error?.code !== 'EEXIST') throw error;
-      const existingStat = await fs.lstat(target);
-      if (!existingStat.isFile() || existingStat.isSymbolicLink())
-        throw new Error('Managed artwork file is unavailable.');
-      const existing = await fs.readFile(target);
+      const { contents: existing } = await readRegularFile(target, {
+        minBytes: 1,
+        maxBytes: MAX_ARTWORK_BYTES,
+        errorMessage: 'Managed artwork file is unavailable.',
+      });
       if (!existing.equals(bytes)) throw new Error('Managed artwork file is corrupted.');
     }
   }

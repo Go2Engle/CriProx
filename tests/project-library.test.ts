@@ -109,6 +109,32 @@ test('managed projects allocate a non-destructive suffix for duplicate names', a
   assert.equal(second.id, 'my-commander-deck-2026-2');
 });
 
+test(
+  'managed project reads reject symlinked project and artwork files',
+  { skip: process.platform === 'win32' },
+  async (t) => {
+    const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-library-'));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const saved = await saveProject(root, { projectId: null, data: JSON.stringify(project) });
+    const directory = path.join(root, saved.id);
+    const projectFile = path.join(directory, PROJECT_FILE);
+    const stored = JSON.parse(await fs.readFile(projectFile, 'utf8'));
+    const artworkFile = path.join(directory, stored.entries[0].card.faces[0].image);
+    const realArtworkFile = `${artworkFile}.real`;
+
+    await fs.rename(artworkFile, realArtworkFile);
+    await fs.symlink(path.basename(realArtworkFile), artworkFile);
+    await assert.rejects(openProject(root, saved.id), /Managed artwork is invalid/);
+    await fs.unlink(artworkFile);
+    await fs.rename(realArtworkFile, artworkFile);
+
+    const realProjectFile = `${projectFile}.real`;
+    await fs.rename(projectFile, realProjectFile);
+    await fs.symlink(path.basename(realProjectFile), projectFile);
+    await assert.rejects(openProject(root, saved.id), /Project data is invalid/);
+  },
+);
+
 test('project deletion delegates the validated project folder to a recoverable trash action', async (t) => {
   const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-library-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
