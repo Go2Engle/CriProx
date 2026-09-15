@@ -1753,6 +1753,14 @@ h1 > span {
   border-color: #f3e6c7;
   color: #aa8656;
 }
+.double-sided-warning {
+  margin: 10px 0;
+}
+.selection-details .double-sided-warning {
+  padding: 9px;
+  font-size: 9px;
+  line-height: 1.55;
+}
 .error-box .text-button {
   display: block;
   margin-top: 8px;
@@ -2934,6 +2942,9 @@ h1 > span {
   border-top: 1px solid #ebe4f2;
   margin-top: 14px;
   padding-top: 15px;
+}
+.back-options .double-sided-back-ready {
+  margin: 0;
 }
 .back-bleed-toggle {
   margin: 15px 0 0;

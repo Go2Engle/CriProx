@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { editEntryCopy } from '../src/lib/entries';
+import {
+  doubleSidedCardCount,
+  editEntryCopy,
+  isDoubleSidedCard,
+  needsSharedCardBack,
+  reverseFaceIndex,
+} from '../src/lib/entries';
 import type { Entry } from '../src/lib/types';
 
 const entry: Entry = {
@@ -34,6 +40,29 @@ const newCard = {
     },
   ],
 };
+
+const doubleSidedEntry: Entry = {
+  ...entry,
+  id: 'double-sided',
+  quantity: 2,
+  card: {
+    ...entry.card,
+    name: 'Delver of Secrets // Insectile Aberration',
+    faces: [
+      { ...entry.card.faces[0], name: 'Delver of Secrets' },
+      { ...entry.card.faces[0], name: 'Insectile Aberration' },
+    ],
+  },
+};
+
+test('double-sided entries expose the opposite face and shared-back requirement', () => {
+  assert.equal(isDoubleSidedCard(doubleSidedEntry.card), true);
+  assert.equal(reverseFaceIndex(doubleSidedEntry), 1);
+  assert.equal(reverseFaceIndex({ ...doubleSidedEntry, face: 1 }), 0);
+  assert.equal(doubleSidedCardCount([entry, doubleSidedEntry]), 2);
+  assert.equal(needsSharedCardBack([doubleSidedEntry]), false);
+  assert.equal(needsSharedCardBack([doubleSidedEntry, entry]), true);
+});
 
 test('editing artwork for one copy splits only that copy and preserves card order', () => {
   const updated = editEntryCopy(

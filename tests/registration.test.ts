@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PDFDocument } from 'pdf-lib';
 import { DEFAULT_SETTINGS, type Entry } from '../src/lib/types';
-import { buildBackAlignmentPdfs } from '../src/lib/registered-pdf';
+import { buildBackAlignmentPdfs, mirroredBackSheet } from '../src/lib/registered-pdf';
 import {
   alignmentArtworkDirection,
   backAlignmentCorrection,
@@ -69,6 +69,60 @@ test('back placements mirror only across the selected paper flip edge', () => {
   assert.equal(rotated.x, long.x);
   assert.equal(rotated.y, long.y);
   assert.equal(rotated.artworkRotation, 180);
+});
+test('back sheets use each double-sided card reverse face and shared art for other cards', () => {
+  const front = {
+      name: 'Delver of Secrets',
+      image: 'https://cards.scryfall.io/front.png',
+      preview: 'https://cards.scryfall.io/front.png',
+    },
+    reverse = {
+      name: 'Insectile Aberration',
+      image: 'https://cards.scryfall.io/reverse.png',
+      preview: 'https://cards.scryfall.io/reverse.png',
+    },
+    doubleSided: Entry = {
+      ...entry,
+      id: 'double-sided',
+      quantity: 1,
+      card: {
+        ...entry.card,
+        id: 'delver',
+        name: 'Delver of Secrets // Insectile Aberration',
+        faces: [front, reverse],
+      },
+    },
+    singleSided: Entry = {
+      ...entry,
+      id: 'single-sided',
+      quantity: 1,
+      card: { ...entry.card, id: 'island', name: 'Island', faces: [front] },
+    },
+    sharedBack = {
+      name: 'Shared back',
+      image: 'https://cards.scryfall.io/back.png',
+      preview: 'https://cards.scryfall.io/back.png',
+    },
+    project = {
+      version: 1 as const,
+      name: 'Mixed faces',
+      entries: [doubleSided, singleSided],
+      settings: { ...DEFAULT_SETTINGS, backsEnabled: true },
+      backArtwork: sharedBack,
+    },
+    full = fullTemplate(project.settings),
+    source = fixedSheets(project.entries, project.settings)[0],
+    back = mirroredBackSheet(source, full, project);
+
+  assert.equal(back.placements[0].entry.card.id, 'delver');
+  assert.equal(back.placements[0].entry.face, 1);
+  assert.equal(back.placements[0].entry.card.faces[1], reverse);
+  assert.equal(back.placements[1].entry.card.faces[0], sharedBack);
+  assert.equal(
+    back.placements[0].x,
+    full.width - source.placements[0].x - source.placements[0].width,
+  );
+  assert.equal(back.placements[0].y, source.placements[0].y);
 });
 test('alignment square measurements move backs opposite the observed error', () => {
   assert.deepEqual(backAlignmentCorrection(2, 'right', 1.5, 'down'), { x: -2, y: -1.5 });

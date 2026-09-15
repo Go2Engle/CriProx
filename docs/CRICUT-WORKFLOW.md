@@ -50,6 +50,11 @@ The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fi
 
 Front and back bleed controls are independent on/off toggles. Their amounts are fixed: 0.5 mm for the six-card profile and 0.05 mm for the tightly spaced seven-card profile.
 
+When a selected Scryfall card has two faces, CriProx warns that card-back printing is required. With
+card backs enabled, the face opposite the selected front is placed in that card's mirrored back-side
+slot automatically. The shared card-back artwork applies only to single-sided cards; it remains required
+for a mixed deck that contains any single-sided cards.
+
 Each PNG is accompanied by an SVG with the same dimensions, origin, card positions, rotation and rounded corners. It contains only opaque vector shapes, with no page background, strokes, registration marks, embedded images or clipping paths.
 
 The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is supplied for inspecting the intended geometry or a separate Basic Cut workflow. It does not tell Cricut where an independently printed page lies. Do not add the SVG as another enabled cut layer over the PNG unless you are deliberately testing a different, validated workflow: that can cause duplicate cuts.

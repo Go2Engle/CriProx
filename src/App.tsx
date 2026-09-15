@@ -57,7 +57,13 @@ import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
-import { editEntryCopy, type EntryArtworkPatch, type EntryCopy } from './lib/entries';
+import {
+  doubleSidedCardCount,
+  editEntryCopy,
+  isDoubleSidedCard,
+  type EntryArtworkPatch,
+  type EntryCopy,
+} from './lib/entries';
 
 // The original Design Space ZIP export remains available for a future workflow,
 // but Print from CriProx is the only export action shown in the interface.
@@ -1113,6 +1119,7 @@ function ArtworkInspector({
   copy,
   customArt,
   proxyLabel,
+  backsEnabled,
   close,
   choosePrinting,
   chooseCustomArt,
@@ -1124,6 +1131,7 @@ function ArtworkInspector({
   copy: number;
   customArt: Card[];
   proxyLabel: boolean;
+  backsEnabled: boolean;
   close: () => void;
   choosePrinting: (card: Card) => void;
   chooseCustomArt: (card: Card) => void;
@@ -1220,16 +1228,24 @@ function ArtworkInspector({
               : 'Change this card’s artwork without changing its position on the sheet.'}
           </p>
           {entry.card.faces.length > 1 && (
-            <label className="inspector-face">
-              Card face
-              <select value={entry.face} onChange={(e) => changeFace(Number(e.target.value))}>
-                {entry.card.faces.map((face, index) => (
-                  <option key={face.name} value={index}>
-                    {face.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <>
+              <label className="inspector-face">
+                Card face
+                <select value={entry.face} onChange={(e) => changeFace(Number(e.target.value))}>
+                  {entry.card.faces.map((face, index) => (
+                    <option key={face.name} value={index}>
+                      {face.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="warning-box double-sided-warning" role="status">
+                This is a double-sided card.{' '}
+                {backsEnabled
+                  ? `${entry.card.faces[entry.face === 0 ? 1 : 0].name} will print as its matching reverse face.`
+                  : 'Enable Print card backs to include its matching reverse face.'}
+              </div>
+            </>
           )}
           <div className="art-source-toggle" role="tablist" aria-label="Artwork source">
             <button
@@ -1580,7 +1596,9 @@ export default function App() {
   const currentPage = Math.min(page, Math.max(0, sheets.length - 1)),
     sheet = sheets[currentPage];
   const count = project.entries.reduce((n, e) => n + e.quantity, 0),
-    g = grid(project.settings);
+    g = grid(project.settings),
+    doubleSidedCount = doubleSidedCardCount(project.entries),
+    sharedBackRequired = count > doubleSidedCount;
   const activeEntry = project.entries.find((e) => e.id === selected?.entryId);
   const inspectedEntry = project.entries.find((e) => e.id === inspecting?.entryId);
   const customArt = project.entries
@@ -1633,22 +1651,24 @@ export default function App() {
     );
   }
   function applyArtwork(target: EntryCopy, entry: Entry, artwork: Card) {
-    const face = artwork.faces[0];
+    const face = artwork.faces[0],
+      doubleSided = isDoubleSidedCard(entry.card);
+    const faces = doubleSided
+      ? entry.card.faces.map((existing, index) =>
+          index === entry.face
+            ? { name: existing.name, image: face.image, preview: face.preview }
+            : existing,
+        )
+      : [{ name: entry.card.name, image: face.image, preview: face.preview }];
     editCopy(target, {
-      face: 0,
+      face: doubleSided ? entry.face : 0,
       card: {
         ...entry.card,
         id: artwork.id,
         set: artwork.set,
         setName: artwork.setName,
         collector: artwork.collector,
-        faces: [
-          {
-            name: entry.card.name,
-            image: face.image,
-            preview: face.preview,
-          },
-        ],
+        faces,
       },
     });
   }
@@ -2383,12 +2403,23 @@ export default function App() {
                   />
                   <span className="switch" />
                 </label>
+                {doubleSidedCount > 0 && (
+                  <div className="warning-box double-sided-warning" role="status">
+                    {doubleSidedCount} double-sided card{doubleSidedCount === 1 ? '' : 's'}{' '}
+                    selected.{' '}
+                    {project.settings.backsEnabled
+                      ? 'Each matching reverse face will print in its mirrored back position; shared artwork remains for single-sided cards.'
+                      : 'Enable Print card backs to include the matching reverse faces.'}
+                  </div>
+                )}
                 {project.settings.backsEnabled && (
                   <button
                     className="text-button back-configure"
                     onClick={() => setModal('registered')}
                   >
-                    {project.backArtwork ? 'Configure back printing' : 'Add card-back artwork'}{' '}
+                    {sharedBackRequired && !project.backArtwork
+                      ? 'Add shared card-back artwork'
+                      : 'Configure back printing'}{' '}
                     <ArrowRight size={12} />
                   </button>
                 )}
@@ -2409,20 +2440,28 @@ export default function App() {
                     <strong>{activeEntry.card.name}</strong>
                     <p>{activeEntry.card.setName}</p>
                     {activeEntry.card.faces.length > 1 && (
-                      <label>
-                        Card face
-                        <select
-                          aria-label="Card face"
-                          value={activeEntry.face}
-                          onChange={(e) => editCopy(selected, { face: Number(e.target.value) })}
-                        >
-                          {activeEntry.card.faces.map((face, i) => (
-                            <option key={i} value={i}>
-                              {face.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      <>
+                        <label>
+                          Card face
+                          <select
+                            aria-label="Card face"
+                            value={activeEntry.face}
+                            onChange={(e) => editCopy(selected, { face: Number(e.target.value) })}
+                          >
+                            {activeEntry.card.faces.map((face, i) => (
+                              <option key={i} value={i}>
+                                {face.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className="warning-box double-sided-warning" role="status">
+                          Double-sided card.{' '}
+                          {project.settings.backsEnabled
+                            ? `${activeEntry.card.faces[activeEntry.face === 0 ? 1 : 0].name} is set as its reverse.`
+                            : 'Turn on Print card backs to print its reverse face.'}
+                        </div>
+                      </>
                     )}
                     <button
                       className="text-button"
@@ -2595,6 +2634,7 @@ export default function App() {
           copy={inspecting.copy}
           customArt={customArt}
           proxyLabel={project.settings.proxyLabel}
+          backsEnabled={project.settings.backsEnabled}
           close={() => setInspecting(null)}
           choosePrinting={(card) => {
             editCopy(inspecting, { card, face: 0 });
