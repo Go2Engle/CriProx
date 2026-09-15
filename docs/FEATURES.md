@@ -54,7 +54,10 @@ See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the comple
 
 ## Card backs and duplex output
 
-Card backs are optional and disabled by default. A shared back can be exported as:
+Card backs are optional and disabled by default. Selecting a double-sided card shows a warning while
+backs are disabled. When backs are enabled, each double-sided card automatically uses the face opposite
+its selected front in the matching mirrored back position. A shared back is used only for single-sided
+cards, including on a mixed sheet. Back pages can be exported as:
 
 - Separate front and back PDFs for manual refeed.
 - Alternating duplex pages.

@@ -2,6 +2,7 @@ import { PDFDocument, PrintScaling, rgb, StandardFonts } from 'pdf-lib';
 import { backBleedMm, frontBleedMm, type Project, type Settings } from './types';
 import { renderSheet, download } from './export';
 import { mmToPx, type Sheet } from './layout';
+import { needsSharedCardBack, reverseFaceIndex } from './entries';
 import { withDpi } from './png';
 import {
   CAPTURE_COLOR,
@@ -187,7 +188,7 @@ export async function buildRegisteredPdf(
   );
   return output.save();
 }
-function mirroredBackSheet(sheet: Sheet, full: Sheet, project: Project): Sheet {
+export function mirroredBackSheet(sheet: Sheet, full: Sheet, project: Project): Sheet {
   const back = project.backArtwork;
   const mirrored = mirrorBackPlacements(
     sheet,
@@ -197,26 +198,31 @@ function mirroredBackSheet(sheet: Sheet, full: Sheet, project: Project): Sheet {
   );
   return {
     ...mirrored,
-    placements: mirrored.placements.map((placement) => ({
-      ...placement,
-      ...(back
-        ? {
-            entry: {
-              ...placement.entry,
-              face: 0,
-              card: {
-                ...placement.entry.card,
-                id: `back-${placement.entry.card.id}`,
-                name: 'Card back',
-                set: 'back',
-                setName: 'Project card back',
-                collector: '',
-                faces: [back],
-              },
-            },
-          }
-        : {}),
-    })),
+    placements: mirrored.placements.map((placement) => {
+      const reverseFace = reverseFaceIndex(placement.entry);
+      return {
+        ...placement,
+        ...(reverseFace !== undefined
+          ? { entry: { ...placement.entry, face: reverseFace } }
+          : back
+            ? {
+                entry: {
+                  ...placement.entry,
+                  face: 0,
+                  card: {
+                    ...placement.entry.card,
+                    id: `back-${placement.entry.card.id}`,
+                    name: 'Card back',
+                    set: 'back',
+                    setName: 'Project card back',
+                    collector: '',
+                    faces: [back],
+                  },
+                },
+              }
+            : {}),
+      };
+    }),
   };
 }
 export async function buildRegisteredBackPdf(
@@ -227,8 +233,10 @@ export async function buildRegisteredBackPdf(
 ): Promise<Uint8Array> {
   if (profile.key !== registrationKey(project.settings))
     throw new Error('This template belongs to different sheet settings.');
-  if (!calibration && !project.backArtwork)
-    throw new Error('Upload card-back artwork before preparing back pages.');
+  if (!calibration && needsSharedCardBack(project.entries) && !project.backArtwork)
+    throw new Error(
+      'Upload shared card-back artwork for the single-sided cards before preparing back pages.',
+    );
   const pages = fixedSheets(project.entries, project.settings),
     full = fullTemplate(project.settings);
   if (!pages.length) throw new Error('Add at least one card.');

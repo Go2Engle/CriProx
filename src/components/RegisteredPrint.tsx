@@ -28,6 +28,7 @@ import MpcArtworkSearch from './MpcArtworkSearch';
 import FrontBleedControl from './FrontBleedControl';
 import PdfPagePreview from './PdfPagePreview';
 import { paperWorkflow } from '../lib/paper-workflow';
+import { doubleSidedCardCount, needsSharedCardBack } from '../lib/entries';
 export default function RegisteredPrint({
   project,
   close,
@@ -62,7 +63,10 @@ export default function RegisteredPrint({
   const key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
     id = templateId(project.settings),
-    printPaper = paperWorkflow(project.settings);
+    printPaper = paperWorkflow(project.settings),
+    doubleSidedCount = doubleSidedCardCount(project.entries),
+    sharedBackRequired = needsSharedCardBack(project.entries),
+    onlyDoubleSided = doubleSidedCount > 0 && !sharedBackRequired;
   useEffect(() => {
     dialog.current?.showModal();
     let active = true;
@@ -317,40 +321,64 @@ export default function RegisteredPrint({
             />
             <span className="switch" />
           </label>
+          {doubleSidedCount > 0 && (
+            <div className="warning-box double-sided-warning" role="status">
+              {doubleSidedCount} double-sided card{doubleSidedCount === 1 ? '' : 's'} selected.{' '}
+              {project.settings.backsEnabled
+                ? 'Matching reverse faces will print automatically in their mirrored back positions.'
+                : 'Turn on Print card backs to include their matching reverse faces.'}
+            </div>
+          )}
           {project.settings.backsEnabled && (
             <div className="back-options">
-              <div className="back-artwork-control">
-                {project.backArtwork ? (
-                  <img
-                    src={project.backArtwork.preview}
-                    alt="Selected card-back artwork"
-                    className={project.settings.backRotation === 180 ? 'back-art-rotated' : ''}
-                  />
-                ) : (
-                  <div className="back-art-placeholder">
-                    <ImagePlus size={22} />
-                    <span>No back art</span>
+              {!onlyDoubleSided ? (
+                <>
+                  <div className="back-artwork-control">
+                    {project.backArtwork ? (
+                      <img
+                        src={project.backArtwork.preview}
+                        alt="Selected shared card-back artwork"
+                        className={project.settings.backRotation === 180 ? 'back-art-rotated' : ''}
+                      />
+                    ) : (
+                      <div className="back-art-placeholder">
+                        <ImagePlus size={22} />
+                        <span>No back art</span>
+                      </div>
+                    )}
+                    <div>
+                      <strong>
+                        {project.backArtwork
+                          ? 'Shared card-back artwork ready'
+                          : 'Add shared card-back artwork'}
+                      </strong>
+                      <small>
+                        Used for single-sided cards only; double-sided cards use their reverse face.
+                      </small>
+                      <button
+                        className="secondary"
+                        disabled={!!busy}
+                        onClick={() => backInput.current?.click()}
+                      >
+                        <ImagePlus size={14} />
+                        {project.backArtwork ? 'Replace artwork' : 'Upload artwork'}
+                      </button>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <strong>
-                    {project.backArtwork ? 'Card-back artwork ready' : 'Add card-back artwork'}
-                  </strong>
-                  <small>One shared design is used for every card.</small>
-                  <button
-                    className="secondary"
-                    disabled={!!busy}
-                    onClick={() => backInput.current?.click()}
-                  >
-                    <ImagePlus size={14} />
-                    {project.backArtwork ? 'Replace artwork' : 'Upload artwork'}
-                  </button>
+                  <MpcArtworkSearch
+                    type="CARDBACK"
+                    choose={(artwork) => chooseMpcBack({ ...artwork.face, name: artwork.name })}
+                  />
+                </>
+              ) : (
+                <div className="soft-info double-sided-back-ready">
+                  <CheckCircle2 size={18} />
+                  <span>
+                    Every selected card is double-sided, so no shared card-back artwork is needed.
+                    Each card’s opposite face will be used.
+                  </span>
                 </div>
-              </div>
-              <MpcArtworkSearch
-                type="CARDBACK"
-                choose={(artwork) => chooseMpcBack({ ...artwork.face, name: artwork.name })}
-              />
+              )}
               <label className="switch-row back-bleed-toggle">
                 <span>
                   Bleed on card backs
@@ -542,8 +570,10 @@ export default function RegisteredPrint({
                   ? 'CriProx will make separate front and back PDFs. Print the fronts, refeed the same sheets, then print the backs.'
                   : `CriProx will alternate front and back pages. Enable duplex and ${project.settings.backFlip === 'long-edge' ? 'long-edge' : 'short-edge'} binding in the printer dialog.`}{' '}
                 Back pages contain artwork only—no Cricut registration marks or cut lines. The front
-                and back bleed settings apply independently. Back orientation rotates the artwork
-                only; it does not move the cards or change the cut template.
+                and back bleed settings apply independently. Double-sided cards use the opposite
+                face from the selected front; the shared back applies only to single-sided cards.
+                Back orientation rotates the artwork only; it does not move the cards or change the
+                cut template.
               </p>
             </div>
           )}
@@ -633,7 +663,7 @@ export default function RegisteredPrint({
                   !!busy ||
                   !profile ||
                   !project.entries.length ||
-                  (project.settings.backsEnabled && !project.backArtwork)
+                  (project.settings.backsEnabled && sharedBackRequired && !project.backArtwork)
                 }
                 onClick={() => prepare(false)}
               >
