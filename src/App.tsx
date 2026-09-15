@@ -44,7 +44,7 @@ import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
 import { DEFAULT_SETTINGS, EMPTY_PROJECT, fixedBleedMm, PRINT_DPI_OPTIONS } from './lib/types';
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
-import { resolveDeck, variants } from './lib/scryfall';
+import { resolveDeck, searchCards, variants } from './lib/scryfall';
 import { exportBundle } from './lib/export';
 import { saveProjectAs } from './lib/save-project';
 import { validateProject } from './lib/project';
@@ -324,6 +324,179 @@ function ImportModal({
         <button className="primary" disabled={!!busy || !text.trim()} onClick={importCards}>
           {busy ? <LoaderCircle className="spin" size={17} /> : <Plus size={17} />}{' '}
           {busy || 'Add to project'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+function CardSearchModal({
+  add,
+  remaining,
+  close,
+}: {
+  add: (card: Card) => void;
+  remaining: number;
+  close: () => void;
+}) {
+  const [query, setQuery] = useState(''),
+    [cards, setCards] = useState<Card[]>([]),
+    [next, setNext] = useState<string>(),
+    [busy, setBusy] = useState(''),
+    [error, setError] = useState(''),
+    [searched, setSearched] = useState(''),
+    [added, setAdded] = useState<Record<string, number>>({});
+
+  async function search(event: React.FormEvent) {
+    event.preventDefault();
+    const term = query.trim();
+    if (!term) {
+      setError('Enter a card name to search.');
+      return;
+    }
+    setBusy('Searching cards…');
+    setError('');
+    try {
+      const result = await searchCards(term);
+      setCards(result.cards);
+      setNext(result.next);
+      setSearched(term);
+    } catch (reason) {
+      setCards([]);
+      setNext(undefined);
+      setSearched(term);
+      setError(errorText(reason));
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function loadMore() {
+    if (!next) return;
+    setBusy('Loading more cards…');
+    setError('');
+    try {
+      const result = await searchCards(searched, next);
+      setCards((current) => [
+        ...current,
+        ...result.cards.filter((card) => !current.some((candidate) => candidate.id === card.id)),
+      ]);
+      setNext(result.next);
+    } catch (reason) {
+      setError(errorText(reason));
+    } finally {
+      setBusy('');
+    }
+  }
+
+  function addCard(card: Card) {
+    if (remaining <= 0) return;
+    add(card);
+    const key = card.oracleId || card.id;
+    setAdded((current) => ({ ...current, [key]: (current[key] || 0) + 1 }));
+  }
+
+  return (
+    <Modal
+      wide
+      className="card-search-modal"
+      title="Find a card"
+      subtitle="Search Scryfall and add cards to your project one at a time."
+      close={() => {
+        if (!busy) close();
+      }}
+    >
+      <div className="card-search-content">
+        <form className="card-search-form" onSubmit={search}>
+          <div className="search-field">
+            <Search size={17} />
+            <input
+              autoFocus
+              aria-label="Search Scryfall cards"
+              placeholder="Search by card name…"
+              value={query}
+              disabled={!!busy}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          <button className="primary" disabled={!!busy || !query.trim()} type="submit">
+            {busy && !cards.length ? (
+              <LoaderCircle className="spin" size={16} />
+            ) : (
+              <Search size={16} />
+            )}
+            Search
+          </button>
+        </form>
+        <div className="card-search-summary" aria-live="polite">
+          {searched && !error && (
+            <span>
+              {cards.length} {cards.length === 1 ? 'result' : 'results'} for “{searched}”
+            </span>
+          )}
+          {Object.values(added).reduce((sum, count) => sum + count, 0) > 0 && (
+            <span>
+              {Object.values(added).reduce((sum, count) => sum + count, 0)} added this session
+            </span>
+          )}
+        </div>
+        {error && (
+          <div className="error-box" role="alert">
+            {error}
+          </div>
+        )}
+        {!searched && !busy && (
+          <div className="card-search-empty">
+            <Search size={31} strokeWidth={1.3} />
+            <strong>Search the card catalog</strong>
+            <span>Try a full or partial name, such as “Sol Ring” or “Lightning”.</span>
+          </div>
+        )}
+        {!!cards.length && (
+          <div className="card-search-results">
+            {cards.map((card) => {
+              const addedCount = added[card.oracleId || card.id] || 0;
+              return (
+                <article className="card-search-result" key={card.id}>
+                  <img src={card.faces[0].preview} alt="" loading="lazy" />
+                  <div className="card-search-result-copy">
+                    <strong>{card.name}</strong>
+                    <span>
+                      {card.setName} · {card.set.toUpperCase()}
+                      {card.collector && ` #${card.collector}`}
+                    </span>
+                  </div>
+                  <button
+                    className={addedCount ? 'secondary compact added-card' : 'secondary compact'}
+                    disabled={remaining <= 0}
+                    onClick={() => addCard(card)}
+                  >
+                    {addedCount ? <Check size={14} /> : <Plus size={14} />}
+                    {addedCount ? `Added ${addedCount}` : 'Add card'}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        )}
+        {busy && !!cards.length && (
+          <div className="loading">
+            <LoaderCircle className="spin" size={18} /> {busy}
+          </div>
+        )}
+        {next && !busy && (
+          <button className="secondary load-more" onClick={() => void loadMore()}>
+            Load more results
+          </button>
+        )}
+      </div>
+      <div className="modal-footer">
+        <span className="muted">
+          {remaining > 0
+            ? `Room for ${remaining} more card${remaining === 1 ? '' : 's'}`
+            : 'This project has reached the 500-card limit'}
+        </span>
+        <button className="secondary" disabled={!!busy} onClick={close}>
+          Done
         </button>
       </div>
     </Modal>
@@ -996,7 +1169,7 @@ export default function App() {
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
   const [modal, setModal] = useState<
-    'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
+    'search' | 'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
   >(null);
   const [selected, setSelected] = useState<string | null>(null),
     [inspecting, setInspecting] = useState<string | null>(null),
@@ -1130,6 +1303,28 @@ export default function App() {
       )
         return p;
       return { ...p, entries: [...p.entries, ...entries] };
+    });
+  }
+  function addCard(card: Card) {
+    setProject((current) => {
+      const total = current.entries.reduce((sum, entry) => sum + entry.quantity, 0);
+      if (total >= 500) return current;
+      const matching = current.entries.find(
+        (entry) =>
+          entry.quantity < 100 &&
+          (card.oracleId ? entry.card.oracleId === card.oracleId : entry.card.id === card.id),
+      );
+      if (matching)
+        return {
+          ...current,
+          entries: current.entries.map((entry) =>
+            entry.id === matching.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
+          ),
+        };
+      return {
+        ...current,
+        entries: [...current.entries, { id: crypto.randomUUID(), card, quantity: 1, face: 0 }],
+      };
     });
   }
   function quantity(entry: Entry, delta: number) {
@@ -1327,9 +1522,9 @@ export default function App() {
                   </button>
                   <button
                     className="icon-button"
-                    aria-label="Paste card list"
-                    disabled={!loaded}
-                    onClick={() => setModal('import')}
+                    aria-label="Find a card"
+                    disabled={!loaded || count >= 500}
+                    onClick={() => setModal('search')}
                   >
                     <Plus size={19} />
                   </button>
@@ -1337,7 +1532,14 @@ export default function App() {
               </div>
               <div className="library-controls">
                 <button
-                  className="primary import-button"
+                  className="primary find-card-button"
+                  disabled={!loaded || count >= 500}
+                  onClick={() => setModal('search')}
+                >
+                  <Search size={16} /> Find a card
+                </button>
+                <button
+                  className="secondary import-button"
                   disabled={!loaded}
                   onClick={() => setModal('import')}
                 >
@@ -1841,6 +2043,9 @@ export default function App() {
       )}
       {modal === 'import' && (
         <ImportModal close={() => setModal(null)} add={add} remaining={500 - count} />
+      )}
+      {modal === 'search' && (
+        <CardSearchModal close={() => setModal(null)} add={addCard} remaining={500 - count} />
       )}
       {modal === 'guide' && <Guide close={() => setModal(null)} />}
       {ENABLE_DESIGN_SPACE_EXPORT && modal === 'export' && count > 0 && (

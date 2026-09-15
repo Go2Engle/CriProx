@@ -3,6 +3,7 @@
 ## Card and artwork sources
 
 - Paste a deck list and resolve cards through Scryfall.
+- Search the Scryfall card catalog by full or partial name and add cards one at a time.
 - Start with four example Scryfall card records in a new workspace.
 - Search loaded cards and filter printings by set and collector number.
 - Select either face of a double-faced card from the inspector.
