@@ -8,6 +8,7 @@
     <a href="https://github.com/Go2Engle/CriProx/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Go2Engle/CriProx?style=for-the-badge&logo=github&color=7656d6"></a>
     <a href="https://github.com/Go2Engle/CriProx/actions/workflows/ci.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/Go2Engle/CriProx/ci.yml?branch=main&style=for-the-badge&label=build"></a>
     <a href="LICENSE"><img alt="GPL-3.0-only license" src="https://img.shields.io/github/license/Go2Engle/CriProx?style=for-the-badge&color=5b8def"></a>
+    <a href="https://github.com/sponsors/Go2Engle"><img alt="Sponsor on GitHub" src="https://img.shields.io/badge/Sponsor_on_GitHub-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white"></a>
     <a href="https://ko-fi.com/go2engle"><img alt="Donate on Ko-fi" src="https://img.shields.io/badge/Donate_on_Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white"></a>
     <img alt="Node.js 22 or newer" src="https://img.shields.io/badge/Node.js-22%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white">
     <img alt="Supported platforms" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-desktop-222?style=for-the-badge">
