@@ -25,7 +25,7 @@ flowchart LR
 | Standard export  | `src/lib/export.ts`, `src/lib/png.ts`                                                        | Artwork rendering, transparent silhouettes, SVG geometry, manifests, ZIPs, and PNG density metadata |
 | Registered print | `src/lib/registration.ts`, `src/lib/registered-pdf.ts`, `src/components/RegisteredPrint.tsx` | PDF recognition, mark preservation, registered page rendering, and workflow UI                      |
 | PDF preview      | `src/lib/pdf-worker.ts`, `src/lib/pdf-preview-pages.ts`, `src/workers/pdf.worker.ts`         | PDF.js worker setup and page preview rendering                                                      |
-| Card sources     | `src/lib/deck.ts`, `src/lib/scryfall.ts`, `src/lib/mpc.ts`                                   | Deck syntax, remote lookups, request pacing, artwork variants, and caching                          |
+| Card sources     | `src/lib/deck.ts`, `src/lib/deck-source.ts`, `src/lib/scryfall.ts`, `src/lib/mpc.ts`         | Deck syntax, source adapters, remote lookups, request pacing, artwork variants, and caching         |
 | Project storage  | `src/lib/project.ts`, `src/lib/save-project.ts`, `electron/project-library.cjs`              | Imported-project validation, autosave, managed project folders, assets, and portable backups        |
 | Desktop shell    | `electron/main.cjs`, `electron/preload.cjs`                                                  | Native window lifecycle, scoped filesystem bridge, packaging, and release notices                   |
 
@@ -50,6 +50,7 @@ Contributions should preserve this boundary:
 - Do not expose unrestricted filesystem or shell primitives through preload. Project-library operations
   must stay confined to path-validated project identifiers beneath the user-selected root.
 - Validate imported data and keep network integrations in their documented scope.
+- Keep deck-source requests constrained to validated public Moxfield and Archidekt deck identifiers.
 - Avoid embedding secrets, private artwork, or project data in logs.
 
 Potential vulnerabilities should be reported through the [security policy](../SECURITY.md), not a public issue.

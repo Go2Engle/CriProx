@@ -2,6 +2,7 @@
 
 ## Card and artwork sources
 
+- Import a public or unlisted Moxfield or Archidekt deck link, preserving selected printings when available.
 - Paste a deck list and resolve cards through Scryfall.
 - Search the Scryfall card catalog by full or partial name and add cards one at a time.
 - Start with four example Scryfall card records in a new workspace.

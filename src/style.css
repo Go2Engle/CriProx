@@ -1668,6 +1668,38 @@ h1 > span {
   margin-bottom: 10px;
   font-size: 12px;
 }
+.import-source-toggle {
+  width: 100%;
+  margin-bottom: 22px;
+}
+.import-source-toggle button {
+  flex: 1;
+  padding: 8px 12px;
+}
+.deck-link-field {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px;
+  color: #a297ad;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fafbfc;
+}
+.deck-link-field:focus-within {
+  border-color: #c7b8f0;
+  box-shadow: 0 0 0 1px #c7b8f0;
+}
+.deck-link-field input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 11px;
+}
 .import-hint {
   display: flex;
   align-items: center;

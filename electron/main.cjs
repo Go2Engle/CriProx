@@ -1,6 +1,7 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, net, shell } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { deckSourceUrl } = require('./deck-source.cjs');
 const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.cjs');
 const {
   assertProjectId,
@@ -60,6 +61,34 @@ ipcMain.handle('mpc-request', async (_event, request) => {
   const result = await response.json();
   if (!response.ok) throw new Error(result.message || `MPC Autofill returned ${response.status}.`);
   return result;
+});
+
+ipcMain.handle('deck-request', async (_event, request) => {
+  const requestUrl = deckSourceUrl(request);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  let response;
+  try {
+    response = await net.fetch(requestUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': `CriProx/${app.getVersion()} (+https://github.com/Go2Engle/CriProx)`,
+      },
+      credentials: 'omit',
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (!response.ok) throw new Error(`${request.provider} returned ${response.status}.`);
+  const body = await response.text();
+  if (body.length > 10_000_000) throw new Error('Deck response exceeds 10 MB.');
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error('Deck source returned invalid JSON.');
+  }
 });
 
 function senderWindow(event) {

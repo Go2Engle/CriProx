@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld(
   Object.freeze({
     platform: process.platform,
     mpcRequest: (path, method, body) => ipcRenderer.invoke('mpc-request', { path, method, body }),
+    deckRequest: (provider, id) => ipcRenderer.invoke('deck-request', { provider, id }),
     saveProject: (defaultName, data) => ipcRenderer.invoke('save-project', { defaultName, data }),
     projects: Object.freeze({
       list: () => ipcRenderer.invoke('list-projects'),

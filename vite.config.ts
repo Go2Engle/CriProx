@@ -19,6 +19,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/mpc-api/, ''),
       },
+      '/deck-source-api/moxfield': {
+        target: 'https://api2.moxfield.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/deck-source-api\/moxfield/, '/v3/decks/all'),
+      },
+      '/deck-source-api/archidekt': {
+        target: 'https://archidekt.com',
+        changeOrigin: true,
+        rewrite: (path) => `${path.replace(/^\/deck-source-api\/archidekt/, '/api/decks')}/`,
+      },
     },
   },
 });

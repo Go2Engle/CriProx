@@ -42,7 +42,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 
 ## From card list to cut
 
-1. **Build the sheet.** Paste a deck list, search card printings, or add local artwork.
+1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search card printings, or add local artwork.
 2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs.
 3. **Export from CriProx.** Download transparent artwork, matched vector geometry, dimensions, and the Design Space handoff guide.
 4. **Print and cut in Design Space.** Preserve the supplied dimensions, print at 100% / Actual size, and complete the cut from the same saved job.

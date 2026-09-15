@@ -5,6 +5,7 @@
 - TypeScript strict type-check and production Vite build.
 - Automated tests covering deck syntax and quantity limits, pagination, mixed and uniform rotated placement, non-overlap across supported settings, raster rounding tolerance, PNG density metadata, imported-project validation, and captured-template recognition.
 - Live Scryfall collection import with valid and invalid card names. Successfully imported entries are removed from the retry list; missing entries stay editable.
+- Live Archidekt import of a 100-card public deck, preserving all 94 selected printings, plus a live Moxfield response through Electron's constrained deck-source bridge.
 - Single-card Scryfall search with partial names and repeated additions.
 - Live variant lookup (136 Sol Ring printings), printing selection, and restoration after reload.
 - Double-faced card import and selection of Insectile Aberration.

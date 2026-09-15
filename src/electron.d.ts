@@ -27,6 +27,7 @@ declare global {
     criprox?: {
       platform?: 'darwin' | 'win32' | 'linux';
       mpcRequest: (path: string, method: 'GET' | 'POST', body?: unknown) => Promise<unknown>;
+      deckRequest?: (provider: 'moxfield' | 'archidekt', id: string) => Promise<unknown>;
       saveProject?: (defaultName: string, data: string) => Promise<boolean>;
       projects?: {
         list: () => Promise<ProjectLibrarySnapshot>;
