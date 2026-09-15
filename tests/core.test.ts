@@ -15,7 +15,7 @@ import {
 import { validateProject } from '../src/lib/project';
 import { withDpi } from '../src/lib/png';
 import { mpcArtworkAsCard, normalizeMpcArtwork } from '../src/lib/mpc';
-import { cardMatchesDeckLine, scryfallLookupName } from '../src/lib/scryfall';
+import { cardMatchesDeckLine, scryfallLookupName, scryfallSearchPath } from '../src/lib/scryfall';
 import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
 import { paperWorkflow } from '../src/lib/paper-workflow';
 const entry: Entry = {
@@ -80,6 +80,17 @@ test('double-faced deck names use the front face for Scryfall lookup and retain 
     );
   }
   assert.equal(scryfallLookupName('Silundi Vision//Silundi Isle'), 'Silundi Vision');
+});
+test('single-card search constrains partial names to paper cards', () => {
+  assert.equal(
+    scryfallSearchPath('  Sol Ring  '),
+    '/cards/search?q=name%3A%22Sol%20Ring%22%20game%3Apaper&unique=cards&order=name',
+  );
+  assert.equal(
+    decodeURIComponent(scryfallSearchPath("Gandalf, Goblins' Bane")),
+    '/cards/search?q=name:"Gandalf, Goblins\' Bane" game:paper&unique=cards&order=name',
+  );
+  assert.throws(() => scryfallSearchPath('   '), /card name/);
 });
 test('deck parser rejects unreasonable counts and caps total', () => {
   assert.equal(parseDeck('0 Island\n101 Forest').errors.length, 2);

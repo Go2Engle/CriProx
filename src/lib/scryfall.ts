@@ -161,3 +161,26 @@ export async function variants(
     next: result.has_more ? result.next_page : undefined,
   };
 }
+
+export function scryfallSearchPath(query: string) {
+  const name = query.trim().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  if (!name) throw new Error('Enter a card name to search.');
+  return `/cards/search?q=${encodeURIComponent(`name:"${name}" game:paper`)}&unique=cards&order=name`;
+}
+
+export async function searchCards(
+  query: string,
+  next?: string,
+): Promise<{ cards: Card[]; next?: string }> {
+  const path = next ? new URL(next).pathname + new URL(next).search : scryfallSearchPath(query);
+  const key = `card-search:v1:${path}`;
+  const cached = await get<{ time: number; data: Collection }>(key).catch(() => undefined);
+  const result =
+    cached && Date.now() - cached.time < 86400000 ? cached.data : await request<Collection>(path);
+  if (!cached || Date.now() - cached.time >= 86400000)
+    await set(key, { time: Date.now(), data: result }).catch(() => {});
+  return {
+    cards: result.data.map(normalize).filter((card) => card.faces.length),
+    next: result.has_more ? result.next_page : undefined,
+  };
+}
