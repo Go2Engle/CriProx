@@ -21,6 +21,7 @@ import {
   Grid2X2,
   ImagePlus,
   Layers3,
+  Link2,
   LoaderCircle,
   Minus,
   Maximize2,
@@ -44,6 +45,7 @@ import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
 import { DEFAULT_SETTINGS, EMPTY_PROJECT, fixedBleedMm, PRINT_DPI_OPTIONS } from './lib/types';
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
+import { importDeckSource } from './lib/deck-source';
 import { resolveDeck, searchCards, variants } from './lib/scryfall';
 import { exportBundle } from './lib/export';
 import { saveProjectAs } from './lib/save-project';
@@ -225,10 +227,53 @@ function ImportModal({
   remaining: number;
   close: () => void;
 }) {
-  const [text, setText] = useState(''),
+  const [mode, setMode] = useState<'link' | 'list'>('link'),
+    [link, setLink] = useState(''),
+    [text, setText] = useState(''),
     [busy, setBusy] = useState(''),
     [error, setError] = useState('');
   const parsed = parseDeck(text);
+  const deckText = (cards: typeof parsed.cards) =>
+    cards
+      .map(
+        (card) =>
+          `${card.quantity} ${card.name}${card.set ? ` (${card.set.toUpperCase()})${card.collector ? ` ${card.collector}` : ''}` : ''}`,
+      )
+      .join('\n');
+
+  async function resolveCards(cards: typeof parsed.cards, retryText: string) {
+    if (cards.reduce((n, card) => n + card.quantity, 0) > remaining) {
+      setError(`There is room for ${remaining} more cards in this project.`);
+      return;
+    }
+    setBusy('Finding your cards…');
+    const result = await resolveDeck(cards, setBusy);
+    if (result.found.length)
+      add(
+        result.found.map(({ card, line }) => ({
+          id: crypto.randomUUID(),
+          card,
+          quantity: line.quantity,
+          face: 0,
+        })),
+      );
+    if (result.missing.length) {
+      const foundLines = new Set(result.found.map((found) => found.line.line));
+      setMode('list');
+      setText(
+        retryText
+          .split(/\r?\n/)
+          .filter((_, index) => !foundLines.has(index + 1))
+          .join('\n'),
+      );
+      setError(
+        `${result.found.length} entries added. Could not find:\n${result.missing.join('\n')}\nCheck spelling or the set and collector number, then retry.`,
+      );
+    } else {
+      close();
+    }
+  }
+
   async function importCards() {
     setError('');
     if (parsed.errors.length) {
@@ -239,79 +284,119 @@ function ImportModal({
       setError('Paste at least one card name.');
       return;
     }
-    if (parsed.cards.reduce((n, c) => n + c.quantity, 0) > remaining) {
-      setError(`There is room for ${remaining} more cards in this project.`);
-      return;
-    }
-    setBusy('Finding your cards…');
     try {
-      const result = await resolveDeck(parsed.cards, setBusy);
-      if (result.found.length)
-        add(
-          result.found.map(({ card, line }) => ({
-            id: crypto.randomUUID(),
-            card,
-            quantity: line.quantity,
-            face: 0,
-          })),
-        );
-      if (result.missing.length) {
-        const foundLines = new Set(result.found.map((f) => f.line.line));
-        setText(
-          text
-            .split(/\r?\n/)
-            .filter((_, i) => !foundLines.has(i + 1))
-            .join('\n'),
-        );
-        setError(
-          `${result.found.length} entries added. Could not find:\n${result.missing.join('\n')}\nCheck spelling or the set and collector number, then retry.`,
-        );
-      } else close();
-    } catch (e) {
-      setError(errorText(e));
+      await resolveCards(parsed.cards, text);
+    } catch (reason) {
+      setError(errorText(reason));
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function importLink() {
+    setError('');
+    setBusy('Loading deck…');
+    try {
+      const deck = await importDeckSource(link);
+      await resolveCards(deck.cards, deckText(deck.cards));
+    } catch (reason) {
+      setError(errorText(reason));
     } finally {
       setBusy('');
     }
   }
   return (
     <Modal
-      title="Bring your deck"
-      subtitle="Paste a list. We’ll find the cards and arrange your sheets."
+      title="Import a deck"
+      subtitle="Use a Moxfield or Archidekt link, or paste a card list."
       close={() => {
         if (!busy) close();
       }}
     >
       <div className="import-content">
-        <div className="field-heading">
-          <label htmlFor="decklist">Card list</label>
+        <div className="segmented import-source-toggle" aria-label="Deck import source">
           <button
-            className="text-button"
+            className={mode === 'link' ? 'selected' : ''}
+            aria-pressed={mode === 'link'}
             disabled={!!busy}
-            onClick={() =>
-              setText('1 Sol Ring\n1 Command Tower\n2 Arcane Signet\n1 Swords to Plowshares')
-            }
+            onClick={() => {
+              setMode('link');
+              setError('');
+            }}
           >
-            Try an example
+            <Link2 size={14} /> Deck link
+          </button>
+          <button
+            className={mode === 'list' ? 'selected' : ''}
+            aria-pressed={mode === 'list'}
+            disabled={!!busy}
+            onClick={() => {
+              setMode('list');
+              setError('');
+            }}
+          >
+            <Upload size={14} /> Card list
           </button>
         </div>
-        <textarea
-          id="decklist"
-          autoFocus
-          rows={10}
-          value={text}
-          disabled={!!busy}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={'1 Sol Ring\n4 Lightning Bolt\n1 Counterspell (MH2) 267'}
-        />
-        <div className="import-hint">
-          <span>Quantity + card name · optional (SET) number</span>
-          <span>{parsed.cards.reduce((n, c) => n + c.quantity, 0)} cards</span>
-        </div>
+        {mode === 'link' ? (
+          <>
+            <div className="field-heading">
+              <label htmlFor="deck-link">Public or unlisted deck link</label>
+            </div>
+            <div className="deck-link-field">
+              <Link2 size={16} />
+              <input
+                id="deck-link"
+                autoFocus
+                type="url"
+                value={link}
+                disabled={!!busy}
+                onChange={(event) => setLink(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && link.trim() && !busy) void importLink();
+                }}
+                placeholder="https://moxfield.com/decks/…"
+              />
+            </div>
+            <div className="import-hint">
+              <span>Moxfield and Archidekt links are supported</span>
+              <span>Maybeboards excluded</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="field-heading">
+              <label htmlFor="decklist">Card list</label>
+              <button
+                className="text-button"
+                disabled={!!busy}
+                onClick={() =>
+                  setText('1 Sol Ring\n1 Command Tower\n2 Arcane Signet\n1 Swords to Plowshares')
+                }
+              >
+                Try an example
+              </button>
+            </div>
+            <textarea
+              id="decklist"
+              autoFocus
+              rows={10}
+              value={text}
+              disabled={!!busy}
+              onChange={(event) => setText(event.target.value)}
+              placeholder={'1 Sol Ring\n4 Lightning Bolt\n1 Counterspell (MH2) 267'}
+            />
+            <div className="import-hint">
+              <span>Quantity + card name · optional (SET) number</span>
+              <span>{parsed.cards.reduce((n, card) => n + card.quantity, 0)} cards</span>
+            </div>
+          </>
+        )}
         <div className="soft-info">
           <Sparkles size={17} />
           <span>
-            Card data comes from Scryfall. Choose a different printing after import. All listed
-            sections are included.
+            Card data comes from Scryfall. Linked decks keep their selected printings when
+            available, and you can choose a different printing after import.
           </span>
         </div>
         {error && (
@@ -322,9 +407,13 @@ function ImportModal({
       </div>
       <div className="modal-footer">
         <span className="muted">Up to 500 cards per project</span>
-        <button className="primary" disabled={!!busy || !text.trim()} onClick={importCards}>
+        <button
+          className="primary"
+          disabled={!!busy || !(mode === 'link' ? link : text).trim()}
+          onClick={mode === 'link' ? importLink : importCards}
+        >
           {busy ? <LoaderCircle className="spin" size={17} /> : <Plus size={17} />}{' '}
-          {busy || 'Add to project'}
+          {busy || (mode === 'link' ? 'Import deck' : 'Add to project')}
         </button>
       </div>
     </Modal>
@@ -1578,7 +1667,7 @@ export default function App() {
                   disabled={!loaded}
                   onClick={() => setModal('import')}
                 >
-                  <Upload size={16} /> Paste card list
+                  <Upload size={16} /> Import deck
                 </button>
                 <button
                   className="secondary artwork-button"

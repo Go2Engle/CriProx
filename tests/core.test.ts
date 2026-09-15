@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseDeck } from '../src/lib/deck';
+import { parseArchidektDeck, parseDeckSource, parseMoxfieldDeck } from '../src/lib/deck-source';
 import { envelope, grid, layout, mmToPx, templateSvg } from '../src/lib/layout';
 import { formatDimensions, formatMeasurement } from '../src/lib/units';
 import { projectFilename } from '../src/lib/save-project';
@@ -96,6 +97,102 @@ test('deck parser rejects unreasonable counts and caps total', () => {
   assert.equal(parseDeck('0 Island\n101 Forest').errors.length, 2);
   assert.match(parseDeck(Array(6).fill('100 Forest').join('\n')).errors.join(' '), /500/);
   assert.equal(parseDeck('  \n// comment').cards.length, 0);
+});
+test('deck source parser accepts Moxfield and Archidekt deck links only', () => {
+  assert.deepEqual(parseDeckSource('https://www.moxfield.com/decks/abc_DEF-123?foo=bar'), {
+    provider: 'moxfield',
+    id: 'abc_DEF-123',
+  });
+  assert.deepEqual(parseDeckSource('https://archidekt.com/decks/14420275/example-deck'), {
+    provider: 'archidekt',
+    id: '14420275',
+  });
+  assert.throws(() => parseDeckSource('http://moxfield.com/decks/abc'), /https/);
+  assert.throws(() => parseDeckSource('https://example.com/decks/123'), /Moxfield or Archidekt/);
+  assert.throws(() => parseDeckSource('https://archidekt.com/folders/123'), /deck link/);
+});
+test('Moxfield import keeps active boards and selected printings but excludes maybeboards', () => {
+  const result = parseMoxfieldDeck({
+    name: 'Artifacts',
+    boards: {
+      commanders: {
+        cards: {
+          commander: {
+            quantity: 1,
+            card: { name: 'Urza, Lord High Artificer', set: 'mh1', cn: '75' },
+          },
+        },
+      },
+      mainboard: {
+        cards: {
+          ring: { quantity: 1, card: { name: 'Sol Ring', set: 'cmm', cn: '396' } },
+          island: { quantity: 10, card: { name: 'Island', set: 'dmu', cn: '278' } },
+        },
+      },
+      sideboard: { cards: { wish: { quantity: 1, card: { name: 'Karn, the Great Creator' } } } },
+      signatureSpells: {
+        cards: {
+          spell: { quantity: 1, card: { name: 'Whir of Invention', set: 'aer', cn: '49' } },
+        },
+      },
+      maybeboard: { cards: { maybe: { quantity: 1, card: { name: 'Mana Crypt' } } } },
+      tokens: { cards: { token: { quantity: 1, card: { name: 'Construct' } } } },
+    },
+  });
+  assert.equal(result.name, 'Artifacts');
+  assert.deepEqual(
+    result.cards.map(({ name, quantity, set, collector }) => ({ name, quantity, set, collector })),
+    [
+      { name: 'Urza, Lord High Artificer', quantity: 1, set: 'mh1', collector: '75' },
+      { name: 'Whir of Invention', quantity: 1, set: 'aer', collector: '49' },
+      { name: 'Sol Ring', quantity: 1, set: 'cmm', collector: '396' },
+      { name: 'Island', quantity: 10, set: 'dmu', collector: '278' },
+      { name: 'Karn, the Great Creator', quantity: 1, set: undefined, collector: undefined },
+    ],
+  );
+});
+test('Archidekt import reads oracle names and excludes deleted and maybeboard cards', () => {
+  const result = parseArchidektDeck({
+    name: 'Counters',
+    cards: [
+      {
+        quantity: 1,
+        categories: ['Commander'],
+        deletedAt: null,
+        card: {
+          collectorNumber: '3',
+          edition: { editioncode: 'EOC' },
+          oracleCard: { name: 'Kilo, Apogee Mind' },
+        },
+      },
+      {
+        quantity: 2,
+        categories: ['Artifact'],
+        deletedAt: null,
+        card: {
+          collectorNumber: '53',
+          edition: { editioncode: 'EOC' },
+          oracleCard: { name: 'Arcane Signet' },
+        },
+      },
+      {
+        quantity: 1,
+        categories: ['Maybeboard'],
+        card: { oracleCard: { name: 'Lux Cannon' } },
+      },
+      {
+        quantity: 1,
+        categories: [],
+        deletedAt: '2026-01-01T00:00:00Z',
+        card: { oracleCard: { name: 'Contagion Engine' } },
+      },
+    ],
+  });
+  assert.equal(result.name, 'Counters');
+  assert.deepEqual(result.cards, [
+    { name: 'Kilo, Apogee Mind', quantity: 1, set: 'eoc', collector: '3', line: 1 },
+    { name: 'Arcane Signet', quantity: 2, set: 'eoc', collector: '53', line: 2 },
+  ]);
 });
 test('layout preserves requested quantity over full and partial sheets without stretching', () => {
   const settings = DEFAULT_SETTINGS;
