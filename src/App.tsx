@@ -52,6 +52,7 @@ import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
+import { editEntryCopy, type EntryArtworkPatch, type EntryCopy } from './lib/entries';
 
 // The original Design Space ZIP export remains available for a future workflow,
 // but Print from CriProx is the only export action shown in the interface.
@@ -817,6 +818,7 @@ function CardArtwork({
 }
 function ArtworkInspector({
   entry,
+  copy,
   customArt,
   proxyLabel,
   close,
@@ -827,6 +829,7 @@ function ArtworkInspector({
   changeFace,
 }: {
   entry: Entry;
+  copy: number;
   customArt: Card[];
   proxyLabel: boolean;
   close: () => void;
@@ -919,7 +922,11 @@ function ArtworkInspector({
         <div className="inspector-controls">
           <div className="section-label">CARD ARTWORK</div>
           <h3>Choose what prints</h3>
-          <p>Change this card’s artwork without changing its quantity or position on the sheet.</p>
+          <p>
+            {entry.quantity > 1
+              ? `Editing copy ${copy + 1} of ${entry.quantity}. Artwork changes apply only to this copy.`
+              : 'Change this card’s artwork without changing its position on the sheet.'}
+          </p>
           {entry.card.faces.length > 1 && (
             <label className="inspector-face">
               Card face
@@ -1057,7 +1064,7 @@ function ArtworkInspector({
         onChange={(e) => upload(e.target.files?.[0])}
       />
       <div className="modal-footer">
-        <span className="muted">Changes apply to every copy of this card entry.</span>
+        <span className="muted">Artwork changes apply only to this card copy.</span>
         <button className="secondary" onClick={close}>
           Done
         </button>
@@ -1077,8 +1084,8 @@ function SheetPreview({
   settings: Settings;
   mode: string;
   zoom: number;
-  select: (id: string) => void;
-  inspect: (id: string) => void;
+  select: (target: EntryCopy) => void;
+  inspect: (target: EntryCopy) => void;
 }) {
   const paper = settings.paper === 'letter' ? { w: 215.9, h: 279.4 } : { w: 210, h: 297 };
   const area = envelope(settings);
@@ -1122,7 +1129,9 @@ function SheetPreview({
                   height: `${(p.height / sheet.height) * 100}%`,
                   borderRadius: `${(settings.radius / p.width) * 100}% / ${(settings.radius / p.height) * 100}%`,
                 }}
-                onClick={() => (mode === 'cuts' ? select(p.entry.id) : inspect(p.entry.id))}
+                onClick={() =>
+                  (mode === 'cuts' ? select : inspect)({ entryId: p.entry.id, copy: p.copy })
+                }
               >
                 {mode === 'cuts' ? (
                   <span>
@@ -1171,8 +1180,8 @@ export default function App() {
   const [modal, setModal] = useState<
     'search' | 'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
   >(null);
-  const [selected, setSelected] = useState<string | null>(null),
-    [inspecting, setInspecting] = useState<string | null>(null),
+  const [selected, setSelected] = useState<EntryCopy | null>(null),
+    [inspecting, setInspecting] = useState<EntryCopy | null>(null),
     [search, setSearch] = useState(''),
     [page, setPage] = useState(0),
     [mode, setMode] = useState('art'),
@@ -1249,10 +1258,12 @@ export default function App() {
     sheet = sheets[currentPage];
   const count = project.entries.reduce((n, e) => n + e.quantity, 0),
     g = grid(project.settings);
-  const activeEntry = project.entries.find((e) => e.id === selected);
-  const inspectedEntry = project.entries.find((e) => e.id === inspecting);
+  const activeEntry = project.entries.find((e) => e.id === selected?.entryId);
+  const inspectedEntry = project.entries.find((e) => e.id === inspecting?.entryId);
   const customArt = project.entries
-    .filter((entry) => entry.id !== inspecting && ['local', 'custom'].includes(entry.card.set))
+    .filter(
+      (entry) => entry.id !== inspecting?.entryId && ['local', 'custom'].includes(entry.card.set),
+    )
     .filter(
       (entry, index, entries) =>
         entries.findIndex((candidate) => candidate.card.id === entry.card.id) === index,
@@ -1270,13 +1281,37 @@ export default function App() {
       entries: p.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)),
     }));
   }
-  function inspect(id: string) {
-    setSelected(id);
-    setInspecting(id);
+  function inspect(target: EntryCopy) {
+    setSelected(target);
+    setInspecting(target);
   }
-  function applyArtwork(entry: Entry, artwork: Card) {
+  function editCopy(target: EntryCopy, patch: EntryArtworkPatch) {
+    const entry = project.entries.find((candidate) => candidate.id === target.entryId);
+    if (!entry || target.copy < 0 || target.copy >= entry.quantity) return;
+    if (entry.quantity === 1) {
+      editEntry(entry.id, patch);
+      return;
+    }
+    const editedId = crypto.randomUUID(),
+      remainderId = crypto.randomUUID();
+    setProject((current) => ({
+      ...current,
+      entries: editEntryCopy(current.entries, target, patch, {
+        edited: editedId,
+        remainder: remainderId,
+      }),
+    }));
+    const edited = { entryId: editedId, copy: 0 };
+    setSelected((current) =>
+      current?.entryId === target.entryId && current.copy === target.copy ? edited : current,
+    );
+    setInspecting((current) =>
+      current?.entryId === target.entryId && current.copy === target.copy ? edited : current,
+    );
+  }
+  function applyArtwork(target: EntryCopy, entry: Entry, artwork: Card) {
     const face = artwork.faces[0];
-    editEntry(entry.id, {
+    editCopy(target, {
       face: 0,
       card: {
         ...entry.card,
@@ -1575,11 +1610,11 @@ export default function App() {
                 {filtered.map((entry) => (
                   <div
                     key={entry.id}
-                    className={`library-card ${selected === entry.id ? 'selected' : ''}`}
+                    className={`library-card ${selected?.entryId === entry.id ? 'selected' : ''}`}
                   >
                     <button
                       className="card-select"
-                      onClick={() => inspect(entry.id)}
+                      onClick={() => inspect({ entryId: entry.id, copy: 0 })}
                       aria-label={`Inspect ${entry.card.name}`}
                     >
                       <img src={entry.card.faces[entry.face].preview} alt="" />
@@ -1592,7 +1627,10 @@ export default function App() {
                       </div>
                     </button>
                     <div className="card-bottom">
-                      <button className="printing-button" onClick={() => inspect(entry.id)}>
+                      <button
+                        className="printing-button"
+                        onClick={() => inspect({ entryId: entry.id, copy: 0 })}
+                      >
                         {entry.card.oracleId ? 'Change artwork' : 'Local artwork'}{' '}
                         <ChevronDown size={12} />
                       </button>
@@ -1947,7 +1985,7 @@ export default function App() {
                   />
                   <span className="switch" />
                 </label>
-                {activeEntry && (
+                {activeEntry && selected && (
                   <div className="selection-details">
                     <div className="section-label">SELECTED CARD</div>
                     <strong>{activeEntry.card.name}</strong>
@@ -1958,9 +1996,7 @@ export default function App() {
                         <select
                           aria-label="Card face"
                           value={activeEntry.face}
-                          onChange={(e) =>
-                            editEntry(activeEntry.id, { face: Number(e.target.value) })
-                          }
+                          onChange={(e) => editCopy(selected, { face: Number(e.target.value) })}
                         >
                           {activeEntry.card.faces.map((face, i) => (
                             <option key={i} value={i}>
@@ -2114,29 +2150,34 @@ export default function App() {
           </div>
         </Modal>
       )}
-      {inspectedEntry && (
+      {inspectedEntry && inspecting && (
         <ArtworkInspector
           entry={inspectedEntry}
+          copy={inspecting.copy}
           customArt={customArt}
           proxyLabel={project.settings.proxyLabel}
           close={() => setInspecting(null)}
           choosePrinting={(card) => {
-            editEntry(inspectedEntry.id, { card, face: 0 });
-            setToast('Scryfall printing applied.');
+            editCopy(inspecting, { card, face: 0 });
+            setToast('Scryfall printing applied to one copy.');
           }}
           chooseCustomArt={(card) => {
-            applyArtwork(inspectedEntry, card);
-            setToast('Custom artwork applied.');
+            applyArtwork(inspecting, inspectedEntry, card);
+            setToast('Custom artwork applied to one copy.');
           }}
           uploadCustomArt={async (file) => {
-            applyArtwork(inspectedEntry, await cardFromArtwork(file, inspectedEntry.card));
-            setToast('Custom artwork applied.');
+            applyArtwork(
+              inspecting,
+              inspectedEntry,
+              await cardFromArtwork(file, inspectedEntry.card),
+            );
+            setToast('Custom artwork applied to one copy.');
           }}
           chooseMpcArt={(card) => {
-            applyArtwork(inspectedEntry, card);
-            setToast('MPC Autofill artwork applied.');
+            applyArtwork(inspecting, inspectedEntry, card);
+            setToast('MPC Autofill artwork applied to one copy.');
           }}
-          changeFace={(face) => editEntry(inspectedEntry.id, { face })}
+          changeFace={(face) => editCopy(inspecting, { face })}
         />
       )}
     </div>
