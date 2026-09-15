@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0](https://github.com/Go2Engle/CriProx/compare/v0.4.0...v0.5.0) (2026-09-15)
+
+
+### Features
+
+* add local project library ([16bddf2](https://github.com/Go2Engle/CriProx/commit/16bddf287624af6de0ea406170b6dcf269d764d7))
+* add single-card catalog search ([8de0c12](https://github.com/Go2Engle/CriProx/commit/8de0c12facab90724599d48181f457c442c6f502))
+* **cards:** add single-card catalog search ([0d8e2e6](https://github.com/Go2Engle/CriProx/commit/0d8e2e6999789585795aa4eecab03d9cd7df1cdd))
+* **import:** add Moxfield and Archidekt deck links ([0ce2afc](https://github.com/Go2Engle/CriProx/commit/0ce2afc10e85590208d714c7cca2f2217a3a5124))
+* **import:** add Moxfield and Archidekt deck links ([b07da8c](https://github.com/Go2Engle/CriProx/commit/b07da8c4aa053510bb7acd098101ae13566715ba))
+* **projects:** add local project library ([20d3fb6](https://github.com/Go2Engle/CriProx/commit/20d3fb618fbd4287ae7c465aa26c3239b29cc713))
+
+
+### Bug Fixes
+
+* **cards:** allow artwork selection per card copy ([0e51612](https://github.com/Go2Engle/CriProx/commit/0e51612188fcdf78ff74193bb63bc151996a4f80))
+* **cards:** allow artwork selection per card copy ([7afa64c](https://github.com/Go2Engle/CriProx/commit/7afa64ccb1f9f18812966b4859d0001a043ff0a4))
+* **projects:** prevent file read race conditions ([d83dd41](https://github.com/Go2Engle/CriProx/commit/d83dd417e5dc789eaa138b62ef051351faa2b184))
+
 ## [0.4.0](https://github.com/Go2Engle/CriProx/compare/v0.3.0...v0.4.0) (2026-09-14)
 
 
