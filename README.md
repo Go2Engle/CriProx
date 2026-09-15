@@ -28,14 +28,14 @@
 
 CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, preview the physical layout, and export the matched files needed to finish the job in Design Space.
 
-|                            |                                                                                                          |
-| -------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 🔒 **Local-first**         | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.             |
-| 📐 **Physical dimensions** | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.   |
-| 🃏 **Flexible artwork**    | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.    |
-| ✂️ **Reusable cuts**       | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks. |
-| 🔁 **Fronts and backs**    | Export manual-refeed or alternating duplex pages with independent bleed and alignment controls.          |
-| 💾 **Portable projects**   | IndexedDB autosave plus JSON backups that can be moved between CriProx installations.                    |
+|                              |                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                   |
+| 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.         |
+| 🃏 **Flexible artwork**      | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.          |
+| ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.       |
+| 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages with independent bleed and alignment controls.                |
+| 💾 **Local project library** | Browse saved projects in CriProx, keep uploaded artwork beside each project, and export portable JSON backups. |
 
 > [!IMPORTANT]
 > CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.

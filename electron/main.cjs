@@ -2,6 +2,46 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.cjs');
+const {
+  assertProjectId,
+  deleteProject,
+  listProjects,
+  openProject,
+  saveProject,
+} = require('./project-library.cjs');
+
+const librarySettingsFile = () => path.join(app.getPath('userData'), 'project-library.json');
+const defaultLibraryRoot = () => path.join(app.getPath('documents'), 'CriProx');
+let configuredLibraryRoot;
+
+async function getLibraryRoot() {
+  if (configuredLibraryRoot) return configuredLibraryRoot;
+  try {
+    const settings = JSON.parse(await fs.readFile(librarySettingsFile(), 'utf8'));
+    if (typeof settings.root === 'string' && path.isAbsolute(settings.root)) {
+      configuredLibraryRoot = settings.root;
+      return configuredLibraryRoot;
+    }
+  } catch {
+    // The default Documents/CriProx library is used until the user chooses another folder.
+  }
+  configuredLibraryRoot = defaultLibraryRoot();
+  return configuredLibraryRoot;
+}
+
+async function setLibraryRoot(root) {
+  if (typeof root !== 'string' || !path.isAbsolute(root))
+    throw new Error('Project library folder must be an absolute path.');
+  await fs.mkdir(root, { recursive: true });
+  await fs.mkdir(path.dirname(librarySettingsFile()), { recursive: true });
+  await fs.writeFile(librarySettingsFile(), JSON.stringify({ root }, null, 2), 'utf8');
+  configuredLibraryRoot = root;
+}
+
+async function projectLibrarySnapshot() {
+  const root = await getLibraryRoot();
+  return { root, isDefault: root === defaultLibraryRoot(), projects: await listProjects(root) };
+}
 
 const mpcPaths = new Set(['/2/sources/', '/2/exploreSearch/']);
 ipcMain.handle('mpc-request', async (_event, request) => {
@@ -71,6 +111,43 @@ ipcMain.handle('save-project', async (event, request) => {
     : `${result.filePath.replace(/\.json$/i, '')}.criprox.json`;
   await fs.writeFile(target, data, 'utf8');
   return true;
+});
+
+ipcMain.handle('list-projects', () => projectLibrarySnapshot());
+
+ipcMain.handle('choose-projects-directory', async (event) => {
+  const result = await dialog.showOpenDialog(senderWindow(event), {
+    title: 'Choose CriProx projects folder',
+    defaultPath: await getLibraryRoot(),
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (result.canceled || !result.filePaths[0]) return null;
+  await setLibraryRoot(result.filePaths[0]);
+  return projectLibrarySnapshot();
+});
+
+ipcMain.handle('save-managed-project', async (_event, request) => {
+  const root = await getLibraryRoot();
+  const project = await saveProject(root, request);
+  return { project, snapshot: await projectLibrarySnapshot() };
+});
+
+ipcMain.handle('open-managed-project', async (_event, projectId) => {
+  const project = await openProject(await getLibraryRoot(), assertProjectId(projectId));
+  return JSON.stringify(project);
+});
+
+ipcMain.handle('delete-managed-project', async (_event, projectId) => {
+  const root = await getLibraryRoot();
+  await deleteProject(root, assertProjectId(projectId), (directory) => shell.trashItem(directory));
+  return projectLibrarySnapshot();
+});
+
+ipcMain.handle('reveal-project-library', async () => {
+  const root = await getLibraryRoot();
+  await fs.mkdir(root, { recursive: true });
+  const error = await shell.openPath(root);
+  if (error) throw new Error(error);
 });
 
 function createWindow() {
