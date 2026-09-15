@@ -66,6 +66,10 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 ## Local projects and caching
 
 - One autosaved workspace stored in IndexedDB.
+- A desktop project explorer backed by `Documents/CriProx` by default.
+- A configurable projects folder, with one subfolder per saved project.
+- Uploaded artwork materialized in the saved project’s `assets` folder.
+- Project deletion moves the complete project folder to the operating system Trash for recovery.
 - Portable JSON backups that include local artwork and selected remote URLs.
 - Successful API responses cached for one day.
 - Export artwork cached for reuse.
@@ -89,7 +93,8 @@ The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 3 mm 
 - 100 copies per entry.
 - 20 MB per local image.
 - 24 sheets per ZIP; export the current sheet for larger projects.
-- One autosaved workspace. New Project and Open Project replace it.
+- One active autosaved workspace. New Project, a project-library selection, or an imported backup
+  replaces it.
 - No image-upscaling service, printer connection, cutter control, native Design Space project generation, or cloud sync.
 - Registered printing depends on a captured PDF for the exact saved cut job.
 - Duplex alignment depends on repeatable printer feed.

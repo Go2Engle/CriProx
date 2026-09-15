@@ -1,7 +1,7 @@
 import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { get, set } from 'idb-keyval';
 import {
   ArrowDownToLine,
@@ -12,11 +12,13 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   CircleHelp,
   Copy,
   Download,
   ExternalLink,
   FilePlus2,
+  FolderCog,
   FolderOpen,
   Grid2X2,
   ImagePlus,
@@ -29,6 +31,7 @@ import {
   Printer,
   RotateCcw,
   Ruler,
+  Save,
   Scissors,
   Search,
   Settings2,
@@ -216,6 +219,206 @@ function Modal({
       </div>
       {children}
     </dialog>
+  );
+}
+function ProjectsModal({
+  snapshot,
+  activeProjectId,
+  busy,
+  close,
+  refresh,
+  changeDirectory,
+  reveal,
+  open,
+  remove,
+  saveCurrent,
+  importBackup,
+  exportBackup,
+  newProject,
+}: {
+  snapshot: ProjectLibrarySnapshot | null;
+  activeProjectId: string | null;
+  busy: boolean;
+  close: () => void;
+  refresh: () => void;
+  changeDirectory: () => void;
+  reveal: () => void;
+  open: (projectId: string) => void;
+  remove: (project: ProjectSummary) => void;
+  saveCurrent: () => void;
+  importBackup: () => void;
+  exportBackup: () => void;
+  newProject: () => void;
+}) {
+  const [showSettings, setShowSettings] = useState(false),
+    [deleteCandidate, setDeleteCandidate] = useState<ProjectSummary | null>(null);
+  const formatUpdated = (value: string) =>
+    new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
+      new Date(value),
+    );
+  return (
+    <Modal
+      title="Projects"
+      subtitle="Save, browse, and reopen projects from your local CriProx library."
+      close={close}
+      wide
+      className="projects-modal"
+    >
+      <div className="projects-content">
+        <div className="library-location">
+          <span className="library-location-icon">
+            <FolderOpen size={18} />
+          </span>
+          <div>
+            <strong>{snapshot?.isDefault ? 'CriProx projects' : 'Custom projects folder'}</strong>
+            <span title={snapshot?.root}>{snapshot?.root || 'Finding your projects folder…'}</span>
+          </div>
+          <button
+            className={`icon-button ${showSettings ? 'active' : ''}`}
+            aria-label="Project folder settings"
+            title="Project folder settings"
+            onClick={() => setShowSettings((shown) => !shown)}
+          >
+            <Settings2 size={17} />
+          </button>
+        </div>
+        {showSettings && (
+          <div className="project-folder-settings">
+            <div>
+              <strong>Projects folder</strong>
+              <span>
+                New projects get their own subfolder here. Uploaded artwork is stored in that
+                project’s assets folder.
+              </span>
+            </div>
+            <div className="project-folder-actions">
+              <button className="secondary compact" disabled={busy} onClick={reveal}>
+                <ExternalLink size={14} /> Show in folder
+              </button>
+              <button className="secondary compact" disabled={busy} onClick={changeDirectory}>
+                <FolderCog size={14} /> Change folder
+              </button>
+              <button className="secondary compact" disabled={busy} onClick={exportBackup}>
+                <ArrowDownToLine size={14} /> Export JSON backup
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="projects-section-heading">
+          <div>
+            <h3>Saved projects</h3>
+            <span>
+              {snapshot
+                ? `${snapshot.projects.length} project${snapshot.projects.length === 1 ? '' : 's'}`
+                : 'Loading…'}
+            </span>
+          </div>
+          <button
+            className="icon-button"
+            aria-label="Refresh projects"
+            title="Refresh projects"
+            disabled={busy}
+            onClick={refresh}
+          >
+            <RotateCcw className={busy ? 'spin' : ''} size={15} />
+          </button>
+        </div>
+        <div className="project-browser" aria-busy={busy}>
+          {snapshot?.projects.map((item) => {
+            const current = item.id === activeProjectId;
+            return (
+              <div className="project-browser-entry" key={item.id}>
+                <article className={`project-browser-item ${current ? 'current' : ''}`}>
+                  <span className="project-browser-icon">
+                    <FolderOpen size={20} />
+                  </span>
+                  <div className="project-browser-copy">
+                    <strong>{item.name}</strong>
+                    <span>
+                      {item.cardCount} card{item.cardCount === 1 ? '' : 's'}
+                      <i />
+                      <Clock3 size={11} /> {formatUpdated(item.updatedAt)}
+                    </span>
+                  </div>
+                  {current && <span className="current-project-badge">CURRENT</span>}
+                  <div className="project-browser-actions">
+                    <button
+                      className="secondary compact"
+                      disabled={busy || current}
+                      onClick={() => open(item.id)}
+                    >
+                      {current ? 'Open' : 'Open project'}
+                    </button>
+                    <button
+                      className="icon-button project-delete-button"
+                      aria-label={`Delete ${item.name}`}
+                      title="Move project to Trash"
+                      disabled={busy}
+                      onClick={() => setDeleteCandidate(item)}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </article>
+                {deleteCandidate?.id === item.id && (
+                  <div className="project-delete-confirm" role="alert">
+                    <span>
+                      Move <strong>{item.name}</strong> and its saved artwork to Trash?
+                    </span>
+                    <div>
+                      <button
+                        className="secondary compact"
+                        disabled={busy}
+                        onClick={() => setDeleteCandidate(null)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="danger-button compact"
+                        disabled={busy}
+                        onClick={() => {
+                          remove(item);
+                          setDeleteCandidate(null);
+                        }}
+                      >
+                        <Trash2 size={14} /> Move to Trash
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {snapshot && !snapshot.projects.length && (
+            <div className="empty-project-browser">
+              <FolderOpen size={30} strokeWidth={1.3} />
+              <strong>No saved projects yet</strong>
+              <span>Save the current project to create its folder and add it here.</span>
+            </div>
+          )}
+          {!snapshot && (
+            <div className="empty-project-browser">
+              <LoaderCircle className="spin" size={26} />
+              <span>Finding saved projects…</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="modal-footer projects-footer">
+        <div>
+          <button className="secondary compact" disabled={busy} onClick={importBackup}>
+            <Upload size={14} /> Import JSON backup
+          </button>
+          <button className="secondary compact" disabled={busy} onClick={newProject}>
+            <FilePlus2 size={14} /> New project
+          </button>
+        </div>
+        <button className="primary compact" disabled={busy} onClick={saveCurrent}>
+          {busy ? <LoaderCircle className="spin" size={14} /> : <Save size={14} />}
+          Save current project
+        </button>
+      </div>
+    </Modal>
   );
 }
 function ImportModal({
@@ -1267,7 +1470,7 @@ export default function App() {
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
   const [modal, setModal] = useState<
-    'search' | 'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | null
+    'search' | 'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | 'projects' | null
   >(null);
   const [selected, setSelected] = useState<EntryCopy | null>(null),
     [inspecting, setInspecting] = useState<EntryCopy | null>(null),
@@ -1277,10 +1480,38 @@ export default function App() {
     [zoom, setZoom] = useState(100),
     [toast, setToast] = useState(''),
     [releaseUpdate, setReleaseUpdate] = useState<ReleaseUpdate | null>(null),
-    [uploading, setUploading] = useState(false);
+    [uploading, setUploading] = useState(false),
+    [projectLibrary, setProjectLibrary] = useState<ProjectLibrarySnapshot | null>(null),
+    [libraryBusy, setLibraryBusy] = useState(false),
+    [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
+      localStorage.getItem('criprox-active-project'),
+    );
   const imageInput = useRef<HTMLInputElement>(null),
     projectInput = useRef<HTMLInputElement>(null);
   const saveQueue = useRef(Promise.resolve());
+  const rememberActiveProject = useCallback((projectId: string | null) => {
+    setActiveProjectId(projectId);
+    if (projectId) localStorage.setItem('criprox-active-project', projectId);
+    else localStorage.removeItem('criprox-active-project');
+  }, []);
+  const refreshProjectLibrary = useCallback(async () => {
+    const projects = window.criprox?.projects;
+    if (!projects) return;
+    setLibraryBusy(true);
+    try {
+      const snapshot = await projects.list();
+      setProjectLibrary(snapshot);
+      setActiveProjectId((current) => {
+        if (!current || snapshot.projects.some((item) => item.id === current)) return current;
+        localStorage.removeItem('criprox-active-project');
+        return null;
+      });
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }, []);
   useEffect(() => {
     let active = true;
     get('criprox-project')
@@ -1300,6 +1531,9 @@ export default function App() {
       active = false;
     };
   }, []);
+  useEffect(() => {
+    void refreshProjectLibrary();
+  }, [refreshProjectLibrary]);
   useEffect(() => {
     const releases = window.criprox?.releases;
     if (!releases) return;
@@ -1503,14 +1737,108 @@ export default function App() {
     setProject((current) => ({ ...current, backArtwork: face }));
     setToast('MPC Autofill card back selected.');
   }
+  async function exportProjectBackup() {
+    try {
+      const didSave = await saveProjectAs(project);
+      setToast(didSave ? 'Project backup exported.' : 'Export cancelled.');
+    } catch (error) {
+      setToast(errorText(error));
+    }
+  }
+  async function saveCurrentProject() {
+    const projects = window.criprox?.projects;
+    if (!projects) {
+      await exportProjectBackup();
+      return;
+    }
+    setLibraryBusy(true);
+    try {
+      const result = await projects.save(activeProjectId, JSON.stringify(project));
+      rememberActiveProject(result.project.id);
+      setProjectLibrary(result.snapshot);
+      setToast('Project saved to your CriProx projects folder.');
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function openManagedProject(projectId: string) {
+    const projects = window.criprox?.projects;
+    if (!projects) return;
+    setLibraryBusy(true);
+    try {
+      const next = validateProject(JSON.parse(await projects.open(projectId)));
+      setProject(next);
+      rememberActiveProject(projectId);
+      setPage(0);
+      setSelected(null);
+      setInspecting(null);
+      setModal(null);
+      setToast('Project opened.');
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function deleteManagedProject(item: ProjectSummary) {
+    const projects = window.criprox?.projects;
+    if (!projects) return;
+    setLibraryBusy(true);
+    try {
+      const snapshot = await projects.delete(item.id);
+      setProjectLibrary(snapshot);
+      const wasCurrent = item.id === activeProjectId;
+      if (wasCurrent) rememberActiveProject(null);
+      setToast(
+        wasCurrent
+          ? `“${item.name}” moved to Trash. Your open workspace is now a local draft.`
+          : `“${item.name}” moved to Trash.`,
+      );
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function changeProjectsDirectory() {
+    const projects = window.criprox?.projects;
+    if (!projects) return;
+    setLibraryBusy(true);
+    try {
+      const snapshot = await projects.chooseDirectory();
+      if (snapshot) {
+        setProjectLibrary(snapshot);
+        rememberActiveProject(null);
+        setToast('Projects folder updated. Save this project to add it to the new folder.');
+      }
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function revealProjectsDirectory() {
+    setLibraryBusy(true);
+    try {
+      await window.criprox?.projects?.reveal();
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
   async function openProject(file?: File) {
     if (!file) return;
     try {
       if (file.size > 100000000) throw new Error('Project files must be under 100 MB.');
       const next = validateProject(JSON.parse(await file.text()));
       setProject(next);
+      rememberActiveProject(null);
       setPage(0);
       setSelected(null);
+      setInspecting(null);
       setToast('Project opened.');
     } catch (e) {
       setToast(errorText(e));
@@ -1538,16 +1866,21 @@ export default function App() {
           </span>
         </a>
         <div className="workspace-title">
-          <span className="breadcrumb">
-            Workspace <ChevronRight size={12} />
-          </span>
+          <button
+            className="breadcrumb"
+            onClick={() =>
+              window.criprox?.projects ? setModal('projects') : projectInput.current?.click()
+            }
+          >
+            {window.criprox?.projects ? 'Projects' : 'Workspace'} <ChevronRight size={12} />
+          </button>
           <input
             aria-label="Project name"
             maxLength={100}
             value={project.name}
             onChange={(e) => setProject((p) => ({ ...p, name: e.target.value }))}
           />
-          <span className="local-badge">LOCAL</span>
+          <span className="local-badge">{activeProjectId ? 'SAVED PROJECT' : 'LOCAL DRAFT'}</span>
         </div>
         <div className="top-actions">
           <button
@@ -1580,23 +1913,19 @@ export default function App() {
           <button
             className="secondary compact"
             disabled={!loaded}
-            onClick={() => projectInput.current?.click()}
+            onClick={() =>
+              window.criprox?.projects ? setModal('projects') : projectInput.current?.click()
+            }
           >
-            <FolderOpen size={16} /> Open
+            <FolderOpen size={16} /> {window.criprox?.projects ? 'Projects' : 'Open'}
           </button>
           <button
             className="secondary compact"
-            disabled={!loaded}
-            onClick={async () => {
-              try {
-                const saved = await saveProjectAs(project);
-                setToast(saved ? 'Project backup saved.' : 'Save cancelled.');
-              } catch (error) {
-                setToast(errorText(error));
-              }
-            }}
+            disabled={!loaded || libraryBusy}
+            onClick={() => void saveCurrentProject()}
           >
-            <ArrowDownToLine size={16} /> Save project
+            {libraryBusy ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}
+            {activeProjectId ? 'Save' : 'Save project'}
           </button>
         </div>
       </header>
@@ -2155,6 +2484,26 @@ export default function App() {
           </button>
         </div>
       )}
+      {modal === 'projects' && window.criprox?.projects && (
+        <ProjectsModal
+          snapshot={projectLibrary}
+          activeProjectId={activeProjectId}
+          busy={libraryBusy}
+          close={() => setModal(null)}
+          refresh={() => void refreshProjectLibrary()}
+          changeDirectory={() => void changeProjectsDirectory()}
+          reveal={() => void revealProjectsDirectory()}
+          open={(projectId) => void openManagedProject(projectId)}
+          remove={(item) => void deleteManagedProject(item)}
+          saveCurrent={() => void saveCurrentProject()}
+          importBackup={() => {
+            setModal(null);
+            projectInput.current?.click();
+          }}
+          exportBackup={() => void exportProjectBackup()}
+          newProject={() => setModal('new')}
+        />
+      )}
       {modal === 'registered' && (
         <RegisteredPrint
           project={project}
@@ -2185,7 +2534,7 @@ export default function App() {
       {modal === 'new' && (
         <Modal
           title="Start a fresh project?"
-          subtitle="Save a project backup first if you want to keep this deck."
+          subtitle="Save the current project first if you want to keep this deck."
           close={() => setModal(null)}
         >
           <div className="modal-footer">
@@ -2196,6 +2545,7 @@ export default function App() {
               className="primary"
               onClick={() => {
                 setProject({ ...EMPTY_PROJECT, settings: { ...DEFAULT_SETTINGS } });
+                rememberActiveProject(null);
                 setSelected(null);
                 setInspecting(null);
                 setPage(0);
