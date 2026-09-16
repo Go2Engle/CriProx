@@ -49,6 +49,9 @@ CriProx can import a one-page PDF captured from Design Space, recognize the surr
 - Bleed is fixed at 0.5 mm for six-card sheets and 0.05 mm for seven-card sheets.
 - The captured PDF must correspond to the exact saved Design Space cut job.
 - CriProx preserves captured marks; it does not generate or imitate them.
+- CriProx saves the finished PDF instead of printing it through the browser, which would rasterize
+  and reduce higher-resolution output. Print the saved file from a dedicated PDF application at
+  100% / Actual size with fit-to-page disabled.
 
 See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the complete setup and reuse procedure.
 
