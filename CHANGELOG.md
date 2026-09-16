@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/Go2Engle/CriProx/compare/v0.5.0...v0.6.0) (2026-09-16)
+
+
+### Features
+
+* **print:** support double-sided card backs ([fba8d06](https://github.com/Go2Engle/CriProx/commit/fba8d062605e8ff6d3012982118216708fc32cc7))
+* **print:** support double-sided card backs ([ea2c0e7](https://github.com/Go2Engle/CriProx/commit/ea2c0e7ddb7a0cb2dacaef481f4aef68f02241e9))
+
+
+### Bug Fixes
+
+* **printing:** save registered PDFs without browser rasterization ([33abdb6](https://github.com/Go2Engle/CriProx/commit/33abdb6f0dec948bba8f79bd7b8b53c0577c582a))
+* **print:** remove quality-reducing direct printing ([0e05388](https://github.com/Go2Engle/CriProx/commit/0e053886489a2145d8d24022c0cb71f0b5d95595))
+
 ## [0.5.0](https://github.com/Go2Engle/CriProx/compare/v0.4.0...v0.5.0) (2026-09-15)
 
 
