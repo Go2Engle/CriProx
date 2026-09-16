@@ -28,7 +28,6 @@ import {
   Minus,
   Maximize2,
   Plus,
-  Printer,
   RotateCcw,
   Ruler,
   Save,
@@ -66,7 +65,7 @@ import {
 } from './lib/entries';
 
 // The original Design Space ZIP export remains available for a future workflow,
-// but Print from CriProx is the only export action shown in the interface.
+// but registered PDF creation is the only export action shown in the interface.
 const ENABLE_DESIGN_SPACE_EXPORT = false;
 
 const createSample = (): Project => ({
@@ -849,7 +848,7 @@ function Guide({ close }: { close: () => void }) {
     {
       title: 'Download the reusable template',
       description:
-        'Open Print from CriProx, choose your machine and paper, then download the one-time setup image. Keep the exact dimensions shown with that template.',
+        'Open Create print PDF, choose your machine and paper, then download the one-time setup image. Keep the exact dimensions shown with that template.',
       video: {
         src: './tutorials/download-template.mp4',
         poster: './tutorials/download-template.jpg',
@@ -877,14 +876,14 @@ function Guide({ close }: { close: () => void }) {
       },
     },
     {
-      title: 'Print and run the saved cut',
+      title: 'Save, print, and run the saved cut',
       description:
-        'Print card sheets from CriProx at 100% with no fit or shrink scaling. Return to the same saved Design Space project, choose Already Printed or skip printing when available, and cut the sheet.',
+        'Save the card-sheet PDF from CriProx, open it in a dedicated PDF application, and print at 100% / Actual size with no fit or shrink scaling. CriProx does not print directly so it can preserve the selected output quality. Return to the same saved Design Space project, choose Already Printed or skip printing when available, and cut the sheet.',
     },
   ];
   return (
     <Modal
-      title="Print from CriProx"
+      title="Registered PDF printing"
       subtitle="Capture Cricut’s registration once, then reuse it."
       close={close}
       wide
@@ -895,8 +894,8 @@ function Guide({ close }: { close: () => void }) {
           <div>
             <strong>Your artwork, inside Cricut’s captured marks.</strong>
             <p>
-              CriProx prints your cards into a verified template captured from Design Space. The
-              saved Cricut project supplies the matching cut paths.
+              CriProx places your cards into a verified template captured from Design Space and
+              saves a full-quality PDF. The saved Cricut project supplies the matching cut paths.
             </p>
           </div>
         </div>
@@ -1908,14 +1907,14 @@ export default function App() {
             disabled={!loaded}
             onClick={() => setModal('registered')}
           >
-            <Printer size={16} />
-            <span className="print-action-long">Print from CriProx</span>
-            <span className="print-action-short">Print</span>
+            <Download size={16} />
+            <span className="print-action-long">Create print PDF</span>
+            <span className="print-action-short">PDF</span>
           </button>
           <button
             className="icon-button top-help-action"
-            title="How Print from CriProx works"
-            aria-label="How Print from CriProx works"
+            title="How registered PDF printing works"
+            aria-label="How registered PDF printing works"
             onClick={() => setModal('guide')}
           >
             <CircleHelp size={18} />

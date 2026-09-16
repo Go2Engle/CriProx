@@ -20,6 +20,8 @@ The dashed rectangle in the preview is a planning guide. It is not a registratio
 
 For reusable registered printing, download CriProx's setup PNG, create and save the cut job in Design Space, print that job to a one-page portrait PDF at actual size, and import the PDF into CriProx. Future registered pages must be cut with that same saved job.
 
+CriProx saves completed registered pages as PDFs and does not print them directly. Open the saved PDF in a dedicated PDF application and print at **100% / Actual size** with fit, shrink, headers, and margins disabled. This preserves the selected artwork resolution and the captured PDF content.
+
 ## Physical validation before a full deck
 
 This is the remaining hardware acceptance test. It cannot be completed by a browser test or by comparing generated files.
@@ -37,7 +39,7 @@ This is the remaining hardware acceptance test. It cannot be completed by a brow
 
 The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 3 mm, the spacing at 0.1 mm, and the complete template at 189.2 × 214.2 mm. Do not modify those values.
 
-1. Download the reusable setup template from **Print from CriProx** and upload the magenta PNG as one flat Print Then Cut image.
+1. Download the reusable setup template from **Create print PDF** and upload the magenta PNG as one flat Print Then Cut image.
 2. Set both Canvas dimensions to 189.2 × 214.2 mm and confirm seven rounded contours.
 3. Choose **Tabloid (11 × 17 in)** as the Print Then Cut page size in Design Space. A4 is too narrow for the middle row.
 4. Choose Make → Send to Printer, disable bleed, and open the system print dialog. Change the printer paper to **US Letter**, portrait, at **100% / Actual size**.

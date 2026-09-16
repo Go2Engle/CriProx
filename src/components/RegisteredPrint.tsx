@@ -7,7 +7,6 @@ import {
   FileUp,
   ImagePlus,
   LoaderCircle,
-  Printer,
   Ruler,
   X,
 } from 'lucide-react';
@@ -21,7 +20,7 @@ import {
   templateId,
   type RegistrationProfile,
 } from '../lib/registration';
-import { captureProfile, downloadSetup, printRegisteredPdf } from '../lib/registered-pdf';
+import { captureProfile, downloadSetup } from '../lib/registered-pdf';
 import { preparePdfJob } from '../lib/pdf-worker';
 import { download } from '../lib/export';
 import MpcArtworkSearch from './MpcArtworkSearch';
@@ -190,22 +189,6 @@ export default function RegisteredPrint({
     setBackPdf(undefined);
     updateSettings(patch);
   }
-  async function print(bytes?: Uint8Array) {
-    if (!bytes) return;
-    setBusy('Preparing print dialog…');
-    setError('');
-    try {
-      await printRegisteredPdf(bytes, setBusy);
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : 'Could not open the print dialog. Download the PDF instead.',
-      );
-    } finally {
-      setBusy('');
-    }
-  }
   async function uploadBack(file?: File) {
     if (!file) return;
     setBusy('Reading card-back artwork…');
@@ -243,8 +226,8 @@ export default function RegisteredPrint({
       <div className="modal-heading">
         <div>
           <div className="registration-tag">REUSABLE TEMPLATE · EXPERIMENTAL</div>
-          <h2 id="registered-title">Print from CriProx</h2>
-          <p>Capture Cricut’s marks once. Change your cards whenever you like.</p>
+          <h2 id="registered-title">Create registered print PDF</h2>
+          <p>Capture Cricut’s marks once, then save full-quality PDFs for printing.</p>
           <div className="registered-guide-hint">
             <CircleHelp size={14} />
             <span>
@@ -639,12 +622,14 @@ export default function RegisteredPrint({
         <div className="registration-step">
           <span className="step-number">3</span>
           <div>
-            <h3>Print here, then use the saved cut job</h3>
+            <h3>Save the PDF, then use the saved cut job</h3>
             <p>
-              Prepare and inspect your pages below. Print at <strong>100% / Actual size</strong>,
-              with no fit, shrink, headers, or margins. If backs are enabled, print their artwork
-              onto the same sheets; those back pages do not contain registration marks or cut lines.
-              In Design Space, reopen this exact saved project and mat, select{' '}
+              Prepare and inspect your pages below, then save the PDF and open it in a dedicated PDF
+              application. Print at <strong>100% / Actual size</strong>, with no fit, shrink,
+              headers, or margins. CriProx does not print directly because browser printing reduces
+              output quality. If backs are enabled, print their artwork onto the same sheets; those
+              back pages do not contain registration marks or cut lines. In Design Space, reopen
+              this exact saved project and mat, select{' '}
               <strong>Already Printed / Skip printing</strong> when available, then load the sheet
               front-side up and cut.
             </p>
@@ -684,10 +669,10 @@ export default function RegisteredPrint({
         <p className="guide-limit">
           Captured marks are preserved from your PDF, not independently generated. This is outside
           Cricut’s recommended print flow and still needs sensor and measurement tests on your
-          machine. Recapture after changes to the saved mat, Design Space, or printer setup. Direct
-          printing rasterizes at 300 DPI; the PDF keeps the captured marks’ original content and the
-          selected artwork DPI. Artwork bleed extends into the surrounding card spacing without
-          changing the cut pattern.
+          machine. Recapture after changes to the saved mat, Design Space, or printer setup. CriProx
+          only saves the print PDF so the captured marks’ original content and the selected artwork
+          DPI are preserved. Print the saved file from a dedicated PDF application. Artwork bleed
+          extends into the surrounding card spacing without changing the cut pattern.
         </p>
         {error && (
           <div className="error-box" role="alert">
@@ -720,11 +705,12 @@ export default function RegisteredPrint({
                   'Print fronts first, refeed those sheets, then print the matching backs in the same order.'}
                 {preparedMode === 'duplex' &&
                   `Enable duplex with ${project.settings.backFlip === 'long-edge' ? 'long-edge' : 'short-edge'} binding in the system print dialog.`}
+                {' Print the saved PDF from a dedicated PDF application at 100% / Actual size.'}
               </p>
               {preparedMode === 'manual' ? (
                 <>
                   <button
-                    className="secondary"
+                    className="primary"
                     disabled={!!busy || !pdf}
                     onClick={() =>
                       savePdf(
@@ -738,39 +724,23 @@ export default function RegisteredPrint({
                     }
                   >
                     <Download size={15} />{' '}
-                    {preparedKind === 'alignment'
-                      ? 'Download front test PDF'
-                      : 'Download fronts PDF'}
+                    {preparedKind === 'alignment' ? 'Save front test PDF' : 'Save fronts PDF'}
                   </button>
                   <button
-                    className="secondary"
+                    className="primary"
                     disabled={!!busy || !backPdf}
                     onClick={() =>
                       savePdf(backPdf, preparedKind === 'alignment' ? 'alignment-back' : 'backs')
                     }
                   >
                     <Download size={15} />{' '}
-                    {preparedKind === 'alignment' ? 'Download back test PDF' : 'Download backs PDF'}
-                  </button>
-                  <button className="primary" disabled={!!busy || !pdf} onClick={() => print(pdf)}>
-                    <Printer size={15} />{' '}
-                    {preparedKind === 'alignment' ? 'Print front test' : 'Print fronts'}
-                  </button>
-                  <button
-                    className="primary"
-                    disabled={!!busy || !backPdf}
-                    onClick={() => print(backPdf)}
-                  >
-                    <Printer size={15} />{' '}
-                    {preparedKind === 'alignment'
-                      ? 'Print back test after refeed'
-                      : 'Print backs after refeed'}
+                    {preparedKind === 'alignment' ? 'Save back test PDF' : 'Save backs PDF'}
                   </button>
                 </>
               ) : (
                 <>
                   <button
-                    className="secondary"
+                    className="primary"
                     disabled={!!busy || !pdf}
                     onClick={() =>
                       savePdf(
@@ -786,11 +756,7 @@ export default function RegisteredPrint({
                     }
                   >
                     <Download size={15} />
-                    {preparedMode === 'duplex' ? 'Download duplex PDF' : 'Download registered PDF'}
-                  </button>
-                  <button className="primary" disabled={!!busy || !pdf} onClick={() => print(pdf)}>
-                    <Printer size={15} />
-                    {preparedMode === 'duplex' ? 'Open duplex print dialog' : 'Open print dialog'}
+                    {preparedMode === 'duplex' ? 'Save duplex PDF' : 'Save registered PDF'}
                   </button>
                 </>
               )}
