@@ -1230,6 +1230,24 @@ h1 > span {
 .bottom-status > span:first-child > svg {
   color: #7caf96;
 }
+.status-summary {
+  min-width: 0;
+  white-space: nowrap;
+}
+.dimension-summary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: #ada6b7;
+  font-size: 8px;
+}
+.dimension-summary strong {
+  font-weight: 500;
+  color: #8b7d9c;
+}
+.dimension-hint {
+  color: #ada6b7;
+}
 .bottom-status i {
   width: 2px;
   height: 2px;
@@ -1237,23 +1255,23 @@ h1 > span {
   border-radius: 50%;
   margin: 0 6px;
 }
+.bottom-status > .app-credit {
+  white-space: nowrap;
+  gap: 4px;
+}
+.donation-link {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
 .little-spark {
   font-size: 16px;
   color: #b3a3d0;
   margin-left: 4px;
-}
-.dimension-note {
-  color: #ada6b7;
-  text-align: center;
-  font-size: 8px;
-  margin: 18px 0 0;
-}
-.dimension-note strong {
-  font-weight: 500;
-  color: #8b7d9c;
-}
-.dimension-note > span {
-  margin-left: 5px;
 }
 .modal {
   border: 1px solid #e7e2ef;
@@ -2360,6 +2378,75 @@ h1 > span {
   margin-left: 12px;
   padding: 0;
 }
+.donation-coin {
+  display: block;
+  width: 32px;
+  height: 32px;
+  transform-origin: 50% 72%;
+  filter: drop-shadow(0 3px 3px #81531938);
+  animation: donation-coin-wiggle 8s ease-in-out infinite;
+}
+.donation-coin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.donation-link:hover .donation-coin,
+.donation-link:focus-visible .donation-coin {
+  animation: none;
+  transform: scale(1.1) rotate(-5deg);
+}
+.donation-link:hover,
+.donation-link:focus-visible {
+  background: #fff8e5;
+}
+.donation-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 7px);
+  padding: 7px 9px;
+  border: 1px solid #4d405e;
+  border-radius: 6px;
+  background: #302a3c;
+  color: #f8f0ff;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px #24163225;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+}
+.donation-link:hover .donation-tooltip,
+.donation-link:focus-visible .donation-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+@keyframes donation-coin-wiggle {
+  0%,
+  85%,
+  100% {
+    transform: rotate(0deg);
+  }
+  87% {
+    transform: rotate(-9deg);
+  }
+  89% {
+    transform: rotate(8deg);
+  }
+  91% {
+    transform: rotate(-5deg);
+  }
+  93% {
+    transform: rotate(2deg);
+  }
+}
 .release-notice {
   position: fixed;
   top: 78px;
@@ -2578,7 +2665,10 @@ h1 > span {
   .bottom-status {
     flex-wrap: wrap;
   }
-  .bottom-status > span:last-child {
+  .app-credit-copy {
+    display: none;
+  }
+  .app-credit .little-spark {
     display: none;
   }
 }
@@ -2715,9 +2805,6 @@ h1 > span {
   .bottom-status {
     font-size: 8px;
     gap: 8px;
-  }
-  .dimension-note {
-    line-height: 1.7;
   }
   .modal-heading,
   .import-content,

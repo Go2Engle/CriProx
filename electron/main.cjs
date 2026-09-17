@@ -240,6 +240,7 @@ function createWindow() {
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https:\/\/(help\.cricut\.com|scryfall\.com|mpcfill\.com)\//.test(url))
       shell.openExternal(url);
+    else if (/^https:\/\/ko-fi\.com\/go2engle(?:\/|$)/.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
   window.webContents.on('will-navigate', (event) => event.preventDefault());
