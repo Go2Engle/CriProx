@@ -68,6 +68,7 @@ export function normalizeMpcArtwork(result: MpcResult): MpcArtwork {
       name: result.name,
       image: `${root}/full/${id}.jpg?dpi=${sourceDpi}&jpgQuality=95`,
       preview: `${root}/large/${id}.jpg?jpgQuality=90`,
+      trim: 'mpc',
     },
   };
 }

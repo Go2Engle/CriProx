@@ -1,4 +1,10 @@
-export type CardFace = { name: string; image: string; preview: string };
+export type CardFace = {
+  name: string;
+  image: string;
+  preview: string;
+  /** Source-specific trim geometry applied before fitting the finished card. */
+  trim?: 'mpc';
+};
 export const PRINT_DPI_OPTIONS = [300, 600, 900, 1200] as const;
 export const STANDARD_CARD_RADIUS_MM = 2.5;
 export type PrintDpi = (typeof PRINT_DPI_OPTIONS)[number];

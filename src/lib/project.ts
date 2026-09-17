@@ -75,6 +75,7 @@ export function validateProject(value: unknown): Project {
   if (
     p.backArtwork &&
     (typeof p.backArtwork.name !== 'string' ||
+      (p.backArtwork.trim !== undefined && p.backArtwork.trim !== 'mpc') ||
       ![p.backArtwork.image, p.backArtwork.preview].every((url) => supportedImage(url)))
   )
     throw new Error('Unsupported card-back artwork in project.');
@@ -103,6 +104,7 @@ export function validateProject(value: unknown): Project {
     for (const face of c.faces) {
       if (
         typeof face.name !== 'string' ||
+        (face.trim !== undefined && face.trim !== 'mpc') ||
         ![face.image, face.preview].every((url) => supportedImage(url))
       )
         throw new Error('Unsupported card image in project.');

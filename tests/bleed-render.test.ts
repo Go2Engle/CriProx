@@ -137,6 +137,79 @@ async function decode(bytes: Uint8Array) {
   return canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
 }
 
+function mpcArtworkWithNativeBleed(): Entry {
+  const canvas = createCanvas(816, 1110),
+    ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ff0033';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#2457e6';
+  ctx.fillRect(36, 36, 744, 1038);
+  const image = canvas.toDataURL('image/png');
+  return {
+    id: 'mpc-back',
+    quantity: 1,
+    face: 0,
+    card: {
+      id: 'mpc-back',
+      name: 'MPC card back',
+      set: 'back',
+      setName: 'Project card back',
+      collector: '',
+      faces: [{ name: 'MPC card back', image, preview: image, trim: 'mpc' }],
+    },
+  };
+}
+
+function colorAtMm(
+  image: Awaited<ReturnType<typeof decode>>,
+  widthMm: number,
+  heightMm: number,
+  xMm: number,
+  yMm: number,
+) {
+  const x = Math.max(0, Math.min(image.width - 1, Math.floor((xMm / widthMm) * image.width))),
+    y = Math.max(0, Math.min(image.height - 1, Math.floor((yMm / heightMm) * image.height))),
+    offset = (y * image.width + x) * 4;
+  return Array.from(image.data.slice(offset, offset + 4));
+}
+
+test('MPC fronts and card backs crop native source bleed from the finished card', async () => {
+  const entry = mpcArtworkWithNativeBleed(),
+    sheet: Sheet = {
+      index: 0,
+      width: 63,
+      height: 88,
+      placements: [{ entry, copy: 0, x: 0, y: 0, width: 63, height: 88, rotated: false }],
+    },
+    image = await decode(
+      await renderSheet(sheet, { ...DEFAULT_SETTINGS, proxyLabel: false }, false, 0),
+    );
+
+  for (const [x, y] of [
+    [1, 1],
+    [31.5, 44],
+    [62, 87],
+  ])
+    assert.deepEqual(colorAtMm(image, 63, 88, x, y), [36, 87, 230, 255]);
+});
+
+test('MPC fronts and card backs reuse native artwork outside the trim for output bleed', async () => {
+  const entry = mpcArtworkWithNativeBleed(),
+    sheet: Sheet = {
+      index: 0,
+      width: 64,
+      height: 89,
+      placements: [{ entry, copy: 0, x: 0.5, y: 0.5, width: 63, height: 88, rotated: false }],
+    },
+    image = await decode(
+      await renderSheet(sheet, { ...DEFAULT_SETTINGS, proxyLabel: false }, false, 0.5),
+    );
+
+  assert.deepEqual(colorAtMm(image, 64, 89, 0.1, 44.5), [255, 0, 51, 255]);
+  assert.deepEqual(colorAtMm(image, 64, 89, 32, 44.5), [36, 87, 230, 255]);
+  assert.deepEqual(colorAtMm(image, 64, 89, 63.9, 44.5), [255, 0, 51, 255]);
+});
+
 function pngPixelsPerMeter(bytes: Uint8Array) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   for (let offset = 8; offset < bytes.length;) {

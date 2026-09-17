@@ -19,6 +19,7 @@ import { mpcArtworkAsCard, normalizeMpcArtwork } from '../src/lib/mpc';
 import { cardMatchesDeckLine, scryfallLookupName, scryfallSearchPath } from '../src/lib/scryfall';
 import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
 import { paperWorkflow } from '../src/lib/paper-workflow';
+import { artworkSourceRect, usesMpcTrim } from '../src/lib/artwork';
 const entry: Entry = {
   id: 'entry-1',
   quantity: 1,
@@ -426,6 +427,20 @@ test('project import validates geometry, IDs, totals, image schemes and selected
       ],
     }),
   );
+  assert.throws(() =>
+    validateProject({
+      ...good,
+      entries: [
+        {
+          ...entry,
+          card: {
+            ...entry.card,
+            faces: [{ ...entry.card.faces[0], trim: 'unknown-provider' }],
+          },
+        },
+      ],
+    } as unknown),
+  );
 });
 test('MPC Autofill artwork uses the official image CDN and remains valid in saved projects', () => {
   const artwork = normalizeMpcArtwork({
@@ -441,6 +456,7 @@ test('MPC Autofill artwork uses the official image CDN and remains valid in save
   );
   assert.match(artwork.face.image, /[?&]dpi=1200(?:&|$)/);
   assert.match(artwork.face.preview, /\/large\//);
+  assert.equal(artwork.face.trim, 'mpc');
   const card = mpcArtworkAsCard(artwork, 'Sol Ring');
   const project = {
     version: 1 as const,
@@ -450,6 +466,54 @@ test('MPC Autofill artwork uses the official image CDN and remains valid in save
     backArtwork: artwork.face,
   };
   assert.equal(validateProject(project).entries[0].card.set, 'mpc');
+});
+
+test('MPC trim removes source bleed at every DPI and recognizes legacy saved URLs', () => {
+  const explicit = {
+      name: 'MPC art',
+      image: 'data:image/png;base64,AA==',
+      preview: 'data:image/png;base64,AA==',
+      trim: 'mpc' as const,
+    },
+    legacy = {
+      name: 'Legacy MPC art',
+      image:
+        'https://cdn.mpcautofill.com/images/google_drive/full/drive-id.jpg?dpi=600&jpgQuality=95',
+      preview: 'https://cdn.mpcautofill.com/images/google_drive/large/drive-id.jpg',
+    };
+  assert.equal(usesMpcTrim(explicit), true);
+  assert.equal(usesMpcTrim(legacy), true);
+  assert.deepEqual(artworkSourceRect(explicit, 816, 1110), {
+    x: 36,
+    y: 36,
+    width: 744,
+    height: 1038,
+  });
+  assert.deepEqual(artworkSourceRect(explicit, 1632, 2220), {
+    x: 72,
+    y: 72,
+    width: 1488,
+    height: 2076,
+  });
+
+  const nativeBleed = artworkSourceRect(explicit, 816, 1110, {
+    x: 0.5 / 63,
+    y: 0.5 / 88,
+  });
+  assert.ok(nativeBleed.x < 36 && nativeBleed.y < 36);
+  assert.ok(nativeBleed.width > 744 && nativeBleed.height > 1038);
+
+  const scryfall = {
+    name: 'Scryfall art',
+    image: 'https://cards.scryfall.io/large/front/example.jpg',
+    preview: 'https://cards.scryfall.io/normal/front/example.jpg',
+  };
+  assert.deepEqual(artworkSourceRect(scryfall, 672, 936), {
+    x: 0,
+    y: 0,
+    width: 672,
+    height: 936,
+  });
 });
 
 test('higher-resolution exports upgrade legacy MPC source requests without changing other art', () => {
