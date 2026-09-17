@@ -183,11 +183,11 @@ export async function renderSheet(
   try {
     for (const p of sheet.placements) {
       let bitmap: ImageBitmap | undefined;
-      const artworkSource = artworkSourceAtDpi(
-        p.entry.card.faces[p.entry.face].image,
-        settings.dpi,
-      );
       if (!calibration) {
+        const artworkSource = artworkSourceAtDpi(
+          p.entry.card.faces[p.entry.face].image,
+          settings.dpi,
+        );
         try {
           bitmap = await imageBitmap(artworkSource);
         } catch {
