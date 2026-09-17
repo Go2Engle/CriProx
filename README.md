@@ -57,7 +57,7 @@ Installers for the latest stable release are available on the [GitHub Releases p
 
 | Platform | Package            | Notes                                                          |
 | -------- | ------------------ | -------------------------------------------------------------- |
-| macOS    | Universal DMG      | Apple Silicon and Intel; Developer ID signed and notarized     |
+| macOS    | Universal DMG      | Apple Silicon and Intel; currently unsigned                    |
 | Windows  | x64 NSIS installer | Currently unsigned                                             |
 | Linux    | x64 AppImage       | Creates exports; Cricut Design Space is not available on Linux |
 
