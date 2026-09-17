@@ -1,5 +1,6 @@
 export type CardFace = { name: string; image: string; preview: string };
 export const PRINT_DPI_OPTIONS = [300, 600, 900, 1200] as const;
+export const STANDARD_CARD_RADIUS_MM = 2.5;
 export type PrintDpi = (typeof PRINT_DPI_OPTIONS)[number];
 export type Card = {
   id: string;
@@ -53,7 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   width: 63,
   height: 88,
   gap: 1,
-  radius: 3,
+  radius: STANDARD_CARD_RADIUS_MM,
   bleed: 0.5,
   backBleedEnabled: true,
   backsEnabled: false,

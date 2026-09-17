@@ -15,7 +15,7 @@ eight-card profile was added. These files are retained as a rejection record.
 
 - Card trim size: 63 × 88 mm (2.4803 × 3.4646 in)
 - Layout: two columns by four rows, cards rotated 90 degrees
-- Card corner radius: 3 mm
+- Card corner radius: 2.5 mm
 - Transparent gap: 0.1 mm
 - Complete image size: 176.1 × 252.3 mm (6.9331 × 9.9331 in)
 - PNG: 4160 × 5960 px at 600 DPI

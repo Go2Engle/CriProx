@@ -44,7 +44,13 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
-import { DEFAULT_SETTINGS, EMPTY_PROJECT, fixedBleedMm, PRINT_DPI_OPTIONS } from './lib/types';
+import {
+  DEFAULT_SETTINGS,
+  EMPTY_PROJECT,
+  fixedBleedMm,
+  PRINT_DPI_OPTIONS,
+  STANDARD_CARD_RADIUS_MM,
+} from './lib/types';
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
 import { importDeckSource } from './lib/deck-source';
@@ -2330,7 +2336,7 @@ export default function App() {
                               width: 63,
                               height: 88,
                               gap: 0.1,
-                              radius: 3,
+                              radius: STANDARD_CARD_RADIUS_MM,
                               bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
                             }
                           : {

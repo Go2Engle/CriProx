@@ -37,7 +37,7 @@ This is the remaining hardware acceptance test. It cannot be completed by a brow
 
 ## Experimental seven-card test
 
-The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 3 mm, the spacing at 0.1 mm, and the complete template at 189.2 × 214.2 mm. Do not modify those values.
+The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 2.5 mm, the spacing at 0.1 mm, and the complete template at 189.2 × 214.2 mm. Do not modify those values.
 
 1. Download the reusable setup template from **Create print PDF** and upload the magenta PNG as one flat Print Then Cut image.
 2. Set both Canvas dimensions to 189.2 × 214.2 mm and confirm seven rounded contours.

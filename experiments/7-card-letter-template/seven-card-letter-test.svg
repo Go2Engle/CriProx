@@ -8,17 +8,17 @@
   <title>CriProx experimental seven-card US Letter template</title>
   <desc>
     Seven 63 by 88 millimeter cards in a narrow-wide-narrow 2-3-2 layout,
-    with 3 millimeter corner radii and 0.1 millimeter transparent gaps.
+    with 2.5 millimeter corner radii and 0.1 millimeter transparent gaps.
   </desc>
   <g fill="#e600c8">
-    <rect x="6.55" y="0" width="88" height="63" rx="3" ry="3" />
-    <rect x="94.65" y="0" width="88" height="63" rx="3" ry="3" />
+    <rect x="6.55" y="0" width="88" height="63" rx="2.5" ry="2.5" />
+    <rect x="94.65" y="0" width="88" height="63" rx="2.5" ry="2.5" />
 
-    <rect x="0" y="63.1" width="63" height="88" rx="3" ry="3" />
-    <rect x="63.1" y="63.1" width="63" height="88" rx="3" ry="3" />
-    <rect x="126.2" y="63.1" width="63" height="88" rx="3" ry="3" />
+    <rect x="0" y="63.1" width="63" height="88" rx="2.5" ry="2.5" />
+    <rect x="63.1" y="63.1" width="63" height="88" rx="2.5" ry="2.5" />
+    <rect x="126.2" y="63.1" width="63" height="88" rx="2.5" ry="2.5" />
 
-    <rect x="6.55" y="151.2" width="88" height="63" rx="3" ry="3" />
-    <rect x="94.65" y="151.2" width="88" height="63" rx="3" ry="3" />
+    <rect x="6.55" y="151.2" width="88" height="63" rx="2.5" ry="2.5" />
+    <rect x="94.65" y="151.2" width="88" height="63" rx="2.5" ry="2.5" />
   </g>
 </svg>

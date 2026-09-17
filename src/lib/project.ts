@@ -1,4 +1,4 @@
-import { fixedBleedMm, PRINT_DPI_OPTIONS, type Project } from './types';
+import { fixedBleedMm, PRINT_DPI_OPTIONS, STANDARD_CARD_RADIUS_MM, type Project } from './types';
 const supportedImage = (url: unknown) =>
   typeof url === 'string' &&
   /^(https:\/\/(cards\.scryfall\.io\/|cdn\.mpcautofill\.com\/images\/google_drive\/(full|large)\/)|data:image\/(png|jpeg|webp);base64,)/.test(
@@ -21,6 +21,9 @@ export function validateProject(value: unknown): Project {
   if ((s.profile as string) === 'conservative') s.profile = 'expanded';
   s.units ??= s.paper === 'letter' ? 'in' : 'mm';
   s.bleed ??= 0;
+  // Projects created with the previous 3 mm default should follow the corrected
+  // physical Magic card geometry without requiring manual JSON edits.
+  if (s.radius === 3) s.radius = STANDARD_CARD_RADIUS_MM;
   if (Number.isFinite(s.bleed) && s.bleed > 0) s.bleed = fixedBleedMm(s);
   s.backBleedEnabled ??= true;
   s.backsEnabled ??= false;
@@ -64,10 +67,10 @@ export function validateProject(value: unknown): Project {
       s.width !== 63 ||
       s.height !== 88 ||
       s.gap !== 0.1 ||
-      s.radius !== 3)
+      s.radius !== STANDARD_CARD_RADIUS_MM)
   )
     throw new Error(
-      'The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, 0.1 mm spacing, and 3 mm corners.',
+      'The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, 0.1 mm spacing, and 2.5 mm corners.',
     );
   if (
     p.backArtwork &&

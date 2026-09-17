@@ -16,7 +16,7 @@ Deck-list requests are batched in groups of at most 75 unique identifiers. Reque
 
 ## Sheet design
 
-- Standard 63 × 88 mm card dimensions with a 3 mm corner radius.
+- Standard 63 × 88 mm card dimensions with a 2.5 mm corner radius.
 - 1 mm spacing in the standard layout profiles.
 - US Letter and A4 planning modes.
 - Millimeter-based placement and vector geometry shared by preview and export.
@@ -91,7 +91,7 @@ The default 180 × 220 mm candidate area produces six rotated cards. With US Let
 
 ### Seven-card 2–3–2 layout
 
-The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 3 mm corners, 0.1 mm spacing, and a 189.2 × 214.2 mm template. It also uses the Tabloid-to-Letter handoff. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
+The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 mm corners, 0.1 mm spacing, and a 189.2 × 214.2 mm template. It also uses the Tabloid-to-Letter handoff. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
 
 ## Current limits
 
