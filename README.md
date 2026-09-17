@@ -87,7 +87,7 @@ CriProx checks GitHub for newer stable releases when the desktop app starts and 
 2. Download the package for your operating system from the notice or the [latest release](https://github.com/Go2Engle/CriProx/releases/latest).
 3. On macOS, open the new DMG, drag **CriProx** into **Applications**, and choose **Replace**. Run the quarantine command above again if macOS blocks the new version.
 4. On Windows, run the new `.exe` installer and complete the setup wizard.
-5. Reopen CriProx. Application updates do not replace the managed project library, which is stored in `Documents/CriProx` by default or in the folder selected in Project settings.
+5. Reopen CriProx. Application updates do not replace the managed project library, which is stored in the app's Application Support folder by default or in the folder selected in Project settings. When upgrading from v0.6.0 or earlier on macOS, use **Projects → Project folder settings → Import old library** once to copy projects from `Documents/CriProx` without changing the new default.
 
 New releases include a `SHA256SUMS.txt` file for installer verification. See the [installation guide](docs/INSTALLATION.md) for Linux notes, troubleshooting, and local-development setup.
 

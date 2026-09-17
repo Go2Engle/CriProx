@@ -66,7 +66,7 @@
       "category": "public.app-category.graphics-design",
       "hardenedRuntime": true,
       "extendInfo": {
-        "NSDocumentsFolderUsageDescription": "CriProx stores and opens projects in your Documents folder."
+        "NSDocumentsFolderUsageDescription": "CriProx accesses the project folders you choose."
       },
       "target": [
         "dmg"

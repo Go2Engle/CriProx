@@ -6,13 +6,21 @@ const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.c
 const {
   assertProjectId,
   deleteProject,
+  importProjects,
   listProjects,
   openProject,
   saveProject,
 } = require('./project-library.cjs');
+const { projectLibraryPaths } = require('./project-library-paths.cjs');
 
-const librarySettingsFile = () => path.join(app.getPath('userData'), 'project-library.json');
-const defaultLibraryRoot = () => path.join(app.getPath('documents'), 'CriProx');
+const libraryPaths = () =>
+  projectLibraryPaths({
+    userData: app.getPath('userData'),
+    documents: app.getPath('documents'),
+  });
+const librarySettingsFile = () => libraryPaths().settingsFile;
+const defaultLibraryRoot = () => libraryPaths().defaultRoot;
+const legacyLibraryRoot = () => libraryPaths().legacyRoot;
 let configuredLibraryRoot;
 
 async function getLibraryRoot() {
@@ -24,7 +32,7 @@ async function getLibraryRoot() {
       return configuredLibraryRoot;
     }
   } catch {
-    // The default Documents/CriProx library is used until the user chooses another folder.
+    // The private application library is used until the user chooses another folder.
   }
   configuredLibraryRoot = defaultLibraryRoot();
   return configuredLibraryRoot;
@@ -41,7 +49,20 @@ async function setLibraryRoot(root) {
 
 async function projectLibrarySnapshot() {
   const root = await getLibraryRoot();
-  return { root, isDefault: root === defaultLibraryRoot(), projects: await listProjects(root) };
+  let canImportDocumentsLibrary = false;
+  if (process.platform === 'darwin' && root !== legacyLibraryRoot()) {
+    try {
+      await fs.access(libraryPaths().legacyImportMarker);
+    } catch {
+      canImportDocumentsLibrary = true;
+    }
+  }
+  return {
+    root,
+    isDefault: root === defaultLibraryRoot(),
+    canImportDocumentsLibrary,
+    projects: await listProjects(root),
+  };
 }
 
 const mpcPaths = new Set(['/2/sources/', '/2/exploreSearch/']);
@@ -153,6 +174,21 @@ ipcMain.handle('choose-projects-directory', async (event) => {
   if (result.canceled || !result.filePaths[0]) return null;
   await setLibraryRoot(result.filePaths[0]);
   return projectLibrarySnapshot();
+});
+
+ipcMain.handle('import-documents-projects', async () => {
+  const sourceRoot = legacyLibraryRoot();
+  const destinationRoot = await getLibraryRoot();
+  if (sourceRoot === destinationRoot)
+    throw new Error('The Documents project library is already selected.');
+  const imported = await importProjects(sourceRoot, destinationRoot);
+  await fs.mkdir(path.dirname(libraryPaths().legacyImportMarker), { recursive: true });
+  await fs.writeFile(
+    libraryPaths().legacyImportMarker,
+    JSON.stringify({ importedAt: new Date().toISOString(), projects: imported.length }, null, 2),
+    'utf8',
+  );
+  return { imported: imported.length, snapshot: await projectLibrarySnapshot() };
 });
 
 ipcMain.handle('save-managed-project', async (_event, request) => {

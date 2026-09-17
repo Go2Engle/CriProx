@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld(
     projects: Object.freeze({
       list: () => ipcRenderer.invoke('list-projects'),
       chooseDirectory: () => ipcRenderer.invoke('choose-projects-directory'),
+      importDocuments: () => ipcRenderer.invoke('import-documents-projects'),
       save: (projectId, data) => ipcRenderer.invoke('save-managed-project', { projectId, data }),
       open: (projectId) => ipcRenderer.invoke('open-managed-project', projectId),
       delete: (projectId) => ipcRenderer.invoke('delete-managed-project', projectId),

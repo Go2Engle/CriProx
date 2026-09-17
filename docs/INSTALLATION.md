@@ -70,7 +70,7 @@ Installer output is written to `release/`. Windows and Linux packages should be 
 
 Scryfall and MPC Autofill searches require an internet connection, as does the desktop release check. Local artwork, locally saved projects, and cached export artwork can be used without a connection. Remote preview images are not guaranteed to remain available offline.
 
-CriProx has no user account, hosted project service, or cloud sync. Browser-mode data is stored in the browser profile. Desktop mode keeps the active workspace in the application's local profile and managed projects in `Documents/CriProx` by default, or in the folder selected from Project settings. Export a JSON backup before clearing site/application data or switching environments.
+CriProx has no user account, hosted project service, or cloud sync. Browser-mode data is stored in the browser profile. Desktop mode keeps the active workspace and default managed-project library in the application's local profile, or uses the folder selected in Project settings. On macOS, upgrades from v0.6.0 or earlier can copy the old `Documents/CriProx` library from **Projects → Project folder settings → Import old library**. The old files remain in Documents as a backup. Export a JSON backup before clearing site/application data or switching environments.
 
 ## Next step
 

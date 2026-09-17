@@ -239,6 +239,7 @@ function ProjectsModal({
   close,
   refresh,
   changeDirectory,
+  importDocuments,
   reveal,
   open,
   remove,
@@ -253,6 +254,7 @@ function ProjectsModal({
   close: () => void;
   refresh: () => void;
   changeDirectory: () => void;
+  importDocuments: () => void;
   reveal: () => void;
   open: (projectId: string) => void;
   remove: (project: ProjectSummary) => void;
@@ -309,6 +311,11 @@ function ProjectsModal({
               <button className="secondary compact" disabled={busy} onClick={changeDirectory}>
                 <FolderCog size={14} /> Change folder
               </button>
+              {snapshot?.canImportDocumentsLibrary && (
+                <button className="secondary compact" disabled={busy} onClick={importDocuments}>
+                  <Upload size={14} /> Import old library
+                </button>
+              )}
               <button className="secondary compact" disabled={busy} onClick={exportBackup}>
                 <ArrowDownToLine size={14} /> Export JSON backup
               </button>
@@ -1844,6 +1851,24 @@ export default function App() {
       setLibraryBusy(false);
     }
   }
+  async function importDocumentsProjectLibrary() {
+    const projects = window.criprox?.projects;
+    if (!projects) return;
+    setLibraryBusy(true);
+    try {
+      const result = await projects.importDocuments();
+      setProjectLibrary(result.snapshot);
+      setToast(
+        result.imported
+          ? `${result.imported} project${result.imported === 1 ? '' : 's'} copied from Documents. Originals were kept.`
+          : 'No older projects were found in Documents/CriProx.',
+      );
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
   async function revealProjectsDirectory() {
     setLibraryBusy(true);
     try {
@@ -2536,6 +2561,7 @@ export default function App() {
           close={() => setModal(null)}
           refresh={() => void refreshProjectLibrary()}
           changeDirectory={() => void changeProjectsDirectory()}
+          importDocuments={() => void importDocumentsProjectLibrary()}
           reveal={() => void revealProjectsDirectory()}
           open={(projectId) => void openManagedProject(projectId)}
           remove={(item) => void deleteManagedProject(item)}
