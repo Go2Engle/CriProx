@@ -80,6 +80,7 @@ test('back sheets use each double-sided card reverse face and shared art for oth
       name: 'Insectile Aberration',
       image: 'https://cards.scryfall.io/reverse.png',
       preview: 'https://cards.scryfall.io/reverse.png',
+      trim: 'mpc' as const,
     },
     doubleSided: Entry = {
       ...entry,
@@ -100,8 +101,9 @@ test('back sheets use each double-sided card reverse face and shared art for oth
     },
     sharedBack = {
       name: 'Shared back',
-      image: 'https://cards.scryfall.io/back.png',
-      preview: 'https://cards.scryfall.io/back.png',
+      image: 'https://cdn.mpcautofill.com/images/google_drive/full/back.jpg?dpi=1200',
+      preview: 'https://cdn.mpcautofill.com/images/google_drive/large/back.jpg',
+      trim: 'mpc' as const,
     },
     project = {
       version: 1 as const,
@@ -118,6 +120,8 @@ test('back sheets use each double-sided card reverse face and shared art for oth
   assert.equal(back.placements[0].entry.face, 1);
   assert.equal(back.placements[0].entry.card.faces[1], reverse);
   assert.equal(back.placements[1].entry.card.faces[0], sharedBack);
+  assert.equal(back.placements[0].entry.card.faces[1].trim, 'mpc');
+  assert.equal(back.placements[1].entry.card.faces[0].trim, 'mpc');
   assert.equal(
     back.placements[0].x,
     full.width - source.placements[0].x - source.placements[0].width,

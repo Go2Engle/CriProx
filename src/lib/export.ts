@@ -1,11 +1,12 @@
 import JSZip from 'jszip';
 import { get, set } from 'idb-keyval';
-import type { Settings, Project } from './types';
+import type { CardFace, Settings, Project } from './types';
 import { mmToPx, templateSvg, type Sheet } from './layout';
 import { withDpi } from './png';
 import { drawBleedTile, repairTransparentCorners, replicateBorder } from './bleed';
 import { formatDimensions, formatMeasurement } from './units';
 import { paperWorkflow } from './paper-workflow';
+import { artworkSourceRect, usesMpcTrim, type SourceRect } from './artwork';
 
 type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
 type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -54,6 +55,7 @@ export function fitArtwork(
 function drawFinishedArtwork(
   ctx: RenderContext,
   bitmap: ImageBitmap,
+  face: CardFace,
   width: number,
   height: number,
   physicalHeight: number,
@@ -61,29 +63,32 @@ function drawFinishedArtwork(
 ) {
   ctx.fillStyle = '#111111';
   ctx.fillRect(0, 0, width, height);
-  const fit = fitArtwork(bitmap.width, bitmap.height, width, height, 'cover');
-  ctx.drawImage(bitmap, fit.x, fit.y, fit.width, fit.height);
-  if (proxyLabel) {
-    const unit = height / physicalHeight;
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, height - 2.6 * unit, width, 2.6 * unit);
-    ctx.fillStyle = '#eee';
-    ctx.textAlign = 'center';
-    ctx.font = `${1.35 * unit}px sans-serif`;
-    ctx.fillText('PLAYTEST • NOT FOR SALE', width / 2, height - 0.85 * unit);
-  }
+  drawSourceArtwork(
+    ctx,
+    bitmap,
+    artworkSourceRect(face, bitmap.width, bitmap.height),
+    width,
+    height,
+  );
+  if (proxyLabel) drawProxyLabel(ctx, width, height, physicalHeight);
 }
 
 function drawBleedCardArtwork(
   ctx: RenderContext,
   bitmap: ImageBitmap,
+  face: CardFace,
   width: number,
   height: number,
   physicalHeight: number,
   proxyLabel: boolean,
 ) {
-  const fit = fitArtwork(bitmap.width, bitmap.height, width, height, 'cover');
-  ctx.drawImage(bitmap, fit.x, fit.y, fit.width, fit.height);
+  drawSourceArtwork(
+    ctx,
+    bitmap,
+    artworkSourceRect(face, bitmap.width, bitmap.height),
+    width,
+    height,
+  );
 
   const image = ctx.getImageData(0, 0, width, height);
   repairTransparentCorners(image.data, width, height);
@@ -95,25 +100,71 @@ function drawBleedCardArtwork(
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 
-  if (proxyLabel) {
-    const unit = height / physicalHeight;
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, height - 2.6 * unit, width, 2.6 * unit);
-    ctx.fillStyle = '#eee';
-    ctx.textAlign = 'center';
-    ctx.font = `${1.35 * unit}px sans-serif`;
-    ctx.fillText('PLAYTEST • NOT FOR SALE', width / 2, height - 0.85 * unit);
-  }
+  if (proxyLabel) drawProxyLabel(ctx, width, height, physicalHeight);
 }
 
-function bleedTile(bitmap: ImageBitmap, settings: Settings, bleed: number) {
+function drawSourceArtwork(
+  ctx: RenderContext,
+  bitmap: ImageBitmap,
+  source: SourceRect,
+  width: number,
+  height: number,
+) {
+  const fit = fitArtwork(source.width, source.height, width, height, 'cover');
+  ctx.drawImage(
+    bitmap,
+    source.x,
+    source.y,
+    source.width,
+    source.height,
+    fit.x,
+    fit.y,
+    fit.width,
+    fit.height,
+  );
+}
+
+function drawProxyLabel(
+  ctx: RenderContext,
+  width: number,
+  height: number,
+  physicalHeight: number,
+  offsetX = 0,
+  offsetY = 0,
+) {
+  const unit = height / physicalHeight;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(offsetX, offsetY + height - 2.6 * unit, width, 2.6 * unit);
+  ctx.fillStyle = '#eee';
+  ctx.textAlign = 'center';
+  ctx.font = `${1.35 * unit}px sans-serif`;
+  ctx.fillText('PLAYTEST • NOT FOR SALE', offsetX + width / 2, offsetY + height - 0.85 * unit);
+}
+
+function bleedTile(bitmap: ImageBitmap, face: CardFace, settings: Settings, bleed: number) {
   const width = mmToPx(settings.width, settings.dpi),
     height = mmToPx(settings.height, settings.dpi),
-    pad = Math.max(1, mmToPx(bleed, settings.dpi)),
-    card = renderCanvas(width, height);
+    pad = Math.max(1, mmToPx(bleed, settings.dpi));
+
+  if (usesMpcTrim(face)) {
+    const tile = renderCanvas(width + pad * 2, height + pad * 2),
+      ctx = tile.getContext('2d') as RenderContext,
+      source = artworkSourceRect(face, bitmap.width, bitmap.height, {
+        x: bleed / settings.width,
+        y: bleed / settings.height,
+      });
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, tile.width, tile.height);
+    drawSourceArtwork(ctx, bitmap, source, tile.width, tile.height);
+    if (settings.proxyLabel) drawProxyLabel(ctx, width, height, settings.height, pad, pad);
+    return tile;
+  }
+
+  const card = renderCanvas(width, height);
   drawBleedCardArtwork(
     card.getContext('2d') as RenderContext,
     bitmap,
+    face,
     width,
     height,
     settings.height,
@@ -210,7 +261,7 @@ export async function renderSheet(
       }
       const bleed = Math.max(0, Math.min(artworkBleedMm, settings.gap / 2));
       if (bitmap && bleed > 0) {
-        const tile = bleedTile(bitmap, settings, bleed);
+        const tile = bleedTile(bitmap, p.entry.card.faces[p.entry.face], settings, bleed);
         drawBleedTile(ctx, tile, w, h, bleed);
         tile.width = tile.height = 0;
       } else {
@@ -253,7 +304,15 @@ export async function renderSheet(
       } else if (bleed === 0) {
         // Card artwork fills the trim shape. Standard card images already match this
         // ratio; full-bleed and custom sources are cropped evenly at the outer edges.
-        drawFinishedArtwork(ctx, bitmap!, w, h, h, settings.proxyLabel);
+        drawFinishedArtwork(
+          ctx,
+          bitmap!,
+          p.entry.card.faces[p.entry.face],
+          w,
+          h,
+          h,
+          settings.proxyLabel,
+        );
       }
       ctx.restore();
       bitmap?.close();

@@ -98,7 +98,14 @@ export default function MpcArtworkSearch({
             onClick={() => choose(artwork)}
             title={`Use ${artwork.name}`}
           >
-            <img src={artwork.face.preview} alt={artwork.name} loading="lazy" />
+            <span className="mpc-result-image">
+              <img
+                className="mpc-source-art"
+                src={artwork.face.preview}
+                alt={artwork.name}
+                loading="lazy"
+              />
+            </span>
             <strong>{artwork.name}</strong>
             <span>
               {artwork.source} · {artwork.dpi} DPI

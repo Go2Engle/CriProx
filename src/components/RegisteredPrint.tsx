@@ -28,6 +28,7 @@ import FrontBleedControl from './FrontBleedControl';
 import PdfPagePreview from './PdfPagePreview';
 import { paperWorkflow } from '../lib/paper-workflow';
 import { doubleSidedCardCount, needsSharedCardBack } from '../lib/entries';
+import { usesMpcTrim } from '../lib/artwork';
 export default function RegisteredPrint({
   project,
   close,
@@ -318,11 +319,19 @@ export default function RegisteredPrint({
                 <>
                   <div className="back-artwork-control">
                     {project.backArtwork ? (
-                      <img
-                        src={project.backArtwork.preview}
-                        alt="Selected shared card-back artwork"
-                        className={project.settings.backRotation === 180 ? 'back-art-rotated' : ''}
-                      />
+                      <span
+                        className={`back-artwork-preview ${
+                          project.settings.backRotation === 180 ? 'back-art-rotated' : ''
+                        }`}
+                      >
+                        <img
+                          className={
+                            usesMpcTrim(project.backArtwork) ? 'mpc-source-art' : undefined
+                          }
+                          src={project.backArtwork.preview}
+                          alt="Selected shared card-back artwork"
+                        />
+                      </span>
                     ) : (
                       <div className="back-art-placeholder">
                         <ImagePlus size={22} />

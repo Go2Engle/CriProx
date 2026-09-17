@@ -62,6 +62,7 @@ import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
+import { usesMpcTrim } from './lib/artwork';
 import {
   doubleSidedCardCount,
   editEntryCopy,
@@ -1108,13 +1109,19 @@ function CardArtwork({
   large?: boolean;
 }) {
   const [failed, setFailed] = useState(false),
-    src = entry.card.faces[entry.face][large ? 'image' : 'preview'];
+    face = entry.card.faces[entry.face],
+    src = face[large ? 'image' : 'preview'];
   useEffect(() => {
     setFailed(false);
   }, [src]);
   return (
     <>
-      <img src={src} alt={entry.card.faces[entry.face].name} onError={() => setFailed(true)} />
+      <img
+        className={usesMpcTrim(face) ? 'mpc-source-art' : undefined}
+        src={src}
+        alt={face.name}
+        onError={() => setFailed(true)}
+      />
       {failed && (
         <div className="art-fallback">
           <ImagePlus size={22} />
@@ -1367,7 +1374,13 @@ function ArtworkInspector({
               <div className="project-art-grid">
                 {customArt.map((card) => (
                   <button key={card.id} onClick={() => chooseCustomArt(card)}>
-                    <img src={card.faces[0].preview} alt={card.name} />
+                    <span className="project-art-image">
+                      <img
+                        className={usesMpcTrim(card.faces[0]) ? 'mpc-source-art' : undefined}
+                        src={card.faces[0].preview}
+                        alt={card.name}
+                      />
+                    </span>
                     <span>{card.name}</span>
                   </button>
                 ))}
@@ -1667,11 +1680,9 @@ export default function App() {
       doubleSided = isDoubleSidedCard(entry.card);
     const faces = doubleSided
       ? entry.card.faces.map((existing, index) =>
-          index === entry.face
-            ? { name: existing.name, image: face.image, preview: face.preview }
-            : existing,
+          index === entry.face ? { ...face, name: existing.name } : existing,
         )
-      : [{ name: entry.card.name, image: face.image, preview: face.preview }];
+      : [{ ...face, name: entry.card.name }];
     editCopy(target, {
       face: doubleSided ? entry.face : 0,
       card: {
@@ -2085,7 +2096,15 @@ export default function App() {
                       onClick={() => inspect({ entryId: entry.id, copy: 0 })}
                       aria-label={`Inspect ${entry.card.name}`}
                     >
-                      <img src={entry.card.faces[entry.face].preview} alt="" />
+                      <span className="card-select-image">
+                        <img
+                          className={
+                            usesMpcTrim(entry.card.faces[entry.face]) ? 'mpc-source-art' : undefined
+                          }
+                          src={entry.card.faces[entry.face].preview}
+                          alt=""
+                        />
+                      </span>
                       <div>
                         <strong>{entry.card.name}</strong>
                         <span>

@@ -606,14 +606,20 @@ h1 > span {
   width: 100%;
   justify-content: flex-start;
 }
-.card-select img {
+.card-select-image {
   width: 37px;
   height: 52px;
-  object-fit: contain;
   background: #222;
   border-radius: 3px;
   flex-shrink: 0;
   box-shadow: 0 2px 3px #0002;
+  overflow: hidden;
+}
+.card-select-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .card-select div {
   min-width: 0;
@@ -2069,13 +2075,20 @@ h1 > span {
   border-color: #a98bd0;
   background: #f7f2fc;
 }
-.mpc-result img {
+.mpc-result-image {
+  display: block;
   width: 100%;
   aspect-ratio: 63 / 88;
-  object-fit: cover;
-  object-position: center;
   border-radius: 5px;
   background: #17131d;
+  overflow: hidden;
+}
+.mpc-result-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 .mpc-result strong {
   overflow: hidden;
@@ -2139,14 +2152,20 @@ h1 > span {
 .project-art-grid button:hover {
   border-color: #aa8ad5;
 }
-.project-art-grid img {
+.project-art-image {
   display: block;
   width: 100%;
   aspect-ratio: 63 / 88;
-  object-fit: cover;
   border-radius: 4px;
+  overflow: hidden;
 }
-.project-art-grid span {
+.project-art-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.project-art-grid button > span:last-child {
   display: block;
   margin: 5px 2px 1px;
   overflow: hidden;
@@ -2415,7 +2434,7 @@ h1 > span {
   .card-list {
     max-height: 600px;
   }
-  .card-select img {
+  .card-select-image {
     width: 42px;
     height: 59px;
   }
@@ -2958,7 +2977,7 @@ h1 > span {
   align-items: center;
   gap: 14px;
 }
-.back-artwork-control > img,
+.back-artwork-preview,
 .back-art-placeholder {
   flex: 0 0 63px;
   width: 63px;
@@ -2966,11 +2985,26 @@ h1 > span {
   border-radius: 6px;
   background: #17131d;
 }
-.back-artwork-control > img {
+.back-artwork-preview {
+  display: block;
+  overflow: hidden;
+}
+.back-artwork-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
-.back-artwork-control > img.back-art-rotated {
+.back-artwork-preview.back-art-rotated {
   transform: rotate(180deg);
+}
+
+/* MPC Autofill previews contain the printer's outer bleed. The export renderer
+ * uses the exact normalized source crop; this scale shows the same trim in
+ * standard 63 x 88 card previews. */
+.mpc-source-art {
+  transform: scale(1.069364);
+  transform-origin: center;
 }
 .back-art-placeholder {
   display: flex;
