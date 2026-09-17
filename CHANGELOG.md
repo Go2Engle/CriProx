@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/Go2Engle/CriProx/compare/v0.5.0...v0.6.0) (2026-09-17)
+
+
+### Features
+
+* **print:** support double-sided card backs ([fba8d06](https://github.com/Go2Engle/CriProx/commit/fba8d062605e8ff6d3012982118216708fc32cc7))
+* **print:** support double-sided card backs ([ea2c0e7](https://github.com/Go2Engle/CriProx/commit/ea2c0e7ddb7a0cb2dacaef481f4aef68f02241e9))
+
+
+### Bug Fixes
+
+* **cards:** use 2.5 mm MTG corner radius ([51e71b7](https://github.com/Go2Engle/CriProx/commit/51e71b754be89b29e8ec74ce47f895cde784a8b0))
+* **cards:** use 2.5 mm MTG corner radius ([45ee272](https://github.com/Go2Engle/CriProx/commit/45ee272388772b40980a805bc60d5e22d9a6ef4a))
+* **macos:** persist document folder permission across launches ([#25](https://github.com/Go2Engle/CriProx/issues/25)) ([4510708](https://github.com/Go2Engle/CriProx/commit/4510708980ea370d0934cb80027586a423071637))
+* **printing:** save registered PDFs without browser rasterization ([33abdb6](https://github.com/Go2Engle/CriProx/commit/33abdb6f0dec948bba8f79bd7b8b53c0577c582a))
+* **print:** remove quality-reducing direct printing ([0e05388](https://github.com/Go2Engle/CriProx/commit/0e053886489a2145d8d24022c0cb71f0b5d95595))
+
 ## [0.5.0](https://github.com/Go2Engle/CriProx/compare/v0.4.0...v0.5.0) (2026-09-15)
 
 
