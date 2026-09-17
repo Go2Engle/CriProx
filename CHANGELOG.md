@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/Go2Engle/CriProx/compare/v0.6.0...v0.6.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **macos:** avoid Documents access on startup ([#28](https://github.com/Go2Engle/CriProx/issues/28)) ([4d9a628](https://github.com/Go2Engle/CriProx/commit/4d9a628dfae990161c08871c604fcb36d2245fbd))
+* **release:** restore unsigned macOS builds ([#26](https://github.com/Go2Engle/CriProx/issues/26)) ([4ce8491](https://github.com/Go2Engle/CriProx/commit/4ce849139db3cc3b4dcfbaf15605ddd20049cf21))
+
 ## [0.6.0](https://github.com/Go2Engle/CriProx/compare/v0.5.0...v0.6.0) (2026-09-17)
 
 
