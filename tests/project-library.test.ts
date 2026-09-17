@@ -11,6 +11,7 @@ const {
   PROJECT_FILE,
   assertProjectId,
   deleteProject,
+  importProjects,
   listProjects,
   openProject,
   projectDirectoryName,
@@ -23,6 +24,7 @@ const {
     projectId: string,
     moveToTrash: (directory: string) => Promise<void>,
   ) => Promise<void>;
+  importProjects: (sourceRoot: string, destinationRoot: string) => Promise<ProjectSummary[]>;
   listProjects: (root: string) => Promise<ProjectSummary[]>;
   openProject: (root: string, projectId: string) => Promise<unknown>;
   projectDirectoryName: (name: string) => string;
@@ -107,6 +109,30 @@ test('managed projects allocate a non-destructive suffix for duplicate names', a
   const second = await saveProject(root, { projectId: null, data: JSON.stringify(project) });
   assert.equal(first.id, 'my-commander-deck-2026');
   assert.equal(second.id, 'my-commander-deck-2026-2');
+});
+
+test('legacy project import copies hydrated projects and keeps the originals', async (t) => {
+  const sourceRoot = await fs.mkdtemp(path.join(tmpdir(), 'criprox-documents-library-'));
+  const destinationRoot = await fs.mkdtemp(path.join(tmpdir(), 'criprox-app-library-'));
+  t.after(() =>
+    Promise.all([
+      fs.rm(sourceRoot, { recursive: true, force: true }),
+      fs.rm(destinationRoot, { recursive: true, force: true }),
+    ]),
+  );
+
+  const source = await saveProject(sourceRoot, {
+    projectId: null,
+    data: JSON.stringify(project),
+  });
+  const imported = await importProjects(sourceRoot, destinationRoot);
+
+  assert.equal(imported.length, 1);
+  assert.equal(imported[0].name, project.name);
+  assert.equal((await listProjects(sourceRoot)).length, 1);
+  const opened = (await openProject(destinationRoot, imported[0].id)) as typeof project;
+  assert.equal(opened.entries[0].card.faces[0].image, tinyPng);
+  assert.equal(source.id, imported[0].id);
 });
 
 test(

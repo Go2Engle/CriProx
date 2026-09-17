@@ -72,7 +72,8 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 ## Local projects and caching
 
 - One autosaved workspace stored in IndexedDB.
-- A desktop project explorer backed by `Documents/CriProx` by default.
+- A desktop project explorer backed by the app's private Application Support directory by default.
+- A one-time macOS importer for projects created in the earlier `Documents/CriProx` library.
 - A configurable projects folder, with one subfolder per saved project.
 - Uploaded artwork materialized in the saved project’s `assets` folder.
 - Project deletion moves the complete project folder to the operating system Trash for recovery.

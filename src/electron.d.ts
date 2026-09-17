@@ -20,6 +20,7 @@ declare global {
   type ProjectLibrarySnapshot = {
     root: string;
     isDefault: boolean;
+    canImportDocumentsLibrary: boolean;
     projects: ProjectSummary[];
   };
 
@@ -32,6 +33,10 @@ declare global {
       projects?: {
         list: () => Promise<ProjectLibrarySnapshot>;
         chooseDirectory: () => Promise<ProjectLibrarySnapshot | null>;
+        importDocuments: () => Promise<{
+          imported: number;
+          snapshot: ProjectLibrarySnapshot;
+        }>;
         save: (
           projectId: string | null,
           data: string,

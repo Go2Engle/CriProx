@@ -270,6 +270,20 @@ async function openProject(root, projectId) {
   return hydrateProjectAssets(project, directory);
 }
 
+async function importProjects(sourceRoot, destinationRoot) {
+  const imported = [];
+  for (const source of await listProjects(sourceRoot)) {
+    const project = await openProject(sourceRoot, source.id);
+    imported.push(
+      await saveProject(destinationRoot, {
+        projectId: null,
+        data: JSON.stringify(project),
+      }),
+    );
+  }
+  return imported;
+}
+
 async function deleteProject(root, projectId, moveToTrash) {
   if (typeof moveToTrash !== 'function') throw new Error('Project deletion is unavailable.');
   const directory = await assertManagedProjectDirectory(root, projectId);
@@ -283,6 +297,7 @@ module.exports = {
   deleteProject,
   externalizeProject,
   hydrateProjectAssets,
+  importProjects,
   listProjects,
   openProject,
   projectDirectoryName,

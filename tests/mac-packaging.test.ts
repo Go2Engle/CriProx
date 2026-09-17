@@ -15,7 +15,7 @@ test('macOS releases remain unsigned until signing credentials are configured', 
   assert.equal(mac.identity, null);
   assert.equal(mac.hardenedRuntime, true);
   assert.equal(mac.notarize, undefined);
-  assert.match(mac.extendInfo.NSDocumentsFolderUsageDescription, /Documents folder/);
+  assert.match(mac.extendInfo.NSDocumentsFolderUsageDescription, /folders you choose/);
   assert.doesNotMatch(packageJson.scripts['package:mac'], /forceCodeSigning/);
   for (const secret of [
     'CSC_LINK',
