@@ -1506,6 +1506,81 @@ function SheetPreview({
     </div>
   );
 }
+
+function DonationLink() {
+  return (
+    <a
+      className="donation-link"
+      href="https://ko-fi.com/go2engle"
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Donation"
+    >
+      <span className="donation-coin" aria-hidden="true">
+        <svg viewBox="0 0 48 48" focusable="false">
+          <defs>
+            <linearGradient
+              id="donation-coin-face"
+              x1="13"
+              y1="9"
+              x2="35"
+              y2="39"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#ffe38a" />
+              <stop offset="0.5" stopColor="#f4b83f" />
+              <stop offset="1" stopColor="#d89025" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="24" cy="27" rx="17" ry="16" fill="#a9661d" opacity="0.45" />
+          <circle
+            cx="24"
+            cy="23"
+            r="17"
+            fill="url(#donation-coin-face)"
+            stroke="#ad6b1b"
+            strokeWidth="1.5"
+          />
+          <circle
+            cx="24"
+            cy="23"
+            r="12.5"
+            fill="none"
+            stroke="#ffe596"
+            strokeWidth="1.5"
+            opacity="0.9"
+          />
+          <path d="M16.5 21.5h13v4.1c0 3.2-2.5 5.7-6.5 5.7s-6.5-2.5-6.5-5.7v-4.1Z" fill="#8c531d" />
+          <path
+            d="M29.5 23h1.2c1.4 0 2.2.7 2.2 1.8s-.8 1.8-2.2 1.8h-1.2"
+            fill="none"
+            stroke="#8c531d"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
+          <path
+            d="M19.5 19c-.7-1.4.2-2.1-.3-3.3M24 19c-.7-1.4.2-2.1-.3-3.3"
+            fill="none"
+            stroke="#8c531d"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
+          <path
+            d="M18.5 34.5h11"
+            stroke="#fff0b0"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            opacity="0.75"
+          />
+        </svg>
+      </span>
+      <span className="donation-tooltip" role="tooltip">
+        Donation
+      </span>
+    </a>
+  );
+}
+
 export default function App() {
   const [project, setProject] = useState<Project>(createSample),
     [loaded, setLoaded] = useState(false),
@@ -2531,21 +2606,31 @@ export default function App() {
               <Check size={14} />
               {saved}
             </span>
-            <span>
+            <span className="status-summary">
               {count} cards <i /> {sheets.length} sheets <i /> {g.capacity} cards per full sheet
+              {sheet && (
+                <>
+                  <i />
+                  <span className="dimension-summary">
+                    <span>Current artwork area:</span>
+                    <strong>
+                      {formatDimensions(sheet.width, sheet.height, project.settings.units)}
+                    </strong>
+                    <span className="dimension-hint">
+                      Display units do not change the printed size.
+                    </span>
+                  </span>
+                </>
+              )}
             </span>
-            <span>
-              CriProx v{__APP_VERSION__} · Made for playtesting{' '}
+            <span className="app-credit">
+              <span className="app-credit-copy">
+                CriProx v{__APP_VERSION__} · Made for playtesting{' '}
+              </span>
               <span className="little-spark">✧</span>
+              <DonationLink />
             </span>
           </div>
-          {sheet && (
-            <div className="dimension-note">
-              Current artwork area:{' '}
-              <strong>{formatDimensions(sheet.width, sheet.height, project.settings.units)}</strong>
-              <span>Display units do not change the printed size.</span>
-            </div>
-          )}
         </main>
       </div>
       <input
