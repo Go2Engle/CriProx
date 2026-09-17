@@ -61,7 +61,35 @@ Installers for the latest stable release are available on the [GitHub Releases p
 | Windows  | x64 NSIS installer | Currently unsigned                                             |
 | Linux    | x64 AppImage       | Creates exports; Cricut Design Space is not available on Linux |
 
-The desktop app checks GitHub for newer stable releases and displays a notice; it does not install updates automatically. New releases include a `SHA256SUMS.txt` file for installer verification. See the [installation guide](docs/INSTALLATION.md) for platform notes, the macOS quarantine command, and local-development setup.
+### Install on macOS
+
+1. Download the **Universal DMG** from the [latest release](https://github.com/Go2Engle/CriProx/releases/latest).
+2. Open the DMG and drag **CriProx** into **Applications**.
+3. Because CriProx is not yet signed or notarized, macOS may block the first launch. Only for a copy downloaded from the official repository, open Terminal and run:
+
+   ```sh
+   xattr -dr com.apple.quarantine "/Applications/CriProx.app"
+   ```
+
+4. Open CriProx from **Applications**.
+
+### Install on Windows
+
+1. Download the **x64 `.exe` installer** from the [latest release](https://github.com/Go2Engle/CriProx/releases/latest).
+2. Run the installer. Because CriProx is not yet code-signed, Microsoft Defender SmartScreen may display a warning. If the installer came from the official repository, select **More info**, then **Run anyway**.
+3. Complete the setup wizard, then open CriProx from the Start menu or desktop shortcut.
+
+### Update CriProx
+
+CriProx checks GitHub for newer stable releases when the desktop app starts and displays a notice, but it does not install updates automatically.
+
+1. Close CriProx. Export a JSON backup first if you want an additional copy of an important project.
+2. Download the package for your operating system from the notice or the [latest release](https://github.com/Go2Engle/CriProx/releases/latest).
+3. On macOS, open the new DMG, drag **CriProx** into **Applications**, and choose **Replace**. Run the quarantine command above again if macOS blocks the new version.
+4. On Windows, run the new `.exe` installer and complete the setup wizard.
+5. Reopen CriProx. Application updates do not replace the managed project library, which is stored in `Documents/CriProx` by default or in the folder selected in Project settings.
+
+New releases include a `SHA256SUMS.txt` file for installer verification. See the [installation guide](docs/INSTALLATION.md) for Linux notes, troubleshooting, and local-development setup.
 
 ## Quick start for contributors
 
