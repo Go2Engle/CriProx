@@ -69,7 +69,17 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm test
+      - name: Build signed and notarized macOS installer
+        if: matrix.name == 'macOS universal'
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run ${{ matrix.script }}
       - name: Build installer
+        if: matrix.name != 'macOS universal'
         run: npm run ${{ matrix.script }}
       - name: Stage installer
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
