@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/Go2Engle/CriProx/compare/v0.6.2...v0.6.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **artwork:** trim MPC Autofill bleed on fronts and backs ([#31](https://github.com/Go2Engle/CriProx/issues/31)) ([4fa03a4](https://github.com/Go2Engle/CriProx/commit/4fa03a4c004e2410a1194063b6223b41efc7e964))
+
 ## [0.6.2](https://github.com/Go2Engle/CriProx/compare/v0.6.1...v0.6.2) (2026-09-17)
 
 
