@@ -1,6 +1,7 @@
 import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
+import ArtworkTrimControl from './components/ArtworkTrimControl';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { get, set } from 'idb-keyval';
 import {
@@ -62,7 +63,7 @@ import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
-import { usesMpcTrim } from './lib/artwork';
+import { looksLikeMpcPrintCanvas, usesMpcTrim, withMpcTrim } from './lib/artwork';
 import {
   doubleSidedCardCount,
   editEntryCopy,
@@ -87,6 +88,7 @@ async function cardFromArtwork(file: File, base?: Card): Promise<Card> {
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 20000000)
     throw new Error(`${file.name}: choose a PNG, JPG, or WebP under 20 MB.`);
   const bitmap = await createImageBitmap(file);
+  const trim = looksLikeMpcPrintCanvas(bitmap.width, bitmap.height) ? 'mpc' : undefined;
   bitmap.close();
   const data = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -103,7 +105,7 @@ async function cardFromArtwork(file: File, base?: Card): Promise<Card> {
     collector: '',
     oracleId: base?.oracleId,
     demo: base?.demo,
-    faces: [{ name, image: data, preview: data }],
+    faces: [{ name, image: data, preview: data, trim }],
   };
 }
 function UnitToggle({
@@ -1145,6 +1147,7 @@ function ArtworkInspector({
   uploadCustomArt,
   chooseMpcArt,
   changeFace,
+  changeArtworkTrim,
 }: {
   entry: Entry;
   copy: number;
@@ -1157,6 +1160,7 @@ function ArtworkInspector({
   uploadCustomArt: (file: File) => Promise<void>;
   chooseMpcArt: (card: Card) => void;
   changeFace: (face: number) => void;
+  changeArtworkTrim: (enabled: boolean) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false),
@@ -1266,6 +1270,7 @@ function ArtworkInspector({
               </div>
             </>
           )}
+          <ArtworkTrimControl face={entry.card.faces[entry.face]} change={changeArtworkTrim} />
           <div className="art-source-toggle" role="tablist" aria-label="Artwork source">
             <button
               role="tab"
@@ -1830,7 +1835,14 @@ export default function App() {
         });
       }
       add(entries);
-      setToast(`${entries.length} artwork file${entries.length === 1 ? '' : 's'} added.`);
+      const detected = entries.filter((entry) => usesMpcTrim(entry.card.faces[0])).length;
+      setToast(
+        `${entries.length} artwork file${entries.length === 1 ? '' : 's'} added.${
+          detected
+            ? ` MPC-style print bleed detected on ${detected}; review the toggle in Card Artwork if needed.`
+            : ''
+        }`,
+      );
     } catch (e) {
       setToast(errorText(e));
     } finally {
@@ -1848,12 +1860,24 @@ export default function App() {
         name: 'Card back',
       },
     }));
-    setToast('Card-back artwork saved.');
+    setToast(
+      usesMpcTrim(card.faces[0])
+        ? 'Card-back artwork saved. MPC-style print bleed was detected; review the toggle if needed.'
+        : 'Card-back artwork saved.',
+    );
   }
   function chooseBackArtwork(face: Project['backArtwork']) {
     if (!face) return;
     setProject((current) => ({ ...current, backArtwork: face }));
     setToast('MPC Autofill card back selected.');
+  }
+  function changeBackArtworkTrim(enabled: boolean) {
+    setProject((current) =>
+      current.backArtwork
+        ? { ...current, backArtwork: withMpcTrim(current.backArtwork, enabled) }
+        : current,
+    );
+    setToast(`MPC-style source bleed ${enabled ? 'enabled' : 'disabled'} for the card back.`);
   }
   async function exportProjectBackup() {
     try {
@@ -2687,6 +2711,7 @@ export default function App() {
           updateSettings={settings}
           updateBackArtwork={uploadBackArtwork}
           selectBackArtwork={chooseBackArtwork}
+          updateBackTrim={changeBackArtworkTrim}
         />
       )}
       {modal === 'import' && (
@@ -2780,18 +2805,28 @@ export default function App() {
             setToast('Custom artwork applied to one copy.');
           }}
           uploadCustomArt={async (file) => {
-            applyArtwork(
-              inspecting,
-              inspectedEntry,
-              await cardFromArtwork(file, inspectedEntry.card),
+            const artwork = await cardFromArtwork(file, inspectedEntry.card);
+            applyArtwork(inspecting, inspectedEntry, artwork);
+            setToast(
+              usesMpcTrim(artwork.faces[0])
+                ? 'Custom artwork applied. MPC-style print bleed was detected; review the toggle if needed.'
+                : 'Custom artwork applied to one copy.',
             );
-            setToast('Custom artwork applied to one copy.');
           }}
           chooseMpcArt={(card) => {
             applyArtwork(inspecting, inspectedEntry, card);
             setToast('MPC Autofill artwork applied to one copy.');
           }}
           changeFace={(face) => editCopy(inspecting, { face })}
+          changeArtworkTrim={(enabled) => {
+            const faces = inspectedEntry.card.faces.map((face, index) =>
+              index === inspectedEntry.face ? withMpcTrim(face, enabled) : face,
+            );
+            editCopy(inspecting, { card: { ...inspectedEntry.card, faces } });
+            setToast(
+              `MPC-style source bleed ${enabled ? 'enabled' : 'disabled'} for this card face.`,
+            );
+          }}
         />
       )}
     </div>

@@ -1892,6 +1892,18 @@ h1 > span {
 .inspector-face select {
   margin-top: 7px;
 }
+.artwork-trim-toggle {
+  padding: 11px 12px;
+  border: 1px solid #ebe4f2;
+  border-radius: 7px;
+  background: #fff;
+}
+.inspector-controls .artwork-trim-toggle {
+  margin: 0 0 16px;
+}
+.back-options .artwork-trim-toggle {
+  margin: 13px 0 0;
+}
 .inspector-actions {
   display: flex;
   flex-direction: column;

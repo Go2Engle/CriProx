@@ -19,7 +19,13 @@ import { mpcArtworkAsCard, normalizeMpcArtwork } from '../src/lib/mpc';
 import { cardMatchesDeckLine, scryfallLookupName, scryfallSearchPath } from '../src/lib/scryfall';
 import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
 import { paperWorkflow } from '../src/lib/paper-workflow';
-import { artworkSourceRect, usesMpcTrim } from '../src/lib/artwork';
+import {
+  artworkSourceRect,
+  isEmbeddedArtwork,
+  looksLikeMpcPrintCanvas,
+  usesMpcTrim,
+  withMpcTrim,
+} from '../src/lib/artwork';
 const entry: Entry = {
   id: 'entry-1',
   quantity: 1,
@@ -514,6 +520,30 @@ test('MPC trim removes source bleed at every DPI and recognizes legacy saved URL
     width: 672,
     height: 936,
   });
+});
+
+test('custom artwork suggests MPC-style trim by dimensions and keeps the choice reversible', () => {
+  assert.equal(looksLikeMpcPrintCanvas(816, 1110), true);
+  assert.equal(looksLikeMpcPrintCanvas(1632, 2220), true);
+  assert.equal(looksLikeMpcPrintCanvas(822, 1122), true);
+  assert.equal(looksLikeMpcPrintCanvas(630, 880), false);
+  assert.equal(looksLikeMpcPrintCanvas(750, 1050), false);
+  assert.equal(looksLikeMpcPrintCanvas(1110, 816), false);
+  assert.equal(looksLikeMpcPrintCanvas(0, 0), false);
+
+  const face = {
+    name: 'Uploaded art',
+    image: 'data:image/png;base64,AA==',
+    preview: 'data:image/png;base64,AA==',
+  };
+  assert.equal(isEmbeddedArtwork(face), true);
+  const enabled = withMpcTrim(face, true);
+  assert.equal(enabled.trim, 'mpc');
+  assert.equal(usesMpcTrim(enabled), true);
+  const disabled = withMpcTrim(enabled, false);
+  assert.equal(disabled.trim, undefined);
+  assert.equal(usesMpcTrim(disabled), false);
+  assert.equal(face.image, disabled.image);
 });
 
 test('higher-resolution exports upgrade legacy MPC source requests without changing other art', () => {
