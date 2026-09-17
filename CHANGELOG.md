@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/Go2Engle/CriProx/compare/v0.6.1...v0.6.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **export:** avoid artwork lookup for size-check sheets ([#29](https://github.com/Go2Engle/CriProx/issues/29)) ([2c481ce](https://github.com/Go2Engle/CriProx/commit/2c481ce49d791a9d8f16fa7955a1a0a9e742e7e9))
+
 ## [0.6.1](https://github.com/Go2Engle/CriProx/compare/v0.6.0...v0.6.1) (2026-09-17)
 
 
