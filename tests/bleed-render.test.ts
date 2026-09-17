@@ -173,6 +173,49 @@ test('production renderer emits the selected dimensions and PNG density at 900 a
   }
 });
 
+test('size-check renderer does not require artwork on template placements', async () => {
+  const width = 6.3,
+    height = 8.8,
+    templateEntry: Entry = {
+      id: 'template-slot',
+      quantity: 1,
+      face: 0,
+      card: {
+        id: 'template-slot',
+        name: 'Template slot',
+        set: 'local',
+        setName: 'Template',
+        collector: '',
+        faces: [],
+      },
+    },
+    sheet: Sheet = {
+      index: 0,
+      width,
+      height,
+      placements: [
+        {
+          entry: templateEntry,
+          copy: 0,
+          x: 0,
+          y: 0,
+          width,
+          height,
+          rotated: false,
+        },
+      ],
+    },
+    bytes = await renderSheet(
+      sheet,
+      { ...DEFAULT_SETTINGS, width, height, dpi: 300, proxyLabel: false },
+      true,
+    ),
+    image = await decode(bytes);
+
+  assert.equal(image.width, mmToPx(width, 300));
+  assert.equal(image.height, mmToPx(height, 300));
+});
+
 test('white bleed copies the white edge without reflecting nearby colored artwork', async () => {
   const sheet: Sheet = {
     index: 0,
