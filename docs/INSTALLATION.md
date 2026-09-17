@@ -6,7 +6,7 @@ Download the newest stable build from [GitHub Releases](https://github.com/Go2En
 
 | Platform | Release package    | Support notes                                                                                   |
 | -------- | ------------------ | ----------------------------------------------------------------------------------------------- |
-| macOS    | Universal DMG      | Runs on Apple Silicon and Intel Macs. Releases are Developer ID signed and notarized.           |
+| macOS    | Universal DMG      | Runs on Apple Silicon and Intel Macs. The application is currently unsigned and not notarized.  |
 | Windows  | x64 NSIS installer | The installer is currently unsigned and may trigger a SmartScreen warning.                      |
 | Linux    | x64 AppImage       | CriProx can create project and export files, but Cricut Design Space is not available on Linux. |
 
@@ -14,25 +14,21 @@ Windows and Linux installers are built on their respective GitHub-hosted runners
 
 CriProx checks the repository for a newer stable release when the desktop app starts. The notice is informational: downloads and installation remain under your control, and automatic update installation is not configured.
 
-## Opening the macOS app
+## Opening the unsigned macOS app
 
-Only use a copy downloaded from the official CriProx repository. Open the DMG and move `CriProx.app`
-to **Applications** before launching it.
+Only use a copy downloaded from the official CriProx repository. Move `CriProx.app` to **Applications**, then run:
 
-CriProx asks macOS for access to your Documents folder because the default project library is stored
-in `Documents/CriProx`. macOS remembers your choice for the signed application, so this prompt should
-appear only once. A newly signed release can require one final prompt when replacing an older unsigned
-build.
+```sh
+xattr -dr com.apple.quarantine "/Applications/CriProx.app"
+```
 
-If the prompt repeats with the latest release, confirm that the app is in **Applications** and report
-the CriProx and macOS versions in a bug report.
+Open CriProx again after the command completes. This removes the quarantine attribute from that application bundle; it does not sign or notarize the app.
 
 ## macOS release signing
 
-The macOS packaging command requires a Developer ID Application certificate and notarization
-credentials. The release workflow reads them from the `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`,
-`APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` GitHub Actions secrets. It fails instead of
-publishing an unsigned macOS build when those credentials are unavailable.
+The release workflow currently produces an unsigned macOS installer. Developer ID signing and
+notarization can be enabled after the repository has a Developer ID Application certificate and Apple
+notarization credentials configured as GitHub Actions secrets.
 
 ## Local development
 

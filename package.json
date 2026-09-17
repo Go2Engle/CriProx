@@ -19,7 +19,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "desktop": "npm run build && electron .",
     "package": "npm run build && electron-builder --publish never",
-    "package:mac": "npm run build && electron-builder --mac --universal --publish never --config.forceCodeSigning=true",
+    "package:mac": "npm run build && electron-builder --mac --universal --publish never",
     "package:windows": "npm run build && electron-builder --win --x64 --publish never",
     "package:linux": "npm run build && electron-builder --linux --x64 --publish never",
     "format": "prettier --write src tests electron vite.config.ts"
@@ -65,13 +65,13 @@
     "mac": {
       "category": "public.app-category.graphics-design",
       "hardenedRuntime": true,
-      "notarize": true,
       "extendInfo": {
         "NSDocumentsFolderUsageDescription": "CriProx stores and opens projects in your Documents folder."
       },
       "target": [
         "dmg"
-      ]
+      ],
+      "identity": null
     },
     "win": {
       "target": [
