@@ -221,11 +221,11 @@ test('default layout uses TCG dimensions and six rounded cut slots', () => {
   assert.match(svg, /width="177mm" height="191mm"/);
   assert.equal(settings.width, 63);
   assert.equal(settings.height, 88);
-  assert.equal(settings.radius, 3);
+  assert.equal(settings.radius, 2.5);
   assert.equal(settings.gap, 1);
   assert.equal(settings.bleed, 0.5);
   assert.equal(settings.proxyLabel, false);
-  assert.match(svg, /rx="3" ry="3"/);
+  assert.match(svg, /rx="2\.5" ry="2\.5"/);
   assert.ok(!/image|clipPath|stroke/.test(svg));
 });
 test('experimental seven-card layout uses the proven 2-3-2 Letter geometry', () => {
@@ -378,6 +378,10 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   assert.equal(migrated.settings.backsEnabled, false);
   assert.equal(migrated.settings.backPrintMode, 'manual');
   assert.equal(migrated.settings.backRotation, 180);
+  assert.equal(
+    validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, radius: 3 } }).settings.radius,
+    2.5,
+  );
   const legacyFour = validateProject({
     ...good,
     settings: { ...DEFAULT_SETTINGS, profile: 'conservative' },

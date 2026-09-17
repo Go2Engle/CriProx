@@ -10,7 +10,7 @@ const sheetHeightMm = 252.3;
 const cardWidthMm = 88;
 const cardHeightMm = 63;
 const gapMm = 0.1;
-const radiusMm = 3;
+const radiusMm = 2.5;
 const mmToPx = (mm: number) => Math.round((mm * dpi) / 25.4);
 
 const canvas = createCanvas(mmToPx(sheetWidthMm), mmToPx(sheetHeightMm));

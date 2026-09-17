@@ -9,7 +9,7 @@ and cutting still require validation.
 
 - Card trim size: 63 × 88 mm (2.4803 × 3.4646 in)
 - Layout: two rotated, three upright, two rotated
-- Card corner radius: 3 mm
+- Card corner radius: 2.5 mm
 - Transparent gap: 0.1 mm
 - Complete image size: 189.2 × 214.2 mm (7.4488 × 8.4331 in)
 - PNG: 4469 × 5060 px at 600 DPI

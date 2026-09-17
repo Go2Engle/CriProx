@@ -8,7 +8,7 @@ const dpi = 600;
 const sheetWidthMm = 189.2;
 const sheetHeightMm = 214.2;
 const gapMm = 0.1;
-const radiusMm = 3;
+const radiusMm = 2.5;
 const mmToPx = (mm: number) => Math.round((mm * dpi) / 25.4);
 
 const placements = [
@@ -28,13 +28,7 @@ context.fillStyle = '#e600c8';
 
 for (const placement of placements) {
   context.beginPath();
-  context.roundRect(
-    placement.x,
-    placement.y,
-    placement.width,
-    placement.height,
-    radiusMm,
-  );
+  context.roundRect(placement.x, placement.y, placement.width, placement.height, radiusMm);
   context.fill();
 }
 
