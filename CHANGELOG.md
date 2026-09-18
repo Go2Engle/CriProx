@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/Go2Engle/CriProx/compare/v0.6.3...v0.7.0) (2026-09-18)
+
+
+### Features
+
+* **artwork:** detect bleed in custom uploads ([#35](https://github.com/Go2Engle/CriProx/issues/35)) ([88e9964](https://github.com/Go2Engle/CriProx/commit/88e9964870b8fec777f418743fbfe4c54e6fd7d7))
+
+
+### Bug Fixes
+
+* **ui:** compact donation footer ([#33](https://github.com/Go2Engle/CriProx/issues/33)) ([f0e39e2](https://github.com/Go2Engle/CriProx/commit/f0e39e23b472bc7cfe73c3acc849c22fb2a65235))
+
 ## [0.6.3](https://github.com/Go2Engle/CriProx/compare/v0.6.2...v0.6.3) (2026-09-17)
 
 
