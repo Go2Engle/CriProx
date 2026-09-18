@@ -1379,6 +1379,10 @@ h1 > span {
   min-width: 0;
   flex: 1;
 }
+.library-location-open {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .library-location strong,
 .library-location span,
 .project-folder-settings strong,
@@ -3412,6 +3416,7 @@ h1 > span {
     width: min(100%, 260px);
   }
   .project-folder-settings,
+  .library-location,
   .project-browser-item,
   .project-delete-confirm {
     align-items: stretch;
@@ -3424,6 +3429,7 @@ h1 > span {
     flex-direction: column;
   }
   .project-folder-actions > button,
+  .library-location-open,
   .projects-footer button {
     width: 100%;
   }
