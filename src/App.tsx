@@ -268,6 +268,12 @@ function ProjectsModal({
 }) {
   const [showSettings, setShowSettings] = useState(false),
     [deleteCandidate, setDeleteCandidate] = useState<ProjectSummary | null>(null);
+  const fileExplorerName =
+    window.criprox?.platform === 'darwin'
+      ? 'Finder'
+      : window.criprox?.platform === 'win32'
+        ? 'File Explorer'
+        : 'file manager';
   const formatUpdated = (value: string) =>
     new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
       new Date(value),
@@ -290,6 +296,13 @@ function ProjectsModal({
             <span title={snapshot?.root}>{snapshot?.root || 'Finding your projects folder…'}</span>
           </div>
           <button
+            className="secondary compact library-location-open"
+            disabled={busy || !snapshot}
+            onClick={() => reveal()}
+          >
+            <ExternalLink size={14} /> Open in {fileExplorerName}
+          </button>
+          <button
             className={`icon-button ${showSettings ? 'active' : ''}`}
             aria-label="Project folder settings"
             title="Project folder settings"
@@ -308,9 +321,6 @@ function ProjectsModal({
               </span>
             </div>
             <div className="project-folder-actions">
-              <button className="secondary compact" disabled={busy} onClick={reveal}>
-                <ExternalLink size={14} /> Show in folder
-              </button>
               <button className="secondary compact" disabled={busy} onClick={changeDirectory}>
                 <FolderCog size={14} /> Change folder
               </button>
