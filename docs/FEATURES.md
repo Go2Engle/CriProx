@@ -12,6 +12,8 @@
 - Trim MPC Autofill's native print bleed from fronts and card backs so the finished-card area fills
   the 63 × 88 mm cut; when output bleed is enabled, reuse the source artwork outside that trim.
 - Import local PNG, JPEG, or WebP artwork up to 20 MB per file.
+- Detect MPC-style print-canvas proportions in uploaded fronts, reverse faces, and shared card backs,
+  with a per-face toggle to correct the suggestion when custom artwork uses a different layout.
 - Keep the complete card interior opaque, even when the source image contains transparent pixels.
 
 Deck-list requests are batched in groups of at most 75 unique identifiers. Request starts are serialized with at least 120 ms between them, and a `429` response stops the operation instead of continuing to pressure the service.

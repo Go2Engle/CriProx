@@ -7,8 +7,32 @@ const MPC_CDN_ARTWORK = /^https:\/\/cdn\.mpcautofill\.com\/images\/google_drive\
 const MPC_TEMPLATE_WIDTH = 816;
 const MPC_TEMPLATE_HEIGHT = 1110;
 const MPC_BLEED_PX = 36;
+const EMBEDDED_ARTWORK = /^data:image\/(?:png|jpeg|webp);base64,/;
+
+// Community print-ready files commonly use either the 63 x 88 mm
+// (816 x 1110) or traditional poker (822 x 1122) MPC canvas. Accept minor
+// contributor/template variations, but keep this well clear of the finished
+// 63:88 card ratio (about 0.716).
+const MPC_CANVAS_ASPECT_MIN = 0.731;
+const MPC_CANVAS_ASPECT_MAX = 0.739;
 
 export type SourceRect = { x: number; y: number; width: number; height: number };
+
+export function looksLikeMpcPrintCanvas(width: number, height: number) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0)
+    return false;
+  const aspect = width / height;
+  return aspect >= MPC_CANVAS_ASPECT_MIN && aspect <= MPC_CANVAS_ASPECT_MAX;
+}
+
+export function isEmbeddedArtwork(face: Pick<CardFace, 'image'>) {
+  return EMBEDDED_ARTWORK.test(face.image);
+}
+
+export function withMpcTrim(face: CardFace, enabled: boolean): CardFace {
+  const { trim: _trim, ...plain } = face;
+  return enabled ? { ...plain, trim: 'mpc' } : plain;
+}
 
 export function usesMpcTrim(face: Pick<CardFace, 'image' | 'preview' | 'trim'>) {
   return (

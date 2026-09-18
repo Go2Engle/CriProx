@@ -25,6 +25,7 @@ import { preparePdfJob } from '../lib/pdf-worker';
 import { download } from '../lib/export';
 import MpcArtworkSearch from './MpcArtworkSearch';
 import FrontBleedControl from './FrontBleedControl';
+import ArtworkTrimControl from './ArtworkTrimControl';
 import PdfPagePreview from './PdfPagePreview';
 import { paperWorkflow } from '../lib/paper-workflow';
 import { doubleSidedCardCount, needsSharedCardBack } from '../lib/entries';
@@ -37,6 +38,7 @@ export default function RegisteredPrint({
   updateSettings,
   updateBackArtwork,
   selectBackArtwork,
+  updateBackTrim,
 }: {
   project: Project;
   close: () => void;
@@ -45,6 +47,7 @@ export default function RegisteredPrint({
   updateSettings: (patch: Partial<Settings>) => void;
   updateBackArtwork: (file?: File) => Promise<void>;
   selectBackArtwork: (face: CardFace) => void;
+  updateBackTrim: (enabled: boolean) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
     input = useRef<HTMLInputElement>(null),
@@ -210,6 +213,11 @@ export default function RegisteredPrint({
     setBackPdf(undefined);
     selectBackArtwork(face);
   }
+  function changeBackTrim(enabled: boolean) {
+    setPdf(undefined);
+    setBackPdf(undefined);
+    updateBackTrim(enabled);
+  }
   function savePdf(bytes: Uint8Array | undefined, suffix: string) {
     if (!bytes) return;
     download(new Blob([bytes.slice().buffer], { type: 'application/pdf' }), `${id}-${suffix}.pdf`);
@@ -357,6 +365,9 @@ export default function RegisteredPrint({
                       </button>
                     </div>
                   </div>
+                  {project.backArtwork && (
+                    <ArtworkTrimControl face={project.backArtwork} change={changeBackTrim} />
+                  )}
                   <MpcArtworkSearch
                     type="CARDBACK"
                     choose={(artwork) => chooseMpcBack({ ...artwork.face, name: artwork.name })}
