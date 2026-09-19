@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/Go2Engle/CriProx/compare/v0.7.0...v0.8.0) (2026-09-19)
+
+
+### Features
+
+* **projects:** add native folder opener ([#36](https://github.com/Go2Engle/CriProx/issues/36)) ([3d48a88](https://github.com/Go2Engle/CriProx/commit/3d48a8851dccfc6ce7234c3228324744a270b21f))
+
+
+### Bug Fixes
+
+* **print:** extend bleed on exterior card-back edges ([#38](https://github.com/Go2Engle/CriProx/issues/38)) ([8f30580](https://github.com/Go2Engle/CriProx/commit/8f3058006a0c7ffc51fabe884ab743f142e75116))
+
 ## [0.7.0](https://github.com/Go2Engle/CriProx/compare/v0.6.3...v0.7.0) (2026-09-18)
 
 
