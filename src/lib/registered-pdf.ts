@@ -1,5 +1,5 @@
 import { PDFDocument, PrintScaling, rgb, StandardFonts } from 'pdf-lib';
-import { backBleedMm, frontBleedMm, type Project, type Settings } from './types';
+import { backBleedMm, backOuterBleedMm, frontBleedMm, type Project, type Settings } from './types';
 import { renderSheet, download } from './export';
 import { mmToPx, type Sheet } from './layout';
 import { needsSharedCardBack, reverseFaceIndex } from './entries';
@@ -249,6 +249,7 @@ export async function buildRegisteredBackPdf(
     const page = output.addPage([profile.pageWidthPt, profile.pageHeightPt]);
     const sheet = mirroredBackSheet(sourceSheet, full, project),
       bleed = calibration ? 0 : backBleedMm(project.settings),
+      outerBleed = calibration ? 0 : backOuterBleedMm(project.settings),
       left =
         (project.settings.backFlip === 'long-edge'
           ? pageWidthMm - profile.leftMm - full.width
@@ -257,15 +258,15 @@ export async function buildRegisteredBackPdf(
         (project.settings.backFlip === 'short-edge'
           ? pageHeightMm - profile.topMm - full.height
           : profile.topMm) + project.settings.backOffsetY;
-    const printableSheet = bleed
+    const printableSheet = outerBleed
       ? {
           ...sheet,
-          width: full.width + bleed * 2,
-          height: full.height + bleed * 2,
+          width: full.width + outerBleed * 2,
+          height: full.height + outerBleed * 2,
           placements: sheet.placements.map((placement) => ({
             ...placement,
-            x: placement.x + bleed,
-            y: placement.y + bleed,
+            x: placement.x + outerBleed,
+            y: placement.y + outerBleed,
           })),
         }
       : sheet;
@@ -275,13 +276,14 @@ export async function buildRegisteredBackPdf(
         { ...project.settings, proxyLabel: false },
         calibration,
         bleed,
+        outerBleed,
       ),
     );
     page.drawImage(art, {
-      x: (left - bleed) * PT_PER_MM,
-      y: profile.pageHeightPt - (top + full.height + bleed) * PT_PER_MM,
-      width: (full.width + bleed * 2) * PT_PER_MM,
-      height: (full.height + bleed * 2) * PT_PER_MM,
+      x: (left - outerBleed) * PT_PER_MM,
+      y: profile.pageHeightPt - (top + full.height + outerBleed) * PT_PER_MM,
+      width: (full.width + outerBleed * 2) * PT_PER_MM,
+      height: (full.height + outerBleed * 2) * PT_PER_MM,
     });
   }
   output.catalog.getOrCreateViewerPreferences().setPrintScaling(PrintScaling.None);

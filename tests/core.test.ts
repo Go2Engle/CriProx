@@ -7,6 +7,7 @@ import { formatDimensions, formatMeasurement } from '../src/lib/units';
 import { projectFilename } from '../src/lib/save-project';
 import {
   backBleedMm,
+  backOuterBleedMm,
   DEFAULT_SETTINGS,
   fixedBleedMm,
   frontBleedMm,
@@ -320,6 +321,8 @@ test('bleed amounts are fixed by layout profile', () => {
   assert.equal(backBleedMm({ profile: 'expanded', backBleedEnabled: true }), 0.5);
   assert.equal(backBleedMm({ profile: 'expanded', backBleedEnabled: false }), 0);
   assert.equal(backBleedMm({ profile: 'seven', backBleedEnabled: true }), 0.05);
+  assert.equal(backOuterBleedMm({ backBleedEnabled: true }), 1.5);
+  assert.equal(backOuterBleedMm({ backBleedEnabled: false }), 0);
 });
 test('paper workflow uses Tabloid for Letter hacks and native A4 for A4 output', () => {
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'expanded' }), {

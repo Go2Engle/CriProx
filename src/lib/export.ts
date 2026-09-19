@@ -218,11 +218,54 @@ export function artworkSourceAtDpi(source: string, dpi: Settings['dpi']) {
   return url.toString();
 }
 
+type BleedSides = { top: number; right: number; bottom: number; left: number };
+
+function placementBleed(
+  placement: Sheet['placements'][number],
+  sheet: Sheet,
+  settings: Settings,
+  interior: number,
+  exterior: number,
+): BleedSides {
+  const epsilon = 0.001,
+    overlaps = (startA: number, endA: number, startB: number, endB: number) =>
+      Math.min(endA, endB) - Math.max(startA, startB) > epsilon,
+    adjacent = (side: keyof BleedSides) =>
+      sheet.placements.some((other) => {
+        if (other === placement) return false;
+        if (side === 'left' || side === 'right') {
+          if (
+            !overlaps(placement.y, placement.y + placement.height, other.y, other.y + other.height)
+          )
+            return false;
+          const gap =
+            side === 'left'
+              ? placement.x - (other.x + other.width)
+              : other.x - (placement.x + placement.width);
+          return gap >= -epsilon && gap <= settings.gap + epsilon;
+        }
+        if (!overlaps(placement.x, placement.x + placement.width, other.x, other.x + other.width))
+          return false;
+        const gap =
+          side === 'top'
+            ? placement.y - (other.y + other.height)
+            : other.y - (placement.y + placement.height);
+        return gap >= -epsilon && gap <= settings.gap + epsilon;
+      });
+  return {
+    top: adjacent('top') ? interior : exterior,
+    right: adjacent('right') ? interior : exterior,
+    bottom: adjacent('bottom') ? interior : exterior,
+    left: adjacent('left') ? interior : exterior,
+  };
+}
+
 export async function renderSheet(
   sheet: Sheet,
   settings: Settings,
   calibration = false,
   artworkBleedMm = 0,
+  exteriorArtworkBleedMm = artworkBleedMm,
 ): Promise<Uint8Array> {
   const canvas = renderCanvas(
     mmToPx(sheet.width, settings.dpi),
@@ -248,6 +291,21 @@ export async function renderSheet(
         }
       }
       ctx.save();
+      const bleed = Math.max(0, Math.min(artworkBleedMm, settings.gap / 2)),
+        exteriorBleed = Math.max(bleed, exteriorArtworkBleedMm);
+      if (exteriorBleed > bleed) {
+        const sides = placementBleed(p, sheet, settings, bleed, exteriorBleed);
+        // Clip in sheet coordinates before applying card rotations. Only sides
+        // facing away from a neighboring card receive the larger safety bleed.
+        ctx.beginPath();
+        ctx.rect(
+          p.x - sides.left,
+          p.y - sides.top,
+          p.width + sides.left + sides.right,
+          p.height + sides.top + sides.bottom,
+        );
+        ctx.clip();
+      }
       ctx.translate(p.x, p.y);
       if (p.rotated) {
         ctx.translate(p.width, 0);
@@ -259,10 +317,9 @@ export async function renderSheet(
         ctx.translate(w, h);
         ctx.rotate(Math.PI);
       }
-      const bleed = Math.max(0, Math.min(artworkBleedMm, settings.gap / 2));
-      if (bitmap && bleed > 0) {
-        const tile = bleedTile(bitmap, p.entry.card.faces[p.entry.face], settings, bleed);
-        drawBleedTile(ctx, tile, w, h, bleed);
+      if (bitmap && exteriorBleed > 0) {
+        const tile = bleedTile(bitmap, p.entry.card.faces[p.entry.face], settings, exteriorBleed);
+        drawBleedTile(ctx, tile, w, h, exteriorBleed);
         tile.width = tile.height = 0;
       } else {
         ctx.beginPath();

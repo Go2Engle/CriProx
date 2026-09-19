@@ -50,7 +50,7 @@ The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fi
 
 ## Exact SVG template
 
-Front and back bleed controls are independent on/off toggles. Their amounts are fixed: 0.5 mm for the six-card profile and 0.05 mm for the tightly spaced seven-card profile.
+Front and back bleed controls are independent on/off toggles. Front bleed and the bleed between card backs are fixed at 0.5 mm for the six-card profile and 0.05 mm for the tightly spaced seven-card profile. Because back pages do not contain registration marks, enabled back bleed extends 1.5 mm past exposed outside edges to cover small front-to-back alignment shifts without changing card positions or cut geometry.
 
 When a selected Scryfall card has two faces, CriProx warns that card-back printing is required. With
 card backs enabled, the face opposite the selected front is placed in that card's mirrored back-side

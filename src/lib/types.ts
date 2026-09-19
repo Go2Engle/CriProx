@@ -7,6 +7,7 @@ export type CardFace = {
 };
 export const PRINT_DPI_OPTIONS = [300, 600, 900, 1200] as const;
 export const STANDARD_CARD_RADIUS_MM = 2.5;
+export const BACK_OUTER_BLEED_MM = 1.5;
 export type PrintDpi = (typeof PRINT_DPI_OPTIONS)[number];
 export type Card = {
   id: string;
@@ -45,6 +46,8 @@ export const frontBleedMm = (settings: Pick<Settings, 'profile' | 'bleed'>) =>
   settings.bleed > 0 ? fixedBleedMm(settings) : 0;
 export const backBleedMm = (settings: Pick<Settings, 'profile' | 'backBleedEnabled'>) =>
   settings.backBleedEnabled ? fixedBleedMm(settings) : 0;
+export const backOuterBleedMm = (settings: Pick<Settings, 'backBleedEnabled'>) =>
+  settings.backBleedEnabled ? BACK_OUTER_BLEED_MM : 0;
 export type Project = {
   version: 1;
   name: string;
