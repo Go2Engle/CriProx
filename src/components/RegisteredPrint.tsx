@@ -10,7 +10,13 @@ import {
   Ruler,
   X,
 } from 'lucide-react';
-import { fixedBleedMm, type CardFace, type Project, type Settings } from '../lib/types';
+import {
+  BACK_OUTER_BLEED_MM,
+  fixedBleedMm,
+  type CardFace,
+  type Project,
+  type Settings,
+} from '../lib/types';
 import { formatDimensions, formatMeasurement } from '../lib/units';
 import {
   BACK_ALIGNMENT_SQUARE_MM,
@@ -386,9 +392,10 @@ export default function RegisteredPrint({
                 <span>
                   Bleed on card backs
                   <small>
-                    {project.settings.backBleedEnabled ? 'On' : 'Off'} · fixed{' '}
+                    {project.settings.backBleedEnabled ? 'On' : 'Off'} ·{' '}
                     {formatMeasurement(fixedBleedMm(project.settings), project.settings.units)}{' '}
-                    extension
+                    between cards, {formatMeasurement(BACK_OUTER_BLEED_MM, project.settings.units)}{' '}
+                    on outside edges
                   </small>
                 </span>
                 <input

@@ -50,7 +50,9 @@ The SVG is a geometry reference or a separate Basic Cut template. It is not a re
 CriProx can import a one-page PDF captured from Design Space, recognize the surrounding marks, and place current artwork into that template without changing the saved cut geometry.
 
 - Front and back bleed are independent toggles.
-- Bleed is fixed at 0.5 mm for six-card sheets and 0.05 mm for seven-card sheets.
+- Front bleed and the bleed between card backs are fixed at 0.5 mm for six-card sheets and
+  0.05 mm for seven-card sheets. Back sheets extend artwork 1.5 mm past exposed outside edges to
+  hide small front-to-back alignment shifts.
 - The captured PDF must correspond to the exact saved Design Space cut job.
 - CriProx preserves captured marks; it does not generate or imitate them.
 - CriProx saves the finished PDF instead of printing it through the browser, which would rasterize

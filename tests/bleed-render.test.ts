@@ -368,6 +368,44 @@ test('touching black bleed tiles have no translucent seams, including rotated ba
     }
 });
 
+test('back sheets extend exterior bleed without widening the bleed between cards', async () => {
+  const red = artwork('#d71920'),
+    blue = artwork('#1647c8'),
+    outer = 1.5,
+    gap = 1,
+    sheet: Sheet = {
+      index: 0,
+      width: 63 * 2 + gap + outer * 2,
+      height: 88 + outer * 2,
+      placements: [
+        { entry: red, copy: 0, x: outer, y: outer, width: 63, height: 88, rotated: false },
+        {
+          entry: blue,
+          copy: 0,
+          x: outer + 63 + gap,
+          y: outer,
+          width: 63,
+          height: 88,
+          rotated: false,
+        },
+      ],
+    },
+    image = await decode(
+      await renderSheet(
+        sheet,
+        { ...DEFAULT_SETTINGS, gap, proxyLabel: false },
+        false,
+        gap / 2,
+        outer,
+      ),
+    );
+
+  assert.deepEqual(colorAtMm(image, sheet.width, sheet.height, 0.1, 45.5), [215, 25, 32, 255]);
+  assert.deepEqual(colorAtMm(image, sheet.width, sheet.height, 64.9, 45.5), [215, 25, 32, 255]);
+  assert.deepEqual(colorAtMm(image, sheet.width, sheet.height, 65.1, 45.5), [22, 71, 200, 255]);
+  assert.deepEqual(colorAtMm(image, sheet.width, sheet.height, 129.9, 45.5), [22, 71, 200, 255]);
+});
+
 test('transparent rounded white source corners remain white through the bleed', async () => {
   const sheet: Sheet = {
     index: 0,
