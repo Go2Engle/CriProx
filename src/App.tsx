@@ -5,7 +5,6 @@ import ArtworkTrimControl from './components/ArtworkTrimControl';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { get, set } from 'idb-keyval';
 import {
-  ArrowDownToLine,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -49,11 +48,17 @@ import {
 import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
 import {
   DEFAULT_SETTINGS,
-  EMPTY_PROJECT,
   fixedBleedMm,
   PRINT_DPI_OPTIONS,
   STANDARD_CARD_RADIUS_MM,
 } from './lib/types';
+import {
+  FACTORY_PROJECT_DEFAULTS,
+  projectDefaultsFrom,
+  projectFromDefaults,
+  validateProjectDefaults,
+  type ProjectDefaults,
+} from './lib/project-defaults';
 import { envelope, grid, layout, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
 import { importDeckSource } from './lib/deck-source';
@@ -84,6 +89,7 @@ import {
 // The original Design Space ZIP export remains available for a future workflow,
 // but registered PDF creation is the only export action shown in the interface.
 const ENABLE_DESIGN_SPACE_EXPORT = false;
+const PROJECT_DEFAULTS_KEY = 'criprox-project-defaults';
 
 const createSample = (): Project => ({
   version: 1,
@@ -250,8 +256,6 @@ function ProjectsModal({
   busy,
   close,
   refresh,
-  changeDirectory,
-  importDocuments,
   reveal,
   open,
   remove,
@@ -265,8 +269,6 @@ function ProjectsModal({
   busy: boolean;
   close: () => void;
   refresh: () => void;
-  changeDirectory: () => void;
-  importDocuments: () => void;
   reveal: () => void;
   open: (projectId: string) => void;
   remove: (project: ProjectSummary) => void;
@@ -275,8 +277,7 @@ function ProjectsModal({
   exportBackup: () => void;
   newProject: () => void;
 }) {
-  const [showSettings, setShowSettings] = useState(false),
-    [deleteCandidate, setDeleteCandidate] = useState<ProjectSummary | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<ProjectSummary | null>(null);
   const fileExplorerName =
     window.criprox?.platform === 'darwin'
       ? 'Finder'
@@ -311,39 +312,7 @@ function ProjectsModal({
           >
             <ExternalLink size={14} /> Open in {fileExplorerName}
           </button>
-          <button
-            className={`icon-button ${showSettings ? 'active' : ''}`}
-            aria-label="Project folder settings"
-            title="Project folder settings"
-            onClick={() => setShowSettings((shown) => !shown)}
-          >
-            <Settings2 size={17} />
-          </button>
         </div>
-        {showSettings && (
-          <div className="project-folder-settings">
-            <div>
-              <strong>Projects folder</strong>
-              <span>
-                New projects get their own subfolder here. Uploaded artwork is stored in that
-                project’s assets folder.
-              </span>
-            </div>
-            <div className="project-folder-actions">
-              <button className="secondary compact" disabled={busy} onClick={changeDirectory}>
-                <FolderCog size={14} /> Change folder
-              </button>
-              {snapshot?.canImportDocumentsLibrary && (
-                <button className="secondary compact" disabled={busy} onClick={importDocuments}>
-                  <Upload size={14} /> Import old library
-                </button>
-              )}
-              <button className="secondary compact" disabled={busy} onClick={exportBackup}>
-                <ArrowDownToLine size={14} /> Export JSON backup
-              </button>
-            </div>
-          </div>
-        )}
         <div className="projects-section-heading">
           <div>
             <h3>Saved projects</h3>
@@ -449,6 +418,9 @@ function ProjectsModal({
           <button className="secondary compact" disabled={busy} onClick={importBackup}>
             <Upload size={14} /> Import JSON backup
           </button>
+          <button className="secondary compact" disabled={busy} onClick={exportBackup}>
+            <Download size={14} /> Export JSON backup
+          </button>
           <button className="secondary compact" disabled={busy} onClick={newProject}>
             <FilePlus2 size={14} /> New project
           </button>
@@ -456,6 +428,211 @@ function ProjectsModal({
         <button className="primary compact" disabled={busy} onClick={saveCurrent}>
           {busy ? <LoaderCircle className="spin" size={14} /> : <Save size={14} />}
           Save current project
+        </button>
+      </div>
+    </Modal>
+  );
+}
+function SettingsModal({
+  defaults,
+  snapshot,
+  busy,
+  colorTheme,
+  close,
+  changeTheme,
+  saveDefaults,
+  applyDefaults,
+  restoreFactoryDefaults,
+  changeDirectory,
+  importDocuments,
+  reveal,
+}: {
+  defaults: ProjectDefaults;
+  snapshot: ProjectLibrarySnapshot | null;
+  busy: boolean;
+  colorTheme: ColorTheme;
+  close: () => void;
+  changeTheme: (theme: ColorTheme) => void;
+  saveDefaults: () => void;
+  applyDefaults: () => void;
+  restoreFactoryDefaults: () => void;
+  changeDirectory: () => void;
+  importDocuments: () => void;
+  reveal: () => void;
+}) {
+  const settings = defaults.settings;
+  const machine =
+    settings.machine === 'maker'
+      ? 'Cricut Maker series'
+      : settings.machine === 'explore'
+        ? 'Cricut Explore series'
+        : 'Cricut Joy Xtra';
+  const profile =
+    settings.profile === 'expanded'
+      ? 'Print and Cut'
+      : settings.profile === 'seven'
+        ? 'Experimental Print and Cut'
+        : 'Manual Alignment';
+  const signedMm = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)} mm`;
+  const fileExplorerName =
+    window.criprox?.platform === 'darwin'
+      ? 'Finder'
+      : window.criprox?.platform === 'win32'
+        ? 'File Explorer'
+        : 'file manager';
+  return (
+    <Modal
+      title="Settings"
+      subtitle="Configure CriProx and choose the setup used by every new project."
+      close={close}
+      wide
+      className="app-settings-modal"
+    >
+      <div className="app-settings-content">
+        <section className="app-settings-section">
+          <div className="app-settings-heading">
+            <span>{colorTheme === 'dark' ? <Moon size={17} /> : <Sun size={17} />}</span>
+            <div>
+              <h3>Appearance</h3>
+              <p>Choose how CriProx looks on this device.</p>
+            </div>
+          </div>
+          <div className="segmented settings-theme-options" aria-label="Color theme">
+            <button
+              className={colorTheme === 'light' ? 'selected' : ''}
+              aria-pressed={colorTheme === 'light'}
+              onClick={() => changeTheme('light')}
+            >
+              <Sun size={14} /> Light
+            </button>
+            <button
+              className={colorTheme === 'dark' ? 'selected' : ''}
+              aria-pressed={colorTheme === 'dark'}
+              onClick={() => changeTheme('dark')}
+            >
+              <Moon size={14} /> Dark
+            </button>
+          </div>
+        </section>
+
+        <section className="app-settings-section defaults-settings-section">
+          <div className="app-settings-heading">
+            <span>
+              <SlidersHorizontal size={17} />
+            </span>
+            <div>
+              <h3>New project defaults</h3>
+              <p>
+                Set up the current project exactly how you want, then save that setup here. Project
+                names and card lists are never included.
+              </p>
+            </div>
+          </div>
+          <div className="defaults-summary-grid">
+            <article>
+              <span>LAYOUT</span>
+              <strong>
+                {grid(settings).capacity}-card {profile}
+              </strong>
+              <small>
+                {machine} · {settings.paper === 'letter' ? 'US Letter' : 'A4'} ·{' '}
+                {settings.units === 'in' ? 'inches' : 'millimeters'}
+              </small>
+            </article>
+            <article>
+              <span>CARD GEOMETRY</span>
+              <strong>
+                {settings.width} × {settings.height} mm
+              </strong>
+              <small>
+                {settings.gap} mm gap · {settings.radius} mm corners
+              </small>
+            </article>
+            <article>
+              <span>PRINT</span>
+              <strong>{settings.dpi} DPI</strong>
+              <small>
+                Front bleed {settings.bleed > 0 ? 'on' : 'off'} · Back bleed{' '}
+                {settings.backBleedEnabled ? 'on' : 'off'} · Labels{' '}
+                {settings.proxyLabel ? 'on' : 'off'}
+              </small>
+            </article>
+            <article>
+              <span>CARD BACKS</span>
+              <strong>{settings.backsEnabled ? 'Enabled' : 'Disabled'}</strong>
+              <small>
+                {settings.backPrintMode === 'manual' ? 'Manual refeed' : 'Duplex'} ·{' '}
+                {settings.backFlip === 'long-edge' ? 'Long-edge flip' : 'Short-edge flip'} ·{' '}
+                {settings.backRotation}° · Shared artwork{' '}
+                {defaults.backArtwork ? 'saved' : 'not set'}
+              </small>
+            </article>
+            <article>
+              <span>BACK ALIGNMENT</span>
+              <strong>
+                X {signedMm(settings.backOffsetX)} · Y {signedMm(settings.backOffsetY)}
+              </strong>
+              <small>Saved printer-side alignment compensation</small>
+            </article>
+            <article>
+              <span>MANUAL CUT ALIGNMENT</span>
+              <strong>
+                X {signedMm(settings.manualCutCorrectionX)} · Y{' '}
+                {signedMm(settings.manualCutCorrectionY)}
+              </strong>
+              <small>Saved physical cut correction</small>
+            </article>
+          </div>
+          <div className="app-settings-actions defaults-settings-actions">
+            <button className="primary compact" onClick={saveDefaults}>
+              <Save size={14} /> Save current project as defaults
+            </button>
+            <button className="secondary compact" onClick={applyDefaults}>
+              <RotateCcw size={14} /> Apply defaults to current project
+            </button>
+            <button className="text-button compact" onClick={restoreFactoryDefaults}>
+              Restore factory defaults
+            </button>
+          </div>
+        </section>
+
+        <section className="app-settings-section">
+          <div className="app-settings-heading">
+            <span>
+              <FolderCog size={17} />
+            </span>
+            <div>
+              <h3>Project library</h3>
+              <p>Choose where saved project folders and their uploaded artwork are stored.</p>
+            </div>
+          </div>
+          <div className="settings-library-location">
+            <div>
+              <strong>{snapshot?.isDefault ? 'CriProx projects' : 'Custom projects folder'}</strong>
+              <span title={snapshot?.root}>
+                {snapshot?.root || 'Finding your projects folder…'}
+              </span>
+            </div>
+            <button className="secondary compact" disabled={busy || !snapshot} onClick={reveal}>
+              <ExternalLink size={14} /> Open in {fileExplorerName}
+            </button>
+          </div>
+          <div className="app-settings-actions">
+            <button className="secondary compact" disabled={busy} onClick={changeDirectory}>
+              <FolderCog size={14} /> Change folder
+            </button>
+            {snapshot?.canImportDocumentsLibrary && (
+              <button className="secondary compact" disabled={busy} onClick={importDocuments}>
+                <Upload size={14} /> Import old library
+              </button>
+            )}
+          </div>
+        </section>
+      </div>
+      <div className="modal-footer app-settings-footer">
+        <span>Settings are stored locally on this device.</span>
+        <button className="primary compact" onClick={close}>
+          Done
         </button>
       </div>
     </Modal>
@@ -1618,10 +1795,20 @@ function DonationLink() {
 export default function App() {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(getInitialColorTheme);
   const [project, setProject] = useState<Project>(createSample),
+    [projectDefaults, setProjectDefaults] = useState<ProjectDefaults>(FACTORY_PROJECT_DEFAULTS),
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
   const [modal, setModal] = useState<
-    'search' | 'import' | 'guide' | 'export' | 'new' | 'clear' | 'registered' | 'projects' | null
+    | 'search'
+    | 'import'
+    | 'guide'
+    | 'export'
+    | 'new'
+    | 'clear'
+    | 'registered'
+    | 'projects'
+    | 'settings'
+    | null
   >(null);
   const [selected, setSelected] = useState<EntryCopy | null>(null),
     [inspecting, setInspecting] = useState<EntryCopy | null>(null),
@@ -1669,19 +1856,31 @@ export default function App() {
   }, []);
   useEffect(() => {
     let active = true;
-    get('criprox-project')
-      .then((value) => {
+    async function restoreWorkspace() {
+      let workspaceFailed = false,
+        defaultsFailed = false;
+      try {
+        const value = await get('criprox-project');
         if (active && value) setProject(validateProject(value));
-      })
-      .catch(() => {
-        if (active)
-          setToast(
-            'Saved workspace could not be restored. Open a saved project backup to recover it.',
-          );
-      })
-      .finally(() => {
-        if (active) setLoaded(true);
-      });
+      } catch {
+        workspaceFailed = true;
+      }
+      try {
+        const value = await get(PROJECT_DEFAULTS_KEY);
+        if (active && value) setProjectDefaults(validateProjectDefaults(value));
+      } catch {
+        defaultsFailed = true;
+      }
+      if (!active) return;
+      if (workspaceFailed)
+        setToast(
+          'Saved workspace could not be restored. Open a saved project backup to recover it.',
+        );
+      else if (defaultsFailed)
+        setToast('Saved project defaults could not be restored. Factory defaults will be used.');
+      setLoaded(true);
+    }
+    void restoreWorkspace();
     return () => {
       active = false;
     };
@@ -1754,6 +1953,45 @@ export default function App() {
   );
   function settings(patch: Partial<Settings>) {
     setProject((p) => ({ ...p, settings: { ...p.settings, ...patch } }));
+  }
+  async function saveCurrentSetupAsDefaults() {
+    const next = projectDefaultsFrom(project);
+    try {
+      await set(PROJECT_DEFAULTS_KEY, next);
+      setProjectDefaults(next);
+      setToast('Current setup will be used for new projects.');
+    } catch {
+      setToast('Could not save project defaults on this device.');
+    }
+  }
+  async function restoreFactoryProjectDefaults() {
+    const next = projectDefaultsFrom(projectFromDefaults(FACTORY_PROJECT_DEFAULTS));
+    try {
+      await set(PROJECT_DEFAULTS_KEY, next);
+      setProjectDefaults(next);
+      setToast('New projects will use the factory setup.');
+    } catch {
+      setToast('Could not restore factory project defaults.');
+    }
+  }
+  function applyProjectDefaults() {
+    const defaults = projectFromDefaults(projectDefaults);
+    setProject((current) => ({
+      ...current,
+      settings: defaults.settings,
+      backArtwork: defaults.backArtwork,
+    }));
+    setPage(0);
+    setToast('Project defaults applied to the current project.');
+  }
+  function startFreshProject() {
+    setProject(projectFromDefaults(projectDefaults));
+    rememberActiveProject(null);
+    setSelected(null);
+    setInspecting(null);
+    setPage(0);
+    setSearch('');
+    setModal(null);
   }
   function editEntry(id: string, patch: Partial<Entry>) {
     setProject((p) => ({
@@ -2090,16 +2328,14 @@ export default function App() {
               {project.settings.profile === 'nine' ? '9-cut' : 'PDF'}
             </span>
           </button>
-          {project.settings.profile !== 'nine' && (
-            <button
-              className="icon-button top-help-action"
-              title="How registered PDF printing works"
-              aria-label="How registered PDF printing works"
-              onClick={() => setModal('guide')}
-            >
-              <CircleHelp size={18} />
-            </button>
-          )}
+          <button
+            className="icon-button top-help-action"
+            title="Help and video tutorials"
+            aria-label="Help and video tutorials"
+            onClick={() => setModal('guide')}
+          >
+            <CircleHelp size={18} />
+          </button>
           <button
             className="icon-button theme-toggle"
             title={`Use ${colorTheme === 'dark' ? 'light' : 'dark'} mode`}
@@ -2109,6 +2345,17 @@ export default function App() {
           >
             {colorTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          {window.criprox?.projects && (
+            <button
+              className="icon-button"
+              title="Settings"
+              aria-label="Settings"
+              disabled={!loaded}
+              onClick={() => setModal('settings')}
+            >
+              <Settings2 size={18} />
+            </button>
+          )}
           <span className="top-action-divider" />
           <button
             className="icon-button"
@@ -2424,9 +2671,9 @@ export default function App() {
                 </h2>
                 <button
                   className="icon-button"
-                  aria-label="Reset sheet settings"
-                  title="Reset sheet settings"
-                  onClick={() => settings({ ...DEFAULT_SETTINGS, units: project.settings.units })}
+                  aria-label="Reset sheet settings to project defaults"
+                  title="Reset sheet settings to project defaults"
+                  onClick={() => settings(projectDefaults.settings)}
                 >
                   <RotateCcw size={15} />
                 </button>
@@ -2749,8 +2996,6 @@ export default function App() {
           busy={libraryBusy}
           close={() => setModal(null)}
           refresh={() => void refreshProjectLibrary()}
-          changeDirectory={() => void changeProjectsDirectory()}
-          importDocuments={() => void importDocumentsProjectLibrary()}
           reveal={() => void revealProjectsDirectory()}
           open={(projectId) => void openManagedProject(projectId)}
           remove={(item) => void deleteManagedProject(item)}
@@ -2761,6 +3006,22 @@ export default function App() {
           }}
           exportBackup={() => void exportProjectBackup()}
           newProject={() => setModal('new')}
+        />
+      )}
+      {modal === 'settings' && window.criprox?.projects && (
+        <SettingsModal
+          defaults={projectDefaults}
+          snapshot={projectLibrary}
+          busy={libraryBusy}
+          colorTheme={colorTheme}
+          close={() => setModal(null)}
+          changeTheme={setColorTheme}
+          saveDefaults={() => void saveCurrentSetupAsDefaults()}
+          applyDefaults={applyProjectDefaults}
+          restoreFactoryDefaults={() => void restoreFactoryProjectDefaults()}
+          changeDirectory={() => void changeProjectsDirectory()}
+          importDocuments={() => void importDocumentsProjectLibrary()}
+          reveal={() => void revealProjectsDirectory()}
         />
       )}
       {modal === 'registered' && (
@@ -2794,25 +3055,14 @@ export default function App() {
       {modal === 'new' && (
         <Modal
           title="Start a fresh project?"
-          subtitle="Save the current project first if you want to keep this deck."
+          subtitle="Save the current project first if you want to keep this deck. Your new-project defaults will be applied."
           close={() => setModal(null)}
         >
           <div className="modal-footer">
             <button className="secondary" onClick={() => setModal(null)}>
               <ArrowLeft size={16} /> Keep editing
             </button>
-            <button
-              className="primary"
-              onClick={() => {
-                setProject({ ...EMPTY_PROJECT, settings: { ...DEFAULT_SETTINGS } });
-                rememberActiveProject(null);
-                setSelected(null);
-                setInspecting(null);
-                setPage(0);
-                setSearch('');
-                setModal(null);
-              }}
-            >
+            <button className="primary" onClick={startFreshProject}>
               <FilePlus2 size={16} /> Start fresh
             </button>
           </div>

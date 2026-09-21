@@ -28,7 +28,7 @@ flowchart LR
 | Manual cutting   | `src/lib/manual-cut.ts`, `src/components/RegisteredPrint.tsx`                                                                              | Fixed mat inset, nine-card print PDFs, matched Basic Cut PNG, and mirrored back pages                      |
 | PDF preview      | `src/lib/pdf-worker.ts`, `src/lib/pdf-preview-pages.ts`, `src/workers/pdf.worker.ts`                                                       | PDF.js worker setup and page preview rendering                                                             |
 | Card sources     | `src/lib/deck.ts`, `src/lib/deck-source.ts`, `src/lib/scryfall.ts`, `src/lib/mpc.ts`                                                       | Deck syntax, source adapters, remote lookups, request pacing, artwork variants, and caching                |
-| Project storage  | `src/lib/project.ts`, `src/lib/save-project.ts`, `electron/project-library.cjs`                                                            | Imported-project validation, autosave, managed project folders, assets, and portable backups               |
+| Project storage  | `src/lib/project.ts`, `src/lib/project-defaults.ts`, `src/lib/save-project.ts`, `electron/project-library.cjs`                             | Imported-project and defaults validation, autosave, managed project folders, assets, and portable backups  |
 | Desktop shell    | `electron/main.cjs`, `electron/preload.cjs`                                                                                                | Native window lifecycle, scoped filesystem bridge, packaging, and release notices                          |
 
 ## Data flow
@@ -43,7 +43,9 @@ flowchart LR
 5. Manual nine-card cutting renders the print PDF and Basic Cut PNG from the same fixed 3×3 geometry.
    It uses a quarter-inch mat inset, stores machine-specific X/Y print compensation, and does not use
    or synthesize sensor registration.
-6. IndexedDB keeps the active workspace available between sessions. The desktop project library stores
+6. IndexedDB keeps the active workspace and user-defined new-project defaults available between
+   sessions. Defaults reuse the complete project settings model and may include shared back artwork,
+   while deliberately excluding a project name and card entries. The desktop project library stores
    each managed project in its own directory, externalizes embedded artwork to a content-addressed
    `assets` directory, and hydrates those files through the sandboxed bridge when reopened. Explicit JSON
    export remains the portable single-file backup path.
