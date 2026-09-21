@@ -263,7 +263,7 @@ function placementBleed(
 export async function renderSheet(
   sheet: Sheet,
   settings: Settings,
-  calibration = false,
+  calibration: boolean | 'manual' = false,
   artworkBleedMm = 0,
   exteriorArtworkBleedMm = artworkBleedMm,
 ): Promise<Uint8Array> {
@@ -331,33 +331,35 @@ export async function renderSheet(
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = '#f0efe9';
         ctx.fillRect(0.5, 0.5, w - 1, h - 1);
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 0.15;
-        for (let x = 5; x < w; x += 5) {
-          ctx.beginPath();
-          ctx.moveTo(x, 3);
-          ctx.lineTo(x, h - 3);
-          ctx.stroke();
+        if (calibration !== 'manual') {
+          ctx.strokeStyle = '#555';
+          ctx.lineWidth = 0.15;
+          for (let x = 5; x < w; x += 5) {
+            ctx.beginPath();
+            ctx.moveTo(x, 3);
+            ctx.lineTo(x, h - 3);
+            ctx.stroke();
+          }
+          for (let y = 5; y < h; y += 5) {
+            ctx.beginPath();
+            ctx.moveTo(3, y);
+            ctx.lineTo(w - 3, y);
+            ctx.stroke();
+          }
+          ctx.fillStyle = '#f0efe9';
+          ctx.fillRect(3, h / 2 - 12, w - 6, 24);
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#111';
+          ctx.font = 'bold 4px sans-serif';
+          ctx.fillText('CriProx · size check', w / 2, h / 2 - 3);
+          ctx.font = '3px sans-serif';
+          ctx.fillText(formatDimensions(w, h, settings.units), w / 2, h / 2 + 3);
+          ctx.fillText(
+            `Grid: ${formatMeasurement(5, settings.units)} · measure after cutting`,
+            w / 2,
+            h / 2 + 8,
+          );
         }
-        for (let y = 5; y < h; y += 5) {
-          ctx.beginPath();
-          ctx.moveTo(3, y);
-          ctx.lineTo(w - 3, y);
-          ctx.stroke();
-        }
-        ctx.fillStyle = '#f0efe9';
-        ctx.fillRect(3, h / 2 - 12, w - 6, 24);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 4px sans-serif';
-        ctx.fillText('CriProx · size check', w / 2, h / 2 - 3);
-        ctx.font = '3px sans-serif';
-        ctx.fillText(formatDimensions(w, h, settings.units), w / 2, h / 2 + 3);
-        ctx.fillText(
-          `Grid: ${formatMeasurement(5, settings.units)} · measure after cutting`,
-          w / 2,
-          h / 2 + 8,
-        );
       } else if (bleed === 0) {
         // Card artwork fills the trim shape. Standard card images already match this
         // ratio; full-bleed and custom sources are cropped evenly at the outer edges.

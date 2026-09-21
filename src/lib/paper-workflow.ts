@@ -7,6 +7,12 @@ export function paperWorkflow(settings: Pick<Settings, 'paper' | 'profile'>) {
       systemPaper: 'A4',
       usesLetterHack: false,
     } as const;
+  if (settings.profile === 'nine')
+    return {
+      designSpacePaper: 'US Letter',
+      systemPaper: 'US Letter',
+      usesLetterHack: false,
+    } as const;
   return {
     designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'US Letter',

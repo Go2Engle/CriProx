@@ -11,6 +11,7 @@ self.onmessage = async ({ data }: MessageEvent<PdfWorkerRequest>) => {
     const result = await executePdfJob(data, progress);
     const transfer: Transferable[] = [result.pdf.buffer as ArrayBuffer];
     if (result.backPdf) transfer.push(result.backPdf.buffer as ArrayBuffer);
+    if (result.cutPng) transfer.push(result.cutPng.buffer as ArrayBuffer);
     self.postMessage(
       { id: data.id, type: 'complete', result } satisfies PdfWorkerResponse,
       transfer,

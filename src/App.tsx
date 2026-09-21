@@ -65,6 +65,7 @@ import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
+import { MANUAL_CUT_INSET_MM } from './lib/manual-cut';
 import { looksLikeMpcPrintCanvas, usesMpcTrim, withMpcTrim } from './lib/artwork';
 import {
   applyColorTheme,
@@ -1444,7 +1445,15 @@ function SheetPreview({
   inspect: (target: EntryCopy) => void;
 }) {
   const paper = settings.paper === 'letter' ? { w: 215.9, h: 279.4 } : { w: 210, h: 297 };
-  const area = envelope(settings);
+  const area = envelope(settings),
+    manualNine = settings.profile === 'nine',
+    manualPosition = manualNine
+      ? {
+          left: `${((MANUAL_CUT_INSET_MM - settings.manualCutCorrectionX) / paper.w) * 100}%`,
+          top: `${((MANUAL_CUT_INSET_MM - settings.manualCutCorrectionY) / paper.h) * 100}%`,
+          transform: 'none',
+        }
+      : undefined;
   return (
     <div className="paper-stage">
       <div
@@ -1462,6 +1471,7 @@ function SheetPreview({
           style={{
             width: `${(area.width / paper.w) * 100}%`,
             height: `${(area.height / paper.h) * 100}%`,
+            ...manualPosition,
           }}
         />
         {sheet ? (
@@ -1470,6 +1480,7 @@ function SheetPreview({
             style={{
               width: `${(sheet.width / paper.w) * 100}%`,
               height: `${(sheet.height / paper.h) * 100}%`,
+              ...manualPosition,
             }}
           >
             {sheet.placements.map((p, i) => (
@@ -2072,17 +2083,23 @@ export default function App() {
             onClick={() => setModal('registered')}
           >
             <Download size={16} />
-            <span className="print-action-long">Create print PDF</span>
-            <span className="print-action-short">PDF</span>
+            <span className="print-action-long">
+              {project.settings.profile === 'nine' ? 'Create manual cut' : 'Create print PDF'}
+            </span>
+            <span className="print-action-short">
+              {project.settings.profile === 'nine' ? '9-cut' : 'PDF'}
+            </span>
           </button>
-          <button
-            className="icon-button top-help-action"
-            title="How registered PDF printing works"
-            aria-label="How registered PDF printing works"
-            onClick={() => setModal('guide')}
-          >
-            <CircleHelp size={18} />
-          </button>
+          {project.settings.profile !== 'nine' && (
+            <button
+              className="icon-button top-help-action"
+              title="How registered PDF printing works"
+              aria-label="How registered PDF printing works"
+              onClick={() => setModal('guide')}
+            >
+              <CircleHelp size={18} />
+            </button>
+          )}
           <button
             className="icon-button theme-toggle"
             title={`Use ${colorTheme === 'dark' ? 'light' : 'dark'} mode`}
@@ -2514,31 +2531,43 @@ export default function App() {
                               radius: STANDARD_CARD_RADIUS_MM,
                               bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
                             }
-                          : {
-                              profile,
-                              ...(project.settings.profile === 'seven'
-                                ? {
-                                    gap: 1,
-                                    bleed:
-                                      project.settings.bleed > 0
-                                        ? fixedBleedMm({ profile: 'expanded' })
-                                        : 0,
-                                  }
-                                : {}),
-                            },
+                          : profile === 'nine'
+                            ? {
+                                profile,
+                                width: 63,
+                                height: 88,
+                                gap: 1,
+                                radius: STANDARD_CARD_RADIUS_MM,
+                                bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
+                              }
+                            : {
+                                profile,
+                                ...(project.settings.profile === 'seven'
+                                  ? {
+                                      gap: 1,
+                                      bleed:
+                                        project.settings.bleed > 0
+                                          ? fixedBleedMm({ profile: 'expanded' })
+                                          : 0,
+                                    }
+                                  : {}),
+                              },
                       );
                       setPage(0);
                     }}
                   >
-                    <option value="expanded">6 slots · default</option>
+                    <option value="expanded">6 cards · Print and Cut</option>
                     <option value="seven" disabled={project.settings.machine === 'joy-xtra'}>
-                      7 slots · experimental Letter hack
+                      7 cards · Print and Cut · Experimental
                     </option>
+                    <option value="nine">9 cards · Manual Alignment · Experimental</option>
                   </select>
                   <p className="field-note">
                     {project.settings.profile === 'seven'
                       ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
-                      : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
+                      : project.settings.profile === 'nine'
+                        ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
+                        : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
                   </p>
                 </div>
                 <div className="settings-divider" />

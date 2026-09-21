@@ -21,6 +21,14 @@ import { cardMatchesDeckLine, scryfallLookupName, scryfallSearchPath } from '../
 import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
 import { paperWorkflow } from '../src/lib/paper-workflow';
 import {
+  MANUAL_CUT_INSET_MM,
+  manualCutCorrection,
+  manualCutCorrectionFileTag,
+  manualCutCorrectionLabel,
+  manualCutFirstSlotBounds,
+  manualCutPlacement,
+} from '../src/lib/manual-cut';
+import {
   artworkSourceRect,
   isEmbeddedArtwork,
   looksLikeMpcPrintCanvas,
@@ -272,6 +280,98 @@ test('experimental seven-card layout uses the proven 2-3-2 Letter geometry', () 
   assert.equal((svg.match(/<rect /g) || []).length, 7);
   assert.match(svg, /width="189\.2mm" height="214\.2mm"/);
 });
+test('manual nine-card layout uses a fixed 3-by-3 block on every page', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'nine' as const },
+    pages = layout([{ ...entry, quantity: 20 }], settings);
+  assert.equal(grid(settings).capacity, 9);
+  assert.deepEqual(
+    pages.map((page) => page.placements.length),
+    [9, 9, 2],
+  );
+  assert.ok(pages.every((page) => page.width === 191 && page.height === 266));
+  assert.deepEqual(
+    pages[0].placements.map(({ x, y, width, height, rotated }) => ({
+      x,
+      y,
+      width,
+      height,
+      rotated,
+    })),
+    [
+      { x: 0, y: 0, width: 63, height: 88, rotated: false },
+      { x: 64, y: 0, width: 63, height: 88, rotated: false },
+      { x: 128, y: 0, width: 63, height: 88, rotated: false },
+      { x: 0, y: 89, width: 63, height: 88, rotated: false },
+      { x: 64, y: 89, width: 63, height: 88, rotated: false },
+      { x: 128, y: 89, width: 63, height: 88, rotated: false },
+      { x: 0, y: 178, width: 63, height: 88, rotated: false },
+      { x: 64, y: 178, width: 63, height: 88, rotated: false },
+      { x: 128, y: 178, width: 63, height: 88, rotated: false },
+    ],
+  );
+  assert.equal(templateSvg(pages[0], settings).match(/<rect /g)?.length, 9);
+});
+test('manual nine-card print placement matches the first quarter-inch mat inset', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'nine' as const },
+    placement = manualCutPlacement(settings);
+  assert.equal(placement.left, MANUAL_CUT_INSET_MM);
+  assert.equal(placement.top, MANUAL_CUT_INSET_MM);
+  assert.equal(placement.full.width, 191);
+  assert.equal(placement.full.height, 266);
+  assert.ok(placement.left + placement.full.width <= placement.paper.width);
+  assert.ok(placement.top + placement.full.height <= placement.paper.height);
+  const back = manualCutPlacement(
+    { ...settings, backFlip: 'long-edge', backOffsetX: 0.5, backOffsetY: -0.25 },
+    true,
+  );
+  assert.equal(back.left, back.paper.width - MANUAL_CUT_INSET_MM - back.full.width + 0.5);
+  assert.equal(back.top, MANUAL_CUT_INSET_MM - 0.25);
+});
+test('manual cut correction moves the physical cut relative to print without changing geometry', () => {
+  const settings = {
+      ...DEFAULT_SETTINGS,
+      profile: 'nine' as const,
+      manualCutCorrectionX: 0.5,
+      manualCutCorrectionY: 1.75,
+    },
+    front = manualCutPlacement(settings),
+    longEdgeBack = manualCutPlacement({ ...settings, backFlip: 'long-edge' }, true),
+    shortEdgeBack = manualCutPlacement({ ...settings, backFlip: 'short-edge' }, true);
+  assert.equal(front.left, MANUAL_CUT_INSET_MM - 0.5);
+  assert.equal(front.top, MANUAL_CUT_INSET_MM - 1.75);
+  assert.equal(longEdgeBack.left, longEdgeBack.paper.width - front.left - front.full.width);
+  assert.equal(longEdgeBack.top, front.top);
+  assert.equal(shortEdgeBack.left, front.left);
+  assert.equal(shortEdgeBack.top, shortEdgeBack.paper.height - front.top - front.full.height);
+  assert.equal(front.full.width, 191);
+  assert.equal(front.full.height, 266);
+});
+test('manual cut calibration converts observed error into the opposite physical correction', () => {
+  assert.deepEqual(manualCutCorrection(1.5, 'left', 2, 'up'), { x: 1.5, y: 2 });
+  assert.deepEqual(manualCutCorrection(0.5, 'right', 1, 'down'), { x: -0.5, y: -1 });
+  assert.throws(() => manualCutCorrection(-1, 'left', 0, 'up'));
+});
+test('manual cut exports identify the exact saved correction', () => {
+  const settings = { manualCutCorrectionX: 0.5, manualCutCorrectionY: -1.25 };
+  assert.equal(manualCutCorrectionLabel(settings), 'X +0.50 mm, Y -1.25 mm');
+  assert.equal(manualCutCorrectionFileTag(settings), 'x-p0_50-y-m1_25');
+});
+test('manual calibration and production artwork share the exact first-slot trim origin', () => {
+  const settings = {
+      ...DEFAULT_SETTINGS,
+      profile: 'nine' as const,
+      manualCutCorrectionX: 0.5,
+      manualCutCorrectionY: 1.5,
+    },
+    placement = manualCutPlacement(settings),
+    target = manualCutFirstSlotBounds(settings);
+  assert.deepEqual(target, {
+    left: placement.left,
+    top: placement.top,
+    width: settings.width,
+    height: settings.height,
+  });
+});
 test('all supported settings place cards inside the planning envelope, without overlaps', () => {
   for (const gap of [1, 3, 10])
     for (const width of [63, 63.5]) {
@@ -335,6 +435,11 @@ test('paper workflow uses Tabloid for Letter hacks and native A4 for A4 output',
     systemPaper: 'US Letter',
     usesLetterHack: true,
   });
+  assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'nine' }), {
+    designSpacePaper: 'US Letter',
+    systemPaper: 'US Letter',
+    usesLetterHack: false,
+  });
   assert.deepEqual(paperWorkflow({ paper: 'a4', profile: 'expanded' }), {
     designSpacePaper: 'A4',
     systemPaper: 'A4',
@@ -379,6 +484,8 @@ test('project import validates geometry, IDs, totals, image schemes and selected
     backRotation: _oldBackRotation,
     backOffsetX: _oldBackX,
     backOffsetY: _oldBackY,
+    manualCutCorrectionX: _oldManualCutX,
+    manualCutCorrectionY: _oldManualCutY,
     ...oldSettings
   } = DEFAULT_SETTINGS;
   const migrated = validateProject({ ...good, settings: oldSettings });
@@ -388,6 +495,8 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   assert.equal(migrated.settings.backsEnabled, false);
   assert.equal(migrated.settings.backPrintMode, 'manual');
   assert.equal(migrated.settings.backRotation, 180);
+  assert.equal(migrated.settings.manualCutCorrectionX, 0);
+  assert.equal(migrated.settings.manualCutCorrectionY, 0);
   assert.equal(
     validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, radius: 3 } }).settings.radius,
     2.5,
@@ -420,6 +529,20 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   );
   assert.throws(() => validateProject({ ...good, settings: { ...seven, paper: 'a4' as const } }));
   assert.throws(() => validateProject({ ...good, settings: { ...seven, gap: 1 } }));
+  const nine = { ...DEFAULT_SETTINGS, profile: 'nine' as const };
+  assert.equal(validateProject({ ...good, settings: nine }).settings.profile, 'nine');
+  assert.equal(
+    validateProject({
+      ...good,
+      settings: { ...nine, manualCutCorrectionX: 0.5, manualCutCorrectionY: 1.75 },
+    }).settings.manualCutCorrectionY,
+    1.75,
+  );
+  assert.throws(() =>
+    validateProject({ ...good, settings: { ...nine, manualCutCorrectionX: 5.25 } }),
+  );
+  assert.throws(() => validateProject({ ...good, settings: { ...nine, gap: 0.1 } }));
+  assert.throws(() => validateProject({ ...good, settings: { ...nine, width: 63.5 } }));
   assert.throws(() => validateProject({ ...good, entries: [entry, entry] }));
   assert.throws(() => validateProject({ ...good, entries: [{ ...entry, face: 2 }] }));
   assert.throws(() =>

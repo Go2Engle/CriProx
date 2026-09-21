@@ -32,8 +32,8 @@ export function fullTemplate(settings: Settings): Sheet {
   return layout([{ ...placeholder, quantity: grid(settings).capacity }], settings)[0];
 }
 export function registrationKey(s: Settings): string {
-  // Deliberately omit artwork, DPI, labels, display units, bleed, and all
-  // card-back options; none of those changes the front-side cut geometry.
+  // Deliberately omit artwork, DPI, labels, display units, bleed, manual-cut
+  // calibration, and all card-back options; none changes the cut geometry.
   return JSON.stringify([
     'capture-v1',
     s.machine,

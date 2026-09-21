@@ -9,6 +9,7 @@ flowchart LR
     C --> D[Layout engine]
     D --> E[Interactive preview]
     D --> F[PNG and SVG export]
+    D --> L[Manual nine-card PDF and Basic Cut PNG]
     G[Captured Design Space PDF] --> H[Registration detector]
     H --> I[Registered print renderer]
     C --> I
@@ -24,6 +25,7 @@ flowchart LR
 | Layout           | `src/lib/layout.ts`, `src/lib/units.ts`, `src/lib/bleed.ts`                                                                                | Physical dimensions, slot placement, pagination, rounding, and bleed bounds                                |
 | Standard export  | `src/lib/export.ts`, `src/lib/png.ts`                                                                                                      | Artwork rendering, transparent silhouettes, SVG geometry, manifests, ZIPs, and PNG density metadata        |
 | Registered print | `src/lib/registration.ts`, `src/lib/registered-pdf.ts`, `src/components/RegisteredPrint.tsx`, `electron/registration-template-library.cjs` | PDF recognition, persistent capture storage, mark preservation, registered page rendering, and workflow UI |
+| Manual cutting   | `src/lib/manual-cut.ts`, `src/components/RegisteredPrint.tsx`                                                                              | Fixed mat inset, nine-card print PDFs, matched Basic Cut PNG, and mirrored back pages                      |
 | PDF preview      | `src/lib/pdf-worker.ts`, `src/lib/pdf-preview-pages.ts`, `src/workers/pdf.worker.ts`                                                       | PDF.js worker setup and page preview rendering                                                             |
 | Card sources     | `src/lib/deck.ts`, `src/lib/deck-source.ts`, `src/lib/scryfall.ts`, `src/lib/mpc.ts`                                                       | Deck syntax, source adapters, remote lookups, request pacing, artwork variants, and caching                |
 | Project storage  | `src/lib/project.ts`, `src/lib/save-project.ts`, `electron/project-library.cjs`                                                            | Imported-project validation, autosave, managed project folders, assets, and portable backups               |
@@ -38,7 +40,10 @@ flowchart LR
    captures at the project-library root, and then draws artwork within the preserved template. The
    geometry-derived filename lets the app reload the exact capture without synthesizing registration
    marks or asking for another upload.
-5. IndexedDB keeps the active workspace available between sessions. The desktop project library stores
+5. Manual nine-card cutting renders the print PDF and Basic Cut PNG from the same fixed 3×3 geometry.
+   It uses a quarter-inch mat inset, stores machine-specific X/Y print compensation, and does not use
+   or synthesize sensor registration.
+6. IndexedDB keeps the active workspace available between sessions. The desktop project library stores
    each managed project in its own directory, externalizes embedded artwork to a content-addressed
    `assets` directory, and hydrates those files through the sandboxed bridge when reopened. Explicit JSON
    export remains the portable single-file backup path.

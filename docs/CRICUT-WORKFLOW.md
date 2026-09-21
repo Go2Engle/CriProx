@@ -22,13 +22,46 @@ For reusable registered printing, download CriProx's setup PNG, create and save 
 
 CriProx saves completed registered pages as PDFs and does not print them directly. Open the saved PDF in a dedicated PDF application and print at **100% / Actual size** with fit, shrink, headers, and margins disabled. This preserves the selected artwork resolution and the captured PDF content.
 
+## Experimental manual nine-card workflow
+
+The nine-card profile is a separate Basic Cut workflow. It bypasses Print Then Cut and its optical
+sensor marks. The print PDF and transparent cut PNG share one fixed 191 × 266 mm 3×3 geometry with
+63 × 88 mm cards, 1 mm gutters, and 2.5 mm corners.
+
+1. Select **9 cards · Manual Alignment · Experimental** and open **Create manual cut**.
+2. Prepare the files. Save the print PDF and `basic-cut.png`; use the same PNG for every print page.
+3. Open the PDF in a dedicated PDF application and print on the selected Letter or A4 paper in
+   portrait orientation at **100% / Actual size**. Disable fit, shrink, headers, and added margins.
+4. Upload the PNG to Design Space as **Basic Cut**, not Print Then Cut. Set both dimensions to
+   **191 × 266 mm** (7.5197 × 10.4724 in), keep all nine shapes together, and save the project.
+5. Choose **On Mat**. In the Prepare preview, keep the group upright with its top-left at the first
+   0.25 in grid inset. Do not center, mirror, rearrange, or auto-resize it.
+6. Place the printed page flush with the upper-left corner of the mat's adhesive grid and apply it
+   smoothly. Keep the page orientation identical to the Design Space preview.
+7. Choose **Prepare 1 mm calibration sheet** and print it on plain paper. Place it exactly as a card
+   sheet and cut it with the existing saved nine-card Basic Cut project. The other eight paths cut
+   blank paper; this is intentional, because the test must preserve the real project's placement.
+8. At the top-left target, count the 1 mm magenta squares between the blade line and the dark left and
+   top edges. Enter those measurements and directions in CriProx, then choose **Apply measured
+   correction**. Prepare a new calibration PDF after changing the correction; the saved Basic Cut PNG
+   and Design Space project do not change. The right and bottom edges should show the same translation;
+   disagreement indicates scale or rotation rather than a simple X/Y offset.
+9. Repeat the same mat load at least twice after each correction and measure several cards. A changing
+   offset indicates paper placement, mat loading, or machine repeatability rather than a value that
+   should be compensated in software. Use card stock only after the offset is repeatable.
+
+On iOS, SnapMat can photograph the material on the mat and help visually place the cut group, but it
+does not certify scale or replace the repeated physical test. The 191 × 266 mm design is smaller than
+Cricut's published 11.5 × 11.5 in maximum cutting area for a 12 × 12 in mat; that size statement does
+not guarantee alignment or machine-specific acceptance.
+
 ## Physical validation before a full deck
 
 This is the remaining hardware acceptance test. It cannot be completed by a browser test or by comparing generated files.
 
 1. Record the Cricut model, Design Space version, OS, printer/driver, paper size, material, and mat. Choose the corresponding machine in Design Space and CriProx.
 2. Calibrate Print Then Cut using Cricut's built-in calibration flow.
-3. In CriProx, leave the layout on **6 slots · default** and select your desired card size. Open Export and download a size-check card. This package contains a single card with a 5 mm grid, not a sensor calibration page.
+3. In CriProx, leave the layout on **6 cards · Print and Cut** and select your desired card size. Open Export and download a size-check card. This package contains a single card with a 5 mm grid, not a sensor calibration page.
 4. Upload the PNG as a flat/single-layer Print Then Cut image. Preserve transparency. Inspect its contour: exactly one rounded rectangle, with no interior holes. Set both Canvas dimensions to the values in START-HERE.txt. Confirm that Design Space accepts those dimensions without resizing.
 5. For US Letter output, choose **Tabloid (11 × 17 in)** in Design Space, then change the system print dialog to **US Letter**, portrait, at **100% / Actual size**. Continue only if all six slots and all four sensor marks remain on one page. For native A4 output, choose A4 in both Design Space and the system dialog.
 6. Print through Design Space with bleed enabled and with printer fit-to-page/shrink-to-fit disabled. Complete cutting in the same session from the same device. Follow the model-specific mat-loading instructions.
@@ -78,5 +111,7 @@ The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is s
 | Six-card result                   | Pending                      |
 | Seven-card one-page PDF capture   | Passed; physical cut pending |
 | Seven-card sensor / cut result    | Pending                      |
+| Nine-card Basic Cut import        | Pending                      |
+| Nine-card manual alignment result | Pending                      |
 
 Until this record is filled in with real measurements, the application is a software-tested prototype, not a guarantee of perfect Cricut alignment.

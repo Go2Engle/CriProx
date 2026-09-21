@@ -32,11 +32,13 @@ export function validateProject(value: unknown): Project {
   s.backRotation ??= s.backPrintMode === 'manual' ? 180 : 0;
   s.backOffsetX ??= 0;
   s.backOffsetY ??= 0;
+  s.manualCutCorrectionX ??= 0;
+  s.manualCutCorrectionY ??= 0;
   if (
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
     !['maker', 'explore', 'joy-xtra'].includes(s.machine) ||
-    !['expanded', 'seven'].includes(s.profile) ||
+    !['expanded', 'seven', 'nine'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.backBleedEnabled !== 'boolean' ||
     typeof s.backsEnabled !== 'boolean' ||
@@ -54,6 +56,8 @@ export function validateProject(value: unknown): Project {
     [s.bleed, 0, 1.5],
     [s.backOffsetX, -5, 5],
     [s.backOffsetY, -5, 5],
+    [s.manualCutCorrectionX, -5, 5],
+    [s.manualCutCorrectionY, -5, 5],
   ]) {
     if (!Number.isFinite(n) || n < min || n > max)
       throw new Error('Card dimensions are outside the supported range.');
@@ -71,6 +75,13 @@ export function validateProject(value: unknown): Project {
   )
     throw new Error(
       'The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, 0.1 mm spacing, and 2.5 mm corners.',
+    );
+  if (
+    s.profile === 'nine' &&
+    (s.width !== 63 || s.height !== 88 || s.gap !== 1 || s.radius !== STANDARD_CARD_RADIUS_MM)
+  )
+    throw new Error(
+      'The manual nine-card layout requires 63 × 88 mm cards, 1 mm spacing, and 2.5 mm corners.',
     );
   if (
     p.backArtwork &&
