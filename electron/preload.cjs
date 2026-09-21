@@ -16,6 +16,12 @@ contextBridge.exposeInMainWorld(
       delete: (projectId) => ipcRenderer.invoke('delete-managed-project', projectId),
       reveal: () => ipcRenderer.invoke('reveal-project-library'),
     }),
+    registrationTemplates: Object.freeze({
+      load: (templateId, slotCount) =>
+        ipcRenderer.invoke('load-registration-template', { templateId, slotCount }),
+      save: (templateId, slotCount, pdf) =>
+        ipcRenderer.invoke('save-registration-template', { templateId, slotCount, pdf }),
+    }),
     releases: Object.freeze({
       check: () => ipcRenderer.invoke('release-check'),
       open: (releaseUrl) => ipcRenderer.invoke('open-release-page', releaseUrl),

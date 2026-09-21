@@ -54,6 +54,9 @@ CriProx can import a one-page PDF captured from Design Space, recognize the surr
   0.05 mm for seven-card sheets. Back sheets extend artwork 1.5 mm past exposed outside edges to
   hide small front-to-back alignment shifts.
 - The captured PDF must correspond to the exact saved Design Space cut job.
+- The desktop app stores verified six-cut and seven-cut captures as PDFs at the root of the selected
+  CriProx project library and loads them automatically whenever their exact cut geometry is selected.
+  Existing captures in local app storage are copied into the library on first use.
 - CriProx preserves captured marks; it does not generate or imitate them.
 - CriProx saves the finished PDF instead of printing it through the browser, which would rasterize
   and reduce higher-resolution output. Print the saved file from a dedicated PDF application at
