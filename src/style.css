@@ -17,12 +17,32 @@
   --purple-light: #f1edfc;
   --border: #e8e9ee;
   --muted: #8b8d9d;
+  --app-bg: #f6f7f9;
+  --surface: #fff;
+  --surface-raised: #fff;
+  --surface-muted: #fafbfc;
+  --surface-soft: #f4f4f7;
+  --surface-hover: #f5f2fc;
+  --surface-selected: #f8f6ff;
+  --control-border: #e1e3ea;
+  --text-primary: #292c3b;
+  --text-secondary: #655d73;
+  --text-muted: #8b8d9d;
+  --canvas-bg: #f0f1f5;
+  --canvas-dot: #d7d9e3;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--app-bg);
+}
+#root,
+.app-shell {
+  min-height: 100vh;
 }
 button,
 input,
@@ -88,14 +108,14 @@ svg {
 input,
 select,
 textarea {
-  color: #3e4050;
+  color: var(--text-primary);
 }
 select {
   width: 100%;
   height: 36px;
-  border: 1px solid #e1e3ea;
+  border: 1px solid var(--control-border);
   border-radius: 7px;
-  background: #fff;
+  background: var(--surface-raised);
   padding: 0 9px;
   font-size: 11px;
 }
@@ -113,7 +133,7 @@ textarea {
   border-radius: 9px;
   width: 100%;
   padding: 16px;
-  background: #fafbfc;
+  background: var(--surface-muted);
   line-height: 1.9;
 }
 button.primary {
@@ -130,8 +150,8 @@ button.primary:not(:disabled):hover {
   background: var(--purple-dark);
 }
 button.secondary {
-  background: #fff;
-  border: 1px solid #e2e3e9;
+  background: var(--surface-raised);
+  border: 1px solid var(--control-border);
   border-radius: 7px;
   padding: 10px 13px;
   font-size: 12px;
@@ -169,7 +189,7 @@ button.compact {
   height: 64px;
   display: flex;
   align-items: center;
-  background: #fff;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
   gap: 24px;
@@ -253,6 +273,10 @@ button.compact {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.theme-toggle[aria-pressed='true'] {
+  background: var(--purple-light);
+  color: var(--purple);
 }
 .window-controls {
   height: 100%;
@@ -448,7 +472,7 @@ h1 > span {
   align-items: stretch;
 }
 .panel {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 11px;
   overflow: hidden;
@@ -2893,6 +2917,445 @@ h1 > span {
   .import-hint {
     font-size: 8px;
   }
+}
+
+/* Dark mode keeps the printed sheet itself white while giving each application
+ * scene its own depth: canvas, chrome, panels, controls, and elevated dialogs. */
+html[data-theme='dark'] {
+  --purple: #aa96ff;
+  --purple-dark: #9078e8;
+  --purple-light: #2c2642;
+  --border: #363642;
+  --muted: #a09aaa;
+  --app-bg: #121217;
+  --surface: #1b1b22;
+  --surface-raised: #23232c;
+  --surface-muted: #17171e;
+  --surface-soft: #272730;
+  --surface-hover: #2c2938;
+  --surface-selected: #302a45;
+  --control-border: #41414f;
+  --text-primary: #f0eef5;
+  --text-secondary: #c7c1cf;
+  --text-muted: #a09aaa;
+  --canvas-bg: #14151b;
+  --canvas-dot: #30323d;
+  color: var(--text-primary);
+  background: var(--app-bg);
+}
+html[data-theme='dark'] .app-shell {
+  color: var(--text-primary);
+  background: var(--app-bg);
+}
+html[data-theme='dark'] .app-shell :is(input, select, textarea) {
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .app-shell :is(select, textarea) {
+  border-color: var(--control-border);
+  background: var(--surface-raised);
+}
+html[data-theme='dark'] .app-shell :is(input, textarea)::placeholder {
+  color: #7f7989;
+}
+html[data-theme='dark'] .app-shell :is(.topbar, .rail, .panel, .modal) {
+  background: var(--surface);
+}
+html[data-theme='dark'] .app-shell .modal {
+  color: var(--text-primary);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    button.secondary,
+    .quantity,
+    .segmented button.selected,
+    .project-browser-item,
+    .card-search-result,
+    .artwork-trim-toggle,
+    .art-source-panel,
+    .mpc-picker,
+    .project-art-grid button,
+    .registration-preferences,
+    .back-print-panel,
+    .back-bleed-toggle,
+    .back-alignment-tool,
+    .release-notice
+  ) {
+  background: var(--surface-raised);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    .search-field,
+    .deck-link-field,
+    .mpc-search,
+    .library-location,
+    .art-inspector,
+    .modal-footer,
+    .registration-summary,
+    .project-delete-confirm,
+    .soft-info
+  ) {
+  background: var(--surface-muted);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    .local-badge,
+    .segmented,
+    .slider-group label strong,
+    .project-folder-settings,
+    .guide-banner,
+    .guide-video-shell,
+    .file-icon,
+    .registered-preview,
+    .alignment-offset-visual
+  ) {
+  background-color: var(--surface-soft);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    .count-badge,
+    .library-location-icon,
+    .project-browser-icon,
+    .current-project-badge,
+    .mini-badge,
+    .guide-step > span,
+    .step-number,
+    .release-notice-icon
+  ) {
+  background: var(--purple-light);
+  color: var(--purple);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    .library-card.selected,
+    .paper-options button.chosen,
+    .variant-card:hover,
+    .variant-card.chosen,
+    .mpc-result:hover,
+    .back-print-panel.enabled,
+    .selection-details,
+    .project-browser-item.current
+  ) {
+  border-color: #65578a;
+  background: var(--surface-selected);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    button.secondary,
+    .quantity,
+    .search-field,
+    .library-card,
+    .paper-options button,
+    .selection-details,
+    .modal,
+    .library-location,
+    .project-browser-item,
+    .card-search-result,
+    .deck-link-field,
+    .variant-card,
+    .artwork-trim-toggle,
+    .art-source-toggle,
+    .art-source-panel,
+    .mpc-picker,
+    .mpc-search,
+    .mpc-result,
+    .project-art-grid button,
+    .guide-video-shell,
+    .file-icon,
+    .release-notice,
+    .registration-summary,
+    .registration-preferences,
+    .back-print-panel,
+    .back-bleed-toggle,
+    .back-alignment-tool,
+    .alignment-offset-visual,
+    .registered-preview > img
+  ) {
+  border-color: var(--control-border);
+}
+html[data-theme='dark'] .app-shell button.secondary:not(:disabled):hover {
+  border-color: #65578a;
+  background: var(--surface-hover);
+}
+html[data-theme='dark'] .app-shell .icon-button:not(:disabled):hover {
+  background: var(--surface-hover);
+  color: var(--purple);
+}
+html[data-theme='dark'] .app-shell .theme-toggle[aria-pressed='true'] {
+  background: var(--purple-light);
+  color: var(--purple);
+}
+html[data-theme='dark'] .app-shell .window-controls.desktop {
+  border-color: var(--border);
+}
+html[data-theme='dark'] .app-shell .window-controls.desktop .window-control {
+  color: var(--text-muted);
+}
+html[data-theme='dark'] .app-shell .window-controls.desktop .window-control:not(:disabled):hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .app-shell .topbar,
+html[data-theme='dark'] .app-shell .panel-heading,
+html[data-theme='dark'] .app-shell .preview-toolbar,
+html[data-theme='dark'] .app-shell .library-footer,
+html[data-theme='dark'] .app-shell .modal-heading,
+html[data-theme='dark'] .app-shell .modal-footer,
+html[data-theme='dark'] .app-shell .settings-divider,
+html[data-theme='dark'] .app-shell .custom-art-panel,
+html[data-theme='dark'] .app-shell .project-artwork,
+html[data-theme='dark'] .app-shell .back-options,
+html[data-theme='dark'] .app-shell .alignment-offset-summary,
+html[data-theme='dark'] .app-shell .dimension-list > div {
+  border-color: var(--border);
+}
+html[data-theme='dark'] .app-shell .settings-divider {
+  background: var(--border);
+}
+html[data-theme='dark'] .app-shell .library-controls .import-button {
+  border-color: #504467;
+  background: var(--surface-raised);
+  color: var(--purple);
+}
+html[data-theme='dark'] .app-shell .library-controls .import-button:not(:disabled):hover {
+  background: var(--surface-selected);
+}
+html[data-theme='dark'] .app-shell .project-delete-button:not(:disabled):hover {
+  border-color: #6b3b46;
+  background: #352027;
+  color: #e5a1ad;
+}
+html[data-theme='dark'] .app-shell .library-card {
+  border-bottom-color: var(--border);
+}
+html[data-theme='dark'] .app-shell .segmented button.selected {
+  color: #ded8eb;
+  box-shadow: 0 1px 4px #0005;
+}
+html[data-theme='dark'] .app-shell .preview-canvas {
+  background-color: var(--canvas-bg);
+  background-image: radial-gradient(var(--canvas-dot) 0.7px, transparent 0.7px);
+  scrollbar-color: #4c4858 transparent;
+}
+html[data-theme='dark'] .app-shell .page-nav .icon-button {
+  border-color: #464451;
+  background: #212129cc;
+}
+html[data-theme='dark'] .app-shell .paper {
+  box-shadow:
+    0 8px 28px #0008,
+    0 1px 5px #0008;
+}
+html[data-theme='dark'] .app-shell :is(.modal, .registered-content, .card-search-content) {
+  scrollbar-color: #4c4858 transparent;
+}
+html[data-theme='dark'] .app-shell .modal::backdrop {
+  background: #08080dbd;
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    .brand small,
+    .breadcrumb,
+    .local-badge,
+    .icon-button,
+    .rail-button,
+    .eyebrow,
+    .page-heading p,
+    .guide-button,
+    .panel-heading h2 > svg,
+    .clear-deck,
+    .artwork-button,
+    .search-field,
+    .search-field input::placeholder,
+    .list-caption,
+    .card-select span,
+    .printing-button,
+    .quantity button,
+    .remove-card,
+    .library-footer,
+    .empty-library,
+    .zoom-control,
+    .zoom-control button,
+    .sheet-label,
+    .view-label,
+    .page-nav,
+    .preview-footer,
+    .setting-group > label,
+    .field-label,
+    .select-wrap > svg,
+    .paper-options button,
+    .paper-options small,
+    .section-label,
+    .field-note,
+    .range-labels,
+    .switch-row small,
+    .selection-details p,
+    .bottom-status,
+    .dimension-summary,
+    .dimension-hint,
+    .little-spark,
+    .modal-heading p,
+    .library-location > div > span,
+    .project-folder-settings span,
+    .projects-section-heading span,
+    .project-browser-copy span,
+    .empty-project-browser,
+    .card-search-summary,
+    .card-search-empty,
+    .card-search-result-copy span,
+    .deck-link-field,
+    .import-hint,
+    .muted,
+    .variant-card span,
+    .inspector-preview > span,
+    .inspector-controls > p,
+    .inspector-face,
+    .art-source-toggle button,
+    .custom-art-heading span,
+    .mpc-picker-heading span,
+    .mpc-picker-footer,
+    .mpc-search > svg,
+    .mpc-result span,
+    .project-artwork > div:first-child span,
+    .project-art-grid button > span:last-child,
+    .loading,
+    .empty-message,
+    .guide-banner p,
+    .guide-step p,
+    .guide-limit,
+    .package-visual,
+    .package-visual p,
+    .dimension-list > div,
+    .release-notice > div > span,
+    .registered-guide-hint,
+    .registration-summary span:not(.mini-badge),
+    .registration-preferences label,
+    .back-art-placeholder,
+    .back-artwork-control small,
+    .back-fields label,
+    .back-offsets label,
+    .back-help,
+    .back-alignment-tool p,
+    .alignment-measurements label,
+    .alignment-offset-summary small,
+    .registration-step p,
+    .capture-success small,
+    .registered-preview p
+  ) {
+  color: var(--text-muted);
+}
+html[data-theme='dark']
+  .app-shell
+  :is(
+    .workspace-title input,
+    .card-select strong,
+    .quantity span,
+    .empty-library strong,
+    .page-nav strong,
+    .paper-options strong,
+    .switch-row,
+    .selection-details strong,
+    .dimension-summary strong,
+    .project-folder-settings strong,
+    .project-browser-copy strong,
+    .empty-project-browser strong,
+    .card-search-empty strong,
+    .inspector-controls h3,
+    .custom-art-heading strong,
+    .mpc-picker-heading strong,
+    .project-artwork > div:first-child strong,
+    .guide-step h3,
+    .package-visual strong,
+    .dimension-list strong,
+    .release-notice strong,
+    .registration-summary strong,
+    .registration-preferences label strong,
+    .back-artwork-control strong,
+    .back-offsets strong,
+    .back-alignment-tool > div:first-child > strong,
+    .alignment-offset-summary strong,
+    .registration-step h3,
+    .registration-step p strong,
+    .registered-preview strong
+  ) {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .app-shell :is(.text-button, .external-link, .mpc-picker-heading a) {
+  color: var(--purple);
+}
+html[data-theme='dark'] .app-shell .text-button:not(:disabled):hover {
+  color: #c5b8ff;
+}
+html[data-theme='dark'] .app-shell .switch {
+  background: #55515f;
+}
+html[data-theme='dark'] .app-shell .switch::after {
+  background: #eeeaf4;
+}
+html[data-theme='dark'] .app-shell .switch-row input:checked + .switch {
+  background: var(--purple-dark);
+}
+html[data-theme='dark'] .app-shell .art-source-toggle {
+  border-color: var(--control-border);
+  background: var(--surface-muted);
+}
+html[data-theme='dark'] .app-shell .art-source-toggle button:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+html[data-theme='dark'] .app-shell .art-source-toggle button.selected {
+  color: #fff;
+  background: var(--purple-dark);
+}
+html[data-theme='dark'] .app-shell .guide-banner strong {
+  color: #c8b9e3;
+}
+html[data-theme='dark'] .app-shell .guide-video-shell video {
+  background: var(--surface-soft);
+}
+html[data-theme='dark'] .app-shell .file-icon.svg {
+  border-color: #365346;
+  background: #20372c;
+  color: #91c2a4;
+}
+html[data-theme='dark'] .app-shell :is(.error-box, .project-delete-confirm) {
+  border-color: #6b3b46;
+  background: #352027;
+  color: #e5a1ad;
+}
+html[data-theme='dark'] .app-shell .warning-box {
+  border-color: #695a36;
+  background: #332c1e;
+  color: #dfc58b;
+}
+html[data-theme='dark'] .app-shell .card-search-result .added-card {
+  border-color: #3f5d4c;
+  background: #20342a;
+  color: #9bc8aa;
+}
+html[data-theme='dark'] .app-shell .capture-success {
+  color: #8fc5a4;
+}
+html[data-theme='dark'] .app-shell .alignment-offset-visual {
+  background-image:
+    linear-gradient(#3b3a45 1px, transparent 1px),
+    linear-gradient(90deg, #3b3a45 1px, transparent 1px);
+}
+html[data-theme='dark'] .app-shell .front-target {
+  border-color: #e2dee8;
+}
+html[data-theme='dark'] .app-shell .back-target {
+  background: #17171ecf;
+}
+html[data-theme='dark'] .app-shell .donation-link:hover,
+html[data-theme='dark'] .app-shell .donation-link:focus-visible {
+  background: #332d21;
 }
 @media (prefers-reduced-motion: reduce) {
   * {
