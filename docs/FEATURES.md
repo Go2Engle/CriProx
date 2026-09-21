@@ -102,6 +102,9 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 ## Local projects and caching
 
 - One autosaved workspace stored in IndexedDB.
+- A dedicated Settings area for appearance, the project library location, and user-defined new-project
+  defaults. Defaults include every sheet, print, back-side, and alignment setting plus optional shared
+  card-back artwork.
 - A desktop project explorer backed by the app's private Application Support directory by default.
 - A one-time macOS importer for projects created in the earlier `Documents/CriProx` library.
 - A configurable projects folder, with one subfolder per saved project.
