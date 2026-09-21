@@ -36,11 +36,12 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.              |
 | 🃏 **Flexible artwork**      | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.               |
 | ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.            |
+| 📐 **Manual nine-card cuts** | Print a 3×3 PDF and reuse its matched transparent Basic Cut PNG with a fixed quarter-inch mat inset.                |
 | 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face. |
 | 💾 **Local project library** | Browse saved projects in CriProx, keep uploaded artwork beside each project, and export portable JSON backups.      |
 
 > [!IMPORTANT]
-> CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
+> CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. The manual nine-card profile deliberately bypasses sensor registration and requires repeatable physical mat placement. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
 
 ## From card list to cut
 
@@ -50,6 +51,10 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 4. **Print and cut in Design Space.** Preserve the supplied dimensions, print at 100% / Actual size, and complete the cut from the same saved job.
 
 CriProx also supports a registered-print workflow: save a one-page PDF from Design Space, import it into CriProx, and reuse those captured marks for later artwork pages while keeping the cut geometry unchanged.
+
+For higher sheet density, the experimental manual profile prints nine cards on Letter or A4 and
+downloads a matched 191 × 266 mm Basic Cut PNG. It is a physical alignment workflow, not Print Then
+Cut, so validate the page and mat position on plain paper first.
 
 ## Download
 

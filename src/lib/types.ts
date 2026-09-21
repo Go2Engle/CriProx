@@ -24,7 +24,7 @@ export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
   machine: 'maker' | 'explore' | 'joy-xtra';
-  profile: 'expanded' | 'seven';
+  profile: 'expanded' | 'seven' | 'nine';
   width: number;
   height: number;
   gap: number;
@@ -37,6 +37,9 @@ export type Settings = {
   backRotation: 0 | 180;
   backOffsetX: number;
   backOffsetY: number;
+  /** Desired physical cut correction relative to the printed artwork. Positive is right/down. */
+  manualCutCorrectionX: number;
+  manualCutCorrectionY: number;
   dpi: PrintDpi;
   proxyLabel: boolean;
 };
@@ -72,6 +75,8 @@ export const DEFAULT_SETTINGS: Settings = {
   backRotation: 180,
   backOffsetX: 0,
   backOffsetY: 0,
+  manualCutCorrectionX: 0,
+  manualCutCorrectionY: 0,
   dpi: 300,
   proxyLabel: false,
 };

@@ -43,6 +43,8 @@ test('capture identity follows cutting geometry and target, not artwork output o
       backFlip: 'short-edge',
       backOffsetX: 1,
       backOffsetY: -1,
+      manualCutCorrectionX: 0.5,
+      manualCutCorrectionY: 1.75,
     }),
   );
   for (const change of [
@@ -52,6 +54,7 @@ test('capture identity follows cutting geometry and target, not artwork output o
     { paper: 'a4' as const },
     { machine: 'explore' as const },
     { profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
+    { profile: 'nine' as const },
   ])
     assert.notEqual(key, registrationKey({ ...DEFAULT_SETTINGS, ...change }));
 });

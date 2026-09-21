@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { PDFDocument } from 'pdf-lib';
 import { renderSheet } from '../src/lib/export';
+import { buildManualCutCalibrationPdf } from '../src/lib/manual-cut';
 import { DEFAULT_SETTINGS, type Entry } from '../src/lib/types';
 import { mmToPx, type Sheet } from '../src/lib/layout';
 import { repairTransparentCorners, replicateBorder } from '../src/lib/bleed';
@@ -97,6 +99,21 @@ Object.defineProperty(globalThis, 'createImageBitmap', {
     const image = await loadImage(Buffer.from(await blob.arrayBuffer()));
     return Object.assign(image, { close() {} });
   },
+});
+
+test('manual cut calibration sheet uses the production raster path on an actual-size page', async () => {
+  const bytes = await buildManualCutCalibrationPdf({
+      version: 1,
+      name: 'Calibration test',
+      entries: [],
+      settings: { ...DEFAULT_SETTINGS, profile: 'nine' },
+    }),
+    document = await PDFDocument.load(bytes),
+    page = document.getPage(0);
+  assert.equal(document.getPageCount(), 1);
+  assert.ok(Math.abs(page.getWidth() - 612) < 0.001);
+  assert.ok(Math.abs(page.getHeight() - 792) < 0.001);
+  assert.match(document.getTitle() || '', /Manual cut calibration - X \+0\.00 mm, Y \+0\.00 mm$/);
 });
 
 function artwork(color: string, detailed = false, rounded = false): Entry {

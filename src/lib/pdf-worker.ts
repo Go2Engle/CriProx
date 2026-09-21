@@ -6,10 +6,16 @@ import {
   buildRegisteredPdf,
   combineDuplexPdfs,
 } from './registered-pdf';
+import {
+  buildManualCutCalibrationPdf,
+  buildManualCutPdf,
+  manualCutTemplatePng,
+} from './manual-cut';
 
 export type PreparedPdfJob = {
   pdf: Uint8Array;
   backPdf?: Uint8Array;
+  cutPng?: Uint8Array;
   mode: 'front' | 'manual' | 'duplex';
 };
 
@@ -20,7 +26,9 @@ export type PdfWorkerPayload =
       profile: RegistrationProfile;
       calibration: boolean;
     }
-  | { kind: 'alignment'; project: Project };
+  | { kind: 'alignment'; project: Project }
+  | { kind: 'manual-calibration'; project: Project }
+  | { kind: 'manual-nine'; project: Project };
 
 export type PdfWorkerRequest = PdfWorkerPayload & { id: string };
 
@@ -33,6 +41,25 @@ export async function executePdfJob(
   request: PdfWorkerRequest,
   progress: (text: string) => void,
 ): Promise<PreparedPdfJob> {
+  if (request.kind === 'manual-calibration') {
+    progress('Building manual cut calibration sheet…');
+    return { pdf: await buildManualCutCalibrationPdf(request.project), mode: 'front' };
+  }
+  if (request.kind === 'manual-nine') {
+    const cutPng = await manualCutTemplatePng(request.project.settings),
+      fronts = await buildManualCutPdf(request.project, progress);
+    if (!request.project.settings.backsEnabled) return { pdf: fronts, cutPng, mode: 'front' };
+    const backs = await buildManualCutPdf(request.project, progress, true);
+    if (request.project.settings.backPrintMode === 'duplex') {
+      progress('Combining duplex pages…');
+      return {
+        pdf: await combineDuplexPdfs(request.project, fronts, backs),
+        cutPng,
+        mode: 'duplex',
+      };
+    }
+    return { pdf: fronts, backPdf: backs, cutPng, mode: 'manual' };
+  }
   if (request.kind === 'alignment') {
     const alignment = await buildBackAlignmentPdfs(request.project);
     if (request.project.settings.backPrintMode === 'duplex') {

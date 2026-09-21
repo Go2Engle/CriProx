@@ -61,6 +61,27 @@ CriProx can import a one-page PDF captured from Design Space, recognize the surr
 
 See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the complete setup and reuse procedure.
 
+## Manual nine-card cutting
+
+The experimental manual profile fits nine fixed 63 × 88 mm cards in a 191 × 266 mm 3×3 block
+with 1 mm gutters. It produces:
+
+- Portrait Letter or A4 print PDFs with the artwork block nominally 6.35 mm (0.25 in) from the top
+  and left before physical calibration.
+- One transparent 300 DPI PNG containing the same nine rounded silhouettes for Basic Cut.
+- Fixed slot positions on partial pages, allowing one saved Design Space cut project to serve every
+  page in a deck.
+- Saved horizontal and vertical physical-cut corrections from -5 mm to +5 mm. Corrections shift the
+  print PDF in the opposite direction, so the Basic Cut PNG and saved Design Space project stay fixed.
+- A plain-paper calibration PDF with 1 mm measurement grids around the top-left card. The guided
+  controls convert the observed blade-line direction and square count into the required correction.
+- Matching manual-refeed or duplex back pages when card backs are enabled.
+
+This mode uses no sensor marks. The printed page must be placed flush to the upper-left of the mat's
+adhesive grid, while the Basic Cut group starts at the first 0.25 in inset in Design Space's Prepare
+preview. Printer scaling, page placement, mat loading, and machine repeatability remain physical error
+sources, so this mode requires a measured plain-paper test.
+
 ## Card backs and duplex output
 
 Card backs are optional and disabled by default. Selecting a double-sided card shows a warning while
@@ -100,6 +121,12 @@ The default 180 × 220 mm candidate area produces six rotated cards. With US Let
 
 The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 mm corners, 0.1 mm spacing, and a 189.2 × 214.2 mm template. It also uses the Tabloid-to-Letter handoff. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
 
+### Nine-card manual layout
+
+The manual profile uses nine fixed 63 × 88 mm cards, 2.5 mm corners, 1 mm spacing, and a
+191 × 266 mm template. It stays inside the published 11.5 × 11.5 in cutting area of a 12 × 12 in
+mat, but it bypasses optical registration and remains physically unverified.
+
 ## Current limits
 
 - 500 cards per project.
@@ -110,6 +137,7 @@ The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 m
   replaces it.
 - No image-upscaling service, printer connection, cutter control, native Design Space project generation, or cloud sync.
 - Registered printing depends on a captured PDF for the exact saved cut job.
+- Manual nine-card cutting depends on repeatable page and cut-template placement on the mat.
 - Duplex alignment depends on repeatable printer feed.
 - Letter output for the six- and seven-card profiles uses an unsupported Tabloid-to-Letter paper-size workaround.
 

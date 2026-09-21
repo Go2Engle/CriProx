@@ -14,8 +14,13 @@ const sevenCardGeometry = (settings: Settings) => ({
   width: settings.width * 3 + settings.gap * 2,
   height: settings.width * 2 + settings.height + settings.gap * 2,
 });
+const nineCardGeometry = (settings: Settings) => ({
+  width: settings.width * 3 + settings.gap * 2,
+  height: settings.height * 3 + settings.gap * 2,
+});
 export function envelope(settings: Settings) {
   if (settings.profile === 'seven') return sevenCardGeometry(settings);
+  if (settings.profile === 'nine') return nineCardGeometry(settings);
   // This is an unvalidated candidate, not the product of multiplying Cricut's
   // nonrectangular maximum extents.
   return { width: 180, height: 220 };
@@ -29,6 +34,15 @@ export function grid(settings: Settings) {
       rows: 3,
       rotated: false,
       capacity: 7,
+    };
+  if (settings.profile === 'nine')
+    return {
+      width: settings.width,
+      height: settings.height,
+      columns: 3,
+      rows: 3,
+      rotated: false,
+      capacity: 9,
     };
   const area = envelope(settings);
   const options = [false, true].map((rotated) => {
@@ -83,6 +97,25 @@ export function layout(entries: Entry[], settings: Settings): Sheet[] {
             height: slot.rotated ? settings.width : settings.height,
           };
         }),
+      });
+    }
+    return sheets;
+  }
+  if (settings.profile === 'nine') {
+    const bounds = nineCardGeometry(settings);
+    for (let start = 0; start < copies.length; start += g.capacity) {
+      const page = copies.slice(start, start + g.capacity);
+      sheets.push({
+        index: sheets.length,
+        ...bounds,
+        placements: page.map((copy, i) => ({
+          ...copy,
+          x: (i % 3) * (settings.width + settings.gap),
+          y: Math.floor(i / 3) * (settings.height + settings.gap),
+          width: settings.width,
+          height: settings.height,
+          rotated: false,
+        })),
       });
     }
     return sheets;

@@ -8,6 +8,7 @@ import {
   ImagePlus,
   LoaderCircle,
   Ruler,
+  Scissors,
   X,
 } from 'lucide-react';
 import {
@@ -36,6 +37,12 @@ import PdfPagePreview from './PdfPagePreview';
 import { paperWorkflow } from '../lib/paper-workflow';
 import { doubleSidedCardCount, needsSharedCardBack } from '../lib/entries';
 import { usesMpcTrim } from '../lib/artwork';
+import {
+  MANUAL_CUT_CALIBRATION_SQUARE_MM,
+  MANUAL_CUT_INSET_MM,
+  manualCutCorrection,
+  manualCutCorrectionFileTag,
+} from '../lib/manual-cut';
 export default function RegisteredPrint({
   project,
   close,
@@ -63,13 +70,21 @@ export default function RegisteredPrint({
     [error, setError] = useState('');
   const [pdf, setPdf] = useState<Uint8Array>(),
     [backPdf, setBackPdf] = useState<Uint8Array>(),
+    [cutPng, setCutPng] = useState<Uint8Array>(),
     [preparedMode, setPreparedMode] = useState<'front' | 'manual' | 'duplex'>('front'),
-    [preparedKind, setPreparedKind] = useState<'cards' | 'size' | 'alignment'>('cards');
+    [preparedKind, setPreparedKind] = useState<
+      'cards' | 'size' | 'alignment' | 'manual-calibration' | 'manual-nine'
+    >('cards');
   const [horizontalSquares, setHorizontalSquares] = useState(0),
     [horizontalDirection, setHorizontalDirection] = useState<'left' | 'right'>('right'),
     [verticalSquares, setVerticalSquares] = useState(0),
-    [verticalDirection, setVerticalDirection] = useState<'up' | 'down'>('down');
-  const key = registrationKey(project.settings),
+    [verticalDirection, setVerticalDirection] = useState<'up' | 'down'>('down'),
+    [manualHorizontalSquares, setManualHorizontalSquares] = useState(0),
+    [manualHorizontalDirection, setManualHorizontalDirection] = useState<'left' | 'right'>('left'),
+    [manualVerticalSquares, setManualVerticalSquares] = useState(0),
+    [manualVerticalDirection, setManualVerticalDirection] = useState<'up' | 'down'>('up');
+  const manualNine = project.settings.profile === 'nine',
+    key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
     id = templateId(project.settings),
     printPaper = paperWorkflow(project.settings),
@@ -78,6 +93,10 @@ export default function RegisteredPrint({
     onlyDoubleSided = doubleSidedCount > 0 && !sharedBackRequired;
   useEffect(() => {
     dialog.current?.showModal();
+    if (manualNine) {
+      setBusy('');
+      return;
+    }
     let active = true;
     get<RegistrationProfile>(`registration:${key}`)
       .then((p) => {
@@ -94,7 +113,7 @@ export default function RegisteredPrint({
     return () => {
       active = false;
     };
-  }, [key]);
+  }, [key, manualNine]);
   async function setup() {
     setBusy('Creating setup image…');
     setError('');
@@ -151,6 +170,42 @@ export default function RegisteredPrint({
       setBusy('');
     }
   }
+  async function prepareManualCut() {
+    setBusy('Building manual cut files…');
+    setError('');
+    setPdf(undefined);
+    setBackPdf(undefined);
+    setCutPng(undefined);
+    try {
+      const result = await preparePdfJob({ kind: 'manual-nine', project }, setBusy);
+      setPdf(result.pdf);
+      setBackPdf(result.backPdf);
+      setCutPng(result.cutPng);
+      setPreparedMode(result.mode);
+      setPreparedKind('manual-nine');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not generate the manual cut files.');
+    } finally {
+      setBusy('');
+    }
+  }
+  async function prepareManualCalibration() {
+    setBusy('Building manual cut calibration sheet…');
+    setError('');
+    setPdf(undefined);
+    setBackPdf(undefined);
+    setCutPng(undefined);
+    try {
+      const result = await preparePdfJob({ kind: 'manual-calibration', project }, setBusy);
+      setPdf(result.pdf);
+      setPreparedMode('front');
+      setPreparedKind('manual-calibration');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not generate the calibration sheet.');
+    } finally {
+      setBusy('');
+    }
+  }
   async function prepareAlignment() {
     setBusy('Building front-to-back alignment pages…');
     setError('');
@@ -188,6 +243,26 @@ export default function RegisteredPrint({
       `Back alignment updated to X ${backOffsetX >= 0 ? '+' : ''}${formatMeasurement(backOffsetX, project.settings.units)}, Y ${backOffsetY >= 0 ? '+' : ''}${formatMeasurement(backOffsetY, project.settings.units)}.`,
     );
   }
+  function applyManualCalibration() {
+    const correction = manualCutCorrection(
+        manualHorizontalSquares,
+        manualHorizontalDirection,
+        manualVerticalSquares,
+        manualVerticalDirection,
+      ),
+      manualCutCorrectionX = project.settings.manualCutCorrectionX + correction.x,
+      manualCutCorrectionY = project.settings.manualCutCorrectionY + correction.y;
+    if (Math.abs(manualCutCorrectionX) > 5 || Math.abs(manualCutCorrectionY) > 5) {
+      setError('The measured correction exceeds the supported 5 mm calibration range.');
+      return;
+    }
+    changePrintSettings({ manualCutCorrectionX, manualCutCorrectionY });
+    setManualHorizontalSquares(0);
+    setManualVerticalSquares(0);
+    notify(
+      `Manual cut calibration updated to X ${offsetDescription(manualCutCorrectionX, true)}, Y ${offsetDescription(manualCutCorrectionY, false)}.`,
+    );
+  }
   function offsetDescription(value: number, horizontal: boolean) {
     if (Math.abs(value) < 0.001) return 'centered';
     return `${formatMeasurement(Math.abs(value), project.settings.units)} ${
@@ -197,6 +272,7 @@ export default function RegisteredPrint({
   function changePrintSettings(patch: Partial<Settings>) {
     setPdf(undefined);
     setBackPdf(undefined);
+    setCutPng(undefined);
     updateSettings(patch);
   }
   async function uploadBack(file?: File) {
@@ -226,7 +302,15 @@ export default function RegisteredPrint({
   }
   function savePdf(bytes: Uint8Array | undefined, suffix: string) {
     if (!bytes) return;
-    download(new Blob([bytes.slice().buffer], { type: 'application/pdf' }), `${id}-${suffix}.pdf`);
+    const calibrationTag = manualNine ? `-${manualCutCorrectionFileTag(project.settings)}` : '';
+    download(
+      new Blob([bytes.slice().buffer], { type: 'application/pdf' }),
+      `${id}-${suffix}${calibrationTag}.pdf`,
+    );
+  }
+  function saveCutPng() {
+    if (!cutPng) return;
+    download(new Blob([cutPng.slice().buffer], { type: 'image/png' }), `${id}-basic-cut.png`);
   }
   return (
     <dialog
@@ -240,23 +324,35 @@ export default function RegisteredPrint({
     >
       <div className="modal-heading">
         <div>
-          <div className="registration-tag">REUSABLE TEMPLATE · EXPERIMENTAL</div>
-          <h2 id="registered-title">Create registered print PDF</h2>
-          <p>Capture Cricut’s marks once, then save full-quality PDFs for printing.</p>
-          <div className="registered-guide-hint">
-            <CircleHelp size={14} />
-            <span>
-              Need a hand?{' '}
-              <button className="text-button" disabled={!!busy} onClick={openGuide}>
-                Open the How To guide
-              </button>{' '}
-              for step-by-step video guidance.
-            </span>
+          <div className="registration-tag">
+            {manualNine
+              ? 'MANUAL MAT ALIGNMENT · EXPERIMENTAL'
+              : 'REUSABLE TEMPLATE · EXPERIMENTAL'}
           </div>
+          <h2 id="registered-title">
+            {manualNine ? 'Create manual 9-card cut' : 'Create registered print PDF'}
+          </h2>
+          <p>
+            {manualNine
+              ? 'Print nine cards per page, then align the matching Basic Cut template on your mat.'
+              : 'Capture Cricut’s marks once, then save full-quality PDFs for printing.'}
+          </p>
+          {!manualNine && (
+            <div className="registered-guide-hint">
+              <CircleHelp size={14} />
+              <span>
+                Need a hand?{' '}
+                <button className="text-button" disabled={!!busy} onClick={openGuide}>
+                  Open the How To guide
+                </button>{' '}
+                for step-by-step video guidance.
+              </span>
+            </div>
+          )}
         </div>
         <button
           className="icon-button"
-          aria-label="Close registered printing"
+          aria-label={manualNine ? 'Close manual cutting' : 'Close registered printing'}
           disabled={!!busy}
           onClick={close}
         >
@@ -588,119 +684,312 @@ export default function RegisteredPrint({
             </div>
           )}
         </div>
-        <div className="registration-step">
-          <span className="step-number">1</span>
-          <div>
-            <h3>Create your reusable cut job</h3>
-            <p>
-              Download the magenta setup image. Upload it to Design Space as one flat Print Then Cut
-              image, preserve transparency, and set both dimensions to{' '}
-              <strong>{formatDimensions(full.width, full.height, project.settings.units)}</strong>.
-              Save the project as <strong>{id}</strong>.
-              {printPaper.usesLetterHack && (
-                <>
-                  {' '}
-                  Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the Print
-                  Then Cut page size in Design Space.
-                </>
-              )}
-            </p>
-            <button className="secondary" disabled={!!busy} onClick={setup}>
-              <Download size={15} /> Download setup PNG
-            </button>
-          </div>
-        </div>
-        <div className="registration-step">
-          <span className="step-number">2</span>
-          <div>
-            <h3>Capture the actual sensor marks</h3>
-            <p>
-              In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>, use
-              the system print dialog, and{' '}
-              {printPaper.usesLetterHack ? (
-                <>
-                  change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save a{' '}
-                  <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it becomes
-                  two pages or clips any of the four sensor marks.
-                </>
-              ) : (
-                <>save a full-page, portrait PDF at actual size.</>
-              )}{' '}
-              Import that PDF here. We check the slot pattern and size before storing it locally.
-            </p>
-            <button className="secondary" disabled={!!busy} onClick={() => input.current?.click()}>
-              <FileUp size={15} />
-              {profile ? 'Replace captured PDF' : 'Import Design Space PDF'}
-            </button>
-            {profile && (
-              <div className="capture-success">
-                <CheckCircle2 size={16} />
+        {manualNine ? (
+          <>
+            <div className="manual-cut-banner">
+              <Scissors size={28} />
+              <div>
+                <strong>One coordinate system, two matched files.</strong>
                 <span>
-                  {profile.name}
-                  <small>
-                    Geometry checked · captured {new Date(profile.capturedAt).toLocaleDateString()}{' '}
-                    · hardware unverified
-                  </small>
+                  The print PDF and Basic Cut PNG share the same 3 × 3 geometry. The Basic Cut stays
+                  at the first {formatMeasurement(MANUAL_CUT_INSET_MM, project.settings.units)} mat
+                  inset; calibration shifts only the printed artwork.
                 </span>
               </div>
-            )}
-          </div>
-        </div>
-        <div className="registration-step">
-          <span className="step-number">3</span>
-          <div>
-            <h3>Save the PDF, then use the saved cut job</h3>
-            <p>
-              Prepare and inspect your pages below, then save the PDF and open it in a dedicated PDF
-              application. Print at <strong>100% / Actual size</strong>, with no fit, shrink,
-              headers, or margins. CriProx does not print directly because browser printing reduces
-              output quality. If backs are enabled, print their artwork onto the same sheets; those
-              back pages do not contain registration marks or cut lines. In Design Space, reopen
-              this exact saved project and mat, select{' '}
-              <strong>Already Printed / Skip printing</strong> when available, then load the sheet
-              front-side up and cut.
-            </p>
-            <div className="registration-actions">
-              <button
-                className="secondary"
-                disabled={!!busy || !profile || !project.entries.length}
-                onClick={() => prepare(true)}
-              >
-                <Ruler size={15} />
-                Prepare size-check sheet
-              </button>
-              <button
-                className="primary"
-                disabled={
-                  !!busy ||
-                  !profile ||
-                  !project.entries.length ||
-                  (project.settings.backsEnabled && sharedBackRequired && !project.backArtwork)
-                }
-                onClick={() => prepare(false)}
-              >
-                Prepare card sheets
-              </button>
             </div>
-          </div>
-        </div>
-        <div className="soft-info">
-          <Ruler size={18} />
-          <span>
-            Every page keeps all {full.placements.length} slots, including the last page. Unused
-            slots print white and will still be cut. Change paper, spacing, machine, or layout and a
-            new captured template is required. Card-back settings and alignment offsets reuse the
-            current cut template; CriProx never creates a second Cricut template for the back side.
-          </span>
-        </div>
-        <p className="guide-limit">
-          Captured marks are preserved from your PDF, not independently generated. This is outside
-          Cricut’s recommended print flow and still needs sensor and measurement tests on your
-          machine. Recapture after changes to the saved mat, Design Space, or printer setup. CriProx
-          only saves the print PDF so the captured marks’ original content and the selected artwork
-          DPI are preserved. Print the saved file from a dedicated PDF application. Artwork bleed
-          extends into the surrounding card spacing without changing the cut pattern.
-        </p>
+            <div className="manual-cut-calibration">
+              <div className="manual-cut-calibration-heading">
+                <div>
+                  <strong>Physical cut calibration</strong>
+                  <p>
+                    Print and cut the measured target at least twice using the same paper-placement
+                    and mat-loading method. If both runs agree, enter the square counts below. If
+                    they differ, the loading is not repeatable and one saved correction cannot fix
+                    it. The target and card sheets use the same raster, bleed, and PDF placement
+                    path; the Basic Cut PNG stays unchanged.
+                  </p>
+                </div>
+                <button
+                  className="secondary"
+                  disabled={
+                    !project.settings.manualCutCorrectionX && !project.settings.manualCutCorrectionY
+                  }
+                  onClick={() =>
+                    changePrintSettings({ manualCutCorrectionX: 0, manualCutCorrectionY: 0 })
+                  }
+                >
+                  Reset
+                </button>
+              </div>
+              <button
+                className="secondary manual-calibration-download"
+                disabled={!!busy}
+                onClick={prepareManualCalibration}
+              >
+                <Ruler size={15} /> Prepare 1 mm calibration sheet
+              </button>
+              <div className="manual-calibration-measurements alignment-measurements">
+                <label>
+                  <span>Cut line is</span>
+                  <select
+                    aria-label="Manual horizontal calibration squares"
+                    value={manualHorizontalSquares}
+                    onChange={(event) => setManualHorizontalSquares(Number(event.target.value))}
+                  >
+                    {Array.from({ length: 11 }, (_, index) => index / 2).map((value) => (
+                      <option key={value} value={value}>
+                        {value} square{value === 1 ? '' : 's'}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="Manual horizontal calibration direction"
+                    value={manualHorizontalDirection}
+                    onChange={(event) =>
+                      setManualHorizontalDirection(event.target.value as 'left' | 'right')
+                    }
+                  >
+                    <option value="left">left</option>
+                    <option value="right">right</option>
+                  </select>
+                  <span>of the dark left edge</span>
+                </label>
+                <label>
+                  <span>Cut line is</span>
+                  <select
+                    aria-label="Manual vertical calibration squares"
+                    value={manualVerticalSquares}
+                    onChange={(event) => setManualVerticalSquares(Number(event.target.value))}
+                  >
+                    {Array.from({ length: 11 }, (_, index) => index / 2).map((value) => (
+                      <option key={value} value={value}>
+                        {value} square{value === 1 ? '' : 's'}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="Manual vertical calibration direction"
+                    value={manualVerticalDirection}
+                    onChange={(event) =>
+                      setManualVerticalDirection(event.target.value as 'up' | 'down')
+                    }
+                  >
+                    <option value="up">above</option>
+                    <option value="down">below</option>
+                  </select>
+                  <span>the dark top edge</span>
+                </label>
+              </div>
+              <button
+                className="primary apply-alignment"
+                disabled={!!busy || (!manualHorizontalSquares && !manualVerticalSquares)}
+                onClick={applyManualCalibration}
+              >
+                Apply measured correction
+              </button>
+              <p className="manual-cut-calibration-note">
+                Current correction: X{' '}
+                {offsetDescription(project.settings.manualCutCorrectionX, true)} · Y{' '}
+                {offsetDescription(project.settings.manualCutCorrectionY, false)}. Each square is{' '}
+                {MANUAL_CUT_CALIBRATION_SQUARE_MM} mm. Measurements reset after applying so the same
+                correction is not added twice.
+              </p>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">1</span>
+              <div>
+                <h3>Prepare the matched print and cut files</h3>
+                <p>
+                  CriProx creates a full-quality {printPaper.systemPaper} PDF and one transparent
+                  nine-slot PNG. Every PDF page keeps all nine positions, so the same cut template
+                  works for the entire deck. Your physical calibration is applied to the PDF only;
+                  blank positions on the last page will still be cut.
+                </p>
+                <button
+                  className="primary"
+                  disabled={
+                    !!busy ||
+                    !project.entries.length ||
+                    (project.settings.backsEnabled && sharedBackRequired && !project.backArtwork)
+                  }
+                  onClick={prepareManualCut}
+                >
+                  Prepare 9-card files
+                </button>
+              </div>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">2</span>
+              <div>
+                <h3>Print the PDF at actual size</h3>
+                <p>
+                  Open the saved PDF in a dedicated PDF application. Print on{' '}
+                  <strong>{printPaper.systemPaper}</strong> in portrait orientation at{' '}
+                  <strong>100% / Actual size</strong>, with fit, shrink, headers, and margins
+                  disabled. Place the printed page flush with the upper-left corner of the mat’s
+                  adhesive grid.
+                </p>
+              </div>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">3</span>
+              <div>
+                <h3>Upload and position the Basic Cut PNG</h3>
+                <p>
+                  Upload the PNG to Design Space as <strong>Basic Cut</strong>, not Print Then Cut.
+                  Set it to exactly{' '}
+                  <strong>
+                    {formatDimensions(full.width, full.height, project.settings.units)}
+                  </strong>{' '}
+                  and keep all nine shapes together. Choose <strong>On Mat</strong>. In the Prepare
+                  preview, keep the group upright with its top-left at the first 0.25 in grid inset;
+                  do not center, mirror, rearrange, or auto-resize it. Run a plain-paper test before
+                  using card stock.
+                </p>
+              </div>
+            </div>
+            <div className="soft-info">
+              <Ruler size={18} />
+              <span>
+                Manual alignment does not use Cricut sensor marks. A straight paper edge, fresh mat,
+                consistent upper-left placement, and a measured test are required. SnapMat on iOS
+                can help position the cut over the photographed sheet, but it does not replace a
+                physical test.
+              </span>
+            </div>
+            <p className="guide-limit">
+              This workflow deliberately bypasses Print Then Cut’s optical registration. Printer
+              scaling, paper placement, mat loading, and cutter repeatability can shift the result.
+              CriProx matches the source geometry but cannot guarantee perfect physical alignment.
+              Keep the saved Design Space project and mat arrangement unchanged after validation.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="registration-step">
+              <span className="step-number">1</span>
+              <div>
+                <h3>Create your reusable cut job</h3>
+                <p>
+                  Download the magenta setup image. Upload it to Design Space as one flat Print Then
+                  Cut image, preserve transparency, and set both dimensions to{' '}
+                  <strong>
+                    {formatDimensions(full.width, full.height, project.settings.units)}
+                  </strong>
+                  . Save the project as <strong>{id}</strong>.
+                  {printPaper.usesLetterHack && (
+                    <>
+                      {' '}
+                      Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the
+                      Print Then Cut page size in Design Space.
+                    </>
+                  )}
+                </p>
+                <button className="secondary" disabled={!!busy} onClick={setup}>
+                  <Download size={15} /> Download setup PNG
+                </button>
+              </div>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">2</span>
+              <div>
+                <h3>Capture the actual sensor marks</h3>
+                <p>
+                  In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>,
+                  use the system print dialog, and{' '}
+                  {printPaper.usesLetterHack ? (
+                    <>
+                      change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save a{' '}
+                      <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it
+                      becomes two pages or clips any of the four sensor marks.
+                    </>
+                  ) : (
+                    <>save a full-page, portrait PDF at actual size.</>
+                  )}{' '}
+                  Import that PDF here. We check the slot pattern and size before storing it
+                  locally.
+                </p>
+                <button
+                  className="secondary"
+                  disabled={!!busy}
+                  onClick={() => input.current?.click()}
+                >
+                  <FileUp size={15} />
+                  {profile ? 'Replace captured PDF' : 'Import Design Space PDF'}
+                </button>
+                {profile && (
+                  <div className="capture-success">
+                    <CheckCircle2 size={16} />
+                    <span>
+                      {profile.name}
+                      <small>
+                        Geometry checked · captured{' '}
+                        {new Date(profile.capturedAt).toLocaleDateString()} · hardware unverified
+                      </small>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">3</span>
+              <div>
+                <h3>Save the PDF, then use the saved cut job</h3>
+                <p>
+                  Prepare and inspect your pages below, then save the PDF and open it in a dedicated
+                  PDF application. Print at <strong>100% / Actual size</strong>, with no fit,
+                  shrink, headers, or margins. CriProx does not print directly because browser
+                  printing reduces output quality. If backs are enabled, print their artwork onto
+                  the same sheets; those back pages do not contain registration marks or cut lines.
+                  In Design Space, reopen this exact saved project and mat, select{' '}
+                  <strong>Already Printed / Skip printing</strong> when available, then load the
+                  sheet front-side up and cut.
+                </p>
+                <div className="registration-actions">
+                  <button
+                    className="secondary"
+                    disabled={!!busy || !profile || !project.entries.length}
+                    onClick={() => prepare(true)}
+                  >
+                    <Ruler size={15} />
+                    Prepare size-check sheet
+                  </button>
+                  <button
+                    className="primary"
+                    disabled={
+                      !!busy ||
+                      !profile ||
+                      !project.entries.length ||
+                      (project.settings.backsEnabled && sharedBackRequired && !project.backArtwork)
+                    }
+                    onClick={() => prepare(false)}
+                  >
+                    Prepare card sheets
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="soft-info">
+              <Ruler size={18} />
+              <span>
+                Every page keeps all {full.placements.length} slots, including the last page. Unused
+                slots print white and will still be cut. Change paper, spacing, machine, or layout
+                and a new captured template is required. Card-back settings and alignment offsets
+                reuse the current cut template; CriProx never creates a second Cricut template for
+                the back side.
+              </span>
+            </div>
+            <p className="guide-limit">
+              Captured marks are preserved from your PDF, not independently generated. This is
+              outside Cricut’s recommended print flow and still needs sensor and measurement tests
+              on your machine. Recapture after changes to the saved mat, Design Space, or printer
+              setup. CriProx only saves the print PDF so the captured marks’ original content and
+              the selected artwork DPI are preserved. Print the saved file from a dedicated PDF
+              application. Artwork bleed extends into the surrounding card spacing without changing
+              the cut pattern.
+            </p>
+          </>
+        )}
         {error && (
           <div className="error-box" role="alert">
             {error}
@@ -719,15 +1008,23 @@ export default function RegisteredPrint({
               <strong>
                 {preparedKind === 'alignment'
                   ? 'Back alignment guide'
-                  : preparedKind === 'size'
-                    ? 'Size-check sheet'
-                    : 'Card sheets'}{' '}
+                  : preparedKind === 'manual-calibration'
+                    ? 'Manual cut calibration'
+                    : preparedKind === 'size'
+                      ? 'Size-check sheet'
+                      : preparedKind === 'manual-nine'
+                        ? 'Manual 9-card files'
+                        : 'Card sheets'}{' '}
                 ready to review
               </strong>
               <p>
                 {preparedKind === 'alignment'
                   ? 'Print the front target first, then the matching back target on the same sheet. '
-                  : 'Review every sheet using the page selector or arrows. Confirm the front marks are unobstructed and check the matching backs. '}
+                  : preparedKind === 'manual-calibration'
+                    ? 'Print this target on plain paper, place it flush at the mat grid origin, and cut it with the unchanged saved 9-card Basic Cut project. '
+                    : preparedKind === 'manual-nine'
+                      ? 'Review every print page, then save the separate Basic Cut PNG for Design Space. '
+                      : 'Review every sheet using the page selector or arrows. Confirm the front marks are unobstructed and check the matching backs. '}
                 {preparedMode === 'manual' &&
                   'Print fronts first, refeed those sheets, then print the matching backs in the same order.'}
                 {preparedMode === 'duplex' &&
@@ -753,6 +1050,11 @@ export default function RegisteredPrint({
                     <Download size={15} />{' '}
                     {preparedKind === 'alignment' ? 'Save front test PDF' : 'Save fronts PDF'}
                   </button>
+                  {preparedKind === 'manual-nine' && (
+                    <button className="secondary" disabled={!!busy || !cutPng} onClick={saveCutPng}>
+                      <Download size={15} /> Save Basic Cut PNG
+                    </button>
+                  )}
                   <button
                     className="primary"
                     disabled={!!busy || !backPdf}
@@ -778,13 +1080,26 @@ export default function RegisteredPrint({
                             : 'duplex'
                           : preparedKind === 'size'
                             ? 'size-check'
-                            : 'cards',
+                            : preparedKind === 'manual-calibration'
+                              ? 'manual-cut-calibration'
+                              : 'cards',
                       )
                     }
                   >
                     <Download size={15} />
-                    {preparedMode === 'duplex' ? 'Save duplex PDF' : 'Save registered PDF'}
+                    {preparedMode === 'duplex'
+                      ? 'Save duplex PDF'
+                      : preparedKind === 'manual-calibration'
+                        ? 'Save calibration PDF'
+                        : preparedKind === 'manual-nine'
+                          ? 'Save print PDF'
+                          : 'Save registered PDF'}
                   </button>
+                  {preparedKind === 'manual-nine' && (
+                    <button className="secondary" disabled={!!busy || !cutPng} onClick={saveCutPng}>
+                      <Download size={15} /> Save Basic Cut PNG
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -806,7 +1121,11 @@ export default function RegisteredPrint({
         onChange={(e) => uploadBack(e.target.files?.[0])}
       />
       <div className="modal-footer">
-        <span className="muted">A saved template replaces artwork uploads for each deck.</span>
+        <span className="muted">
+          {manualNine
+            ? 'Test alignment on plain paper before committing card stock.'
+            : 'A saved template replaces artwork uploads for each deck.'}
+        </span>
         <button className="secondary" disabled={!!busy} onClick={close}>
           Done
         </button>
