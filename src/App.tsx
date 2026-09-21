@@ -27,6 +27,7 @@ import {
   Link2,
   LoaderCircle,
   Minus,
+  Moon,
   Maximize2,
   Plus,
   RotateCcw,
@@ -38,6 +39,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Sun,
   Trash2,
   Upload,
   X,
@@ -65,6 +67,12 @@ import { mpcArtworkAsCard } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
 import { MANUAL_CUT_INSET_MM } from './lib/manual-cut';
 import { looksLikeMpcPrintCanvas, usesMpcTrim, withMpcTrim } from './lib/artwork';
+import {
+  applyColorTheme,
+  getInitialColorTheme,
+  saveColorTheme,
+  type ColorTheme,
+} from './lib/theme';
 import {
   doubleSidedCardCount,
   editEntryCopy,
@@ -1608,6 +1616,7 @@ function DonationLink() {
 }
 
 export default function App() {
+  const [colorTheme, setColorTheme] = useState<ColorTheme>(getInitialColorTheme);
   const [project, setProject] = useState<Project>(createSample),
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
@@ -1631,6 +1640,10 @@ export default function App() {
   const imageInput = useRef<HTMLInputElement>(null),
     projectInput = useRef<HTMLInputElement>(null);
   const saveQueue = useRef(Promise.resolve());
+  useEffect(() => {
+    applyColorTheme(colorTheme);
+    saveColorTheme(colorTheme);
+  }, [colorTheme]);
   const rememberActiveProject = useCallback((projectId: string | null) => {
     setActiveProjectId(projectId);
     if (projectId) localStorage.setItem('criprox-active-project', projectId);
@@ -2087,6 +2100,15 @@ export default function App() {
               <CircleHelp size={18} />
             </button>
           )}
+          <button
+            className="icon-button theme-toggle"
+            title={`Use ${colorTheme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Use ${colorTheme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-pressed={colorTheme === 'dark'}
+            onClick={() => setColorTheme((theme) => (theme === 'dark' ? 'light' : 'dark'))}
+          >
+            {colorTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <span className="top-action-divider" />
           <button
             className="icon-button"

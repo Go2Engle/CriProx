@@ -45,6 +45,17 @@ declare global {
         delete: (projectId: string) => Promise<ProjectLibrarySnapshot>;
         reveal: () => Promise<void>;
       };
+      registrationTemplates?: {
+        load: (
+          templateId: string,
+          slotCount: number,
+        ) => Promise<{ name: string; capturedAt: string; pdf: ArrayBuffer } | null>;
+        save: (
+          templateId: string,
+          slotCount: number,
+          pdf: ArrayBuffer,
+        ) => Promise<{ name: string; capturedAt: string }>;
+      };
       releases?: {
         check: () => Promise<ReleaseUpdate | null>;
         open: (releaseUrl: string) => Promise<void>;

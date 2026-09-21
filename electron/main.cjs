@@ -12,6 +12,10 @@ const {
   saveProject,
 } = require('./project-library.cjs');
 const { projectLibraryPaths } = require('./project-library-paths.cjs');
+const {
+  loadRegistrationTemplate,
+  saveRegistrationTemplate,
+} = require('./registration-template-library.cjs');
 
 const libraryPaths = () =>
   projectLibraryPaths({
@@ -214,6 +218,14 @@ ipcMain.handle('reveal-project-library', async () => {
   const error = await shell.openPath(root);
   if (error) throw new Error(error);
 });
+
+ipcMain.handle('load-registration-template', async (_event, request) =>
+  loadRegistrationTemplate(await getLibraryRoot(), request),
+);
+
+ipcMain.handle('save-registration-template', async (_event, request) =>
+  saveRegistrationTemplate(await getLibraryRoot(), request),
+);
 
 function createWindow() {
   const window = new BrowserWindow({
