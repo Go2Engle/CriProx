@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0](https://github.com/Go2Engle/CriProx/compare/v0.7.0...v0.8.0) (2026-09-21)
+
+
+### Features
+
+* **cutting:** add calibrated nine-card manual workflow ([#48](https://github.com/Go2Engle/CriProx/issues/48)) ([1b9f581](https://github.com/Go2Engle/CriProx/commit/1b9f581f92a7bf07c33a5f3580fe131f7e2c89cb))
+* **printing:** persist Cricut templates in project library ([#39](https://github.com/Go2Engle/CriProx/issues/39)) ([519e003](https://github.com/Go2Engle/CriProx/commit/519e003ec01b2c61aa8b3722d3f7e293ded1ff54))
+* **projects:** add native folder opener ([#36](https://github.com/Go2Engle/CriProx/issues/36)) ([3d48a88](https://github.com/Go2Engle/CriProx/commit/3d48a8851dccfc6ce7234c3228324744a270b21f))
+* **settings:** add project defaults management ([#49](https://github.com/Go2Engle/CriProx/issues/49)) ([01f8e72](https://github.com/Go2Engle/CriProx/commit/01f8e729e96c4bb0bc60c25a241197a78e732a2d))
+* **theme:** add first-class dark mode ([#40](https://github.com/Go2Engle/CriProx/issues/40)) ([9cf427f](https://github.com/Go2Engle/CriProx/commit/9cf427f2b4e53d0e8fb277d2c6c7bebbece2af9d))
+
+
+### Bug Fixes
+
+* **print:** extend bleed on exterior card-back edges ([#38](https://github.com/Go2Engle/CriProx/issues/38)) ([8f30580](https://github.com/Go2Engle/CriProx/commit/8f3058006a0c7ffc51fabe884ab743f142e75116))
+
 ## [0.7.0](https://github.com/Go2Engle/CriProx/compare/v0.6.3...v0.7.0) (2026-09-18)
 
 
