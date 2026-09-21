@@ -18,23 +18,26 @@ flowchart LR
 
 ## Important modules
 
-| Area             | Files                                                                                        | Responsibility                                                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Application UI   | `src/App.tsx`, `src/style.css`                                                               | Workspace, card list, preview, settings, export, and project actions                                |
-| Layout           | `src/lib/layout.ts`, `src/lib/units.ts`, `src/lib/bleed.ts`                                  | Physical dimensions, slot placement, pagination, rounding, and bleed bounds                         |
-| Standard export  | `src/lib/export.ts`, `src/lib/png.ts`                                                        | Artwork rendering, transparent silhouettes, SVG geometry, manifests, ZIPs, and PNG density metadata |
-| Registered print | `src/lib/registration.ts`, `src/lib/registered-pdf.ts`, `src/components/RegisteredPrint.tsx` | PDF recognition, mark preservation, registered page rendering, and workflow UI                      |
-| PDF preview      | `src/lib/pdf-worker.ts`, `src/lib/pdf-preview-pages.ts`, `src/workers/pdf.worker.ts`         | PDF.js worker setup and page preview rendering                                                      |
-| Card sources     | `src/lib/deck.ts`, `src/lib/deck-source.ts`, `src/lib/scryfall.ts`, `src/lib/mpc.ts`         | Deck syntax, source adapters, remote lookups, request pacing, artwork variants, and caching         |
-| Project storage  | `src/lib/project.ts`, `src/lib/save-project.ts`, `electron/project-library.cjs`              | Imported-project validation, autosave, managed project folders, assets, and portable backups        |
-| Desktop shell    | `electron/main.cjs`, `electron/preload.cjs`                                                  | Native window lifecycle, scoped filesystem bridge, packaging, and release notices                   |
+| Area             | Files                                                                                                                                      | Responsibility                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Application UI   | `src/App.tsx`, `src/style.css`                                                                                                             | Workspace, card list, preview, settings, export, and project actions                                       |
+| Layout           | `src/lib/layout.ts`, `src/lib/units.ts`, `src/lib/bleed.ts`                                                                                | Physical dimensions, slot placement, pagination, rounding, and bleed bounds                                |
+| Standard export  | `src/lib/export.ts`, `src/lib/png.ts`                                                                                                      | Artwork rendering, transparent silhouettes, SVG geometry, manifests, ZIPs, and PNG density metadata        |
+| Registered print | `src/lib/registration.ts`, `src/lib/registered-pdf.ts`, `src/components/RegisteredPrint.tsx`, `electron/registration-template-library.cjs` | PDF recognition, persistent capture storage, mark preservation, registered page rendering, and workflow UI |
+| PDF preview      | `src/lib/pdf-worker.ts`, `src/lib/pdf-preview-pages.ts`, `src/workers/pdf.worker.ts`                                                       | PDF.js worker setup and page preview rendering                                                             |
+| Card sources     | `src/lib/deck.ts`, `src/lib/deck-source.ts`, `src/lib/scryfall.ts`, `src/lib/mpc.ts`                                                       | Deck syntax, source adapters, remote lookups, request pacing, artwork variants, and caching                |
+| Project storage  | `src/lib/project.ts`, `src/lib/save-project.ts`, `electron/project-library.cjs`                                                            | Imported-project validation, autosave, managed project folders, assets, and portable backups               |
+| Desktop shell    | `electron/main.cjs`, `electron/preload.cjs`                                                                                                | Native window lifecycle, scoped filesystem bridge, packaging, and release notices                          |
 
 ## Data flow
 
 1. Imports are normalized into the local project model. Remote responses and export artwork are cached, while local images are embedded with the project data.
 2. The layout engine converts physical settings to deterministic slot positions. Preview and export consume the same geometry so they do not drift into separate implementations.
 3. Standard export clips each artwork source into its rounded card silhouette and emits corresponding vector geometry and physical-size metadata.
-4. Registered printing first verifies a captured Design Space PDF, then draws artwork within the preserved template. It never synthesizes registration marks.
+4. Registered printing first verifies a captured Design Space PDF, stores six-cut and seven-cut
+   captures at the project-library root, and then draws artwork within the preserved template. The
+   geometry-derived filename lets the app reload the exact capture without synthesizing registration
+   marks or asking for another upload.
 5. IndexedDB keeps the active workspace available between sessions. The desktop project library stores
    each managed project in its own directory, externalizes embedded artwork to a content-addressed
    `assets` directory, and hydrates those files through the sandboxed bridge when reopened. Explicit JSON

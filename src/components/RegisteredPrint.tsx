@@ -75,22 +75,67 @@ export default function RegisteredPrint({
     printPaper = paperWorkflow(project.settings),
     doubleSidedCount = doubleSidedCardCount(project.entries),
     sharedBackRequired = needsSharedCardBack(project.entries),
-    onlyDoubleSided = doubleSidedCount > 0 && !sharedBackRequired;
+    onlyDoubleSided = doubleSidedCount > 0 && !sharedBackRequired,
+    registrationTemplates = window.criprox?.registrationTemplates,
+    slotCount = full.placements.length;
   useEffect(() => {
     dialog.current?.showModal();
     let active = true;
-    get<RegistrationProfile>(`registration:${key}`)
-      .then((p) => {
-        if (active && p?.version === 1 && p.key === key && p.pdf instanceof Uint8Array)
-          setProfile(p);
-      })
-      .catch(() => {
+    void (async () => {
+      let libraryError: unknown;
+      if (registrationTemplates) {
+        try {
+          const stored = await registrationTemplates.load(id, slotCount);
+          if (stored) {
+            const restored = await captureProfile(
+              new Uint8Array(stored.pdf),
+              project.settings,
+              stored.name,
+            );
+            restored.capturedAt = stored.capturedAt;
+            await set(`registration:${key}`, restored).catch(() => {});
+            if (active) setProfile(restored);
+            return;
+          }
+        } catch (cause) {
+          libraryError = cause;
+        }
+      }
+      try {
+        const saved = await get<RegistrationProfile>(`registration:${key}`);
+        if (saved?.version === 1 && saved.key === key && saved.pdf instanceof Uint8Array) {
+          if (registrationTemplates) {
+            try {
+              const stored = await registrationTemplates.save(
+                id,
+                slotCount,
+                saved.pdf.slice().buffer,
+              );
+              saved.name = stored.name;
+              libraryError = undefined;
+            } catch (cause) {
+              libraryError = cause;
+            }
+          }
+          if (active) {
+            setProfile(saved);
+            if (libraryError)
+              setError(
+                'The template is available in local app storage, but CriProx could not copy it to the project library root.',
+              );
+          }
+        } else if (active && libraryError) {
+          setError(
+            'Could not load the saved template from the project library. Import the original Design Space PDF again.',
+          );
+        }
+      } catch {
         if (active)
           setError('Could not load a saved template. Import the original Design Space PDF again.');
-      })
-      .finally(() => {
-        if (active) setBusy('');
-      });
+      }
+    })().finally(() => {
+      if (active) setBusy('');
+    });
     return () => {
       active = false;
     };
@@ -120,9 +165,20 @@ export default function RegisteredPrint({
         project.settings,
         file.name,
       );
-      await set(`registration:${key}`, next);
+      if (registrationTemplates) {
+        const stored = await registrationTemplates.save(id, slotCount, next.pdf.slice().buffer);
+        next.name = stored.name;
+        next.capturedAt = stored.capturedAt;
+        await set(`registration:${key}`, next).catch(() => {});
+      } else {
+        await set(`registration:${key}`, next);
+      }
       setProfile(next);
-      notify('Template captured. Run a test cut before printing a full deck.');
+      notify(
+        registrationTemplates
+          ? 'Template captured and saved in the CriProx project library. Run a test cut before printing a full deck.'
+          : 'Template captured. Run a test cut before printing a full deck.',
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not read this PDF.');
     } finally {
@@ -626,7 +682,11 @@ export default function RegisteredPrint({
               ) : (
                 <>save a full-page, portrait PDF at actual size.</>
               )}{' '}
-              Import that PDF here. We check the slot pattern and size before storing it locally.
+              Import that PDF here. We check the slot pattern and size, then{' '}
+              {registrationTemplates
+                ? 'save it in the root of your CriProx project library'
+                : 'store it in local app storage'}
+              . It loads automatically the next time this exact cut layout is selected.
             </p>
             <button className="secondary" disabled={!!busy} onClick={() => input.current?.click()}>
               <FileUp size={15} />
@@ -639,7 +699,8 @@ export default function RegisteredPrint({
                   {profile.name}
                   <small>
                     Geometry checked · captured {new Date(profile.capturedAt).toLocaleDateString()}{' '}
-                    · hardware unverified
+                    · {registrationTemplates ? 'project library root' : 'local app storage'} ·
+                    hardware unverified
                   </small>
                 </span>
               </div>
@@ -806,7 +867,9 @@ export default function RegisteredPrint({
         onChange={(e) => uploadBack(e.target.files?.[0])}
       />
       <div className="modal-footer">
-        <span className="muted">A saved template replaces artwork uploads for each deck.</span>
+        <span className="muted">
+          Saved six-cut and seven-cut templates load automatically for matching layouts.
+        </span>
         <button className="secondary" disabled={!!busy} onClick={close}>
           Done
         </button>
