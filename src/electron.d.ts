@@ -37,11 +37,18 @@ declare global {
           imported: number;
           snapshot: ProjectLibrarySnapshot;
         }>;
-        save: (
+        beginSave: (
           projectId: string | null,
+          name: string,
+        ) => Promise<{ saveId: string; projectId: string }>;
+        writeAsset: (saveId: string, dataUrl: string) => Promise<string>;
+        finishSave: (
+          saveId: string,
           data: string,
         ) => Promise<{ project: ProjectSummary; snapshot: ProjectLibrarySnapshot }>;
+        abortSave: (saveId: string) => Promise<void>;
         open: (projectId: string) => Promise<string>;
+        readAsset: (projectId: string, relativePath: string) => Promise<string>;
         delete: (projectId: string) => Promise<ProjectLibrarySnapshot>;
         reveal: () => Promise<void>;
       };

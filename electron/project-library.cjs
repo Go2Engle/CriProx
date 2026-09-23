@@ -69,20 +69,24 @@ function parseProjectData(data) {
   return project;
 }
 
+function decodeEmbeddedArtwork(value) {
+  const match = typeof value === 'string' ? dataImagePattern.exec(value) : null;
+  if (!match) throw new Error('Unsupported embedded artwork in project.');
+  const bytes = Buffer.from(match[2], 'base64');
+  if (!bytes.length || bytes.length > MAX_ARTWORK_BYTES)
+    throw new Error('Embedded artwork is invalid or exceeds 20 MB.');
+  const extension = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
+  const filename = `${crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 24)}.${extension}`;
+  return { bytes, relativePath: `assets/${filename}` };
+}
+
 function externalizeProject(project) {
   const savedProject = JSON.parse(JSON.stringify(project));
   const assets = new Map();
 
   function externalize(value) {
     if (typeof value !== 'string' || !value.startsWith('data:')) return value;
-    const match = dataImagePattern.exec(value);
-    if (!match) throw new Error('Unsupported embedded artwork in project.');
-    const bytes = Buffer.from(match[2], 'base64');
-    if (!bytes.length || bytes.length > MAX_ARTWORK_BYTES)
-      throw new Error('Embedded artwork is invalid or exceeds 20 MB.');
-    const extension = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
-    const filename = `${crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 24)}.${extension}`;
-    const relativePath = `assets/${filename}`;
+    const { bytes, relativePath } = decodeEmbeddedArtwork(value);
     assets.set(relativePath, bytes);
     return relativePath;
   }
@@ -104,7 +108,6 @@ function externalizeProject(project) {
 async function hydrateProjectAssets(project, projectDirectory) {
   const hydrated = JSON.parse(JSON.stringify(project));
   const cache = new Map();
-  let hydratedBytes = 0;
   let checkedAssetsDirectory = false;
 
   async function hydrate(value) {
@@ -118,14 +121,11 @@ async function hydrateProjectAssets(project, projectDirectory) {
       checkedAssetsDirectory = true;
     }
     const absolutePath = path.join(projectDirectory, ...value.split('/'));
-    const { contents: bytes, stat } = await readRegularFile(absolutePath, {
+    const { contents: bytes } = await readRegularFile(absolutePath, {
       minBytes: 1,
       maxBytes: MAX_ARTWORK_BYTES,
       errorMessage: 'Managed artwork is invalid or exceeds 20 MB.',
     });
-    hydratedBytes += stat.size;
-    if (hydratedBytes > MAX_PROJECT_BYTES)
-      throw new Error('Managed artwork exceeds the 100 MB project limit.');
     const extension = path.extname(value).slice(1);
     const mime = extension === 'jpg' ? 'jpeg' : extension;
     const dataUrl = `data:image/${mime};base64,${bytes.toString('base64')}`;
@@ -168,6 +168,116 @@ async function allocateProjectDirectory(root, name) {
     }
   }
   throw new Error('Could not create a unique project folder.');
+}
+
+async function ensureAssetsDirectory(projectDirectory) {
+  const assetsDirectory = path.join(projectDirectory, 'assets');
+  try {
+    const assetsStat = await fs.lstat(assetsDirectory);
+    if (!assetsStat.isDirectory() || assetsStat.isSymbolicLink())
+      throw new Error('Managed artwork folder is unavailable.');
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    await fs.mkdir(assetsDirectory);
+  }
+  return assetsDirectory;
+}
+
+async function beginProjectSave(root, request) {
+  await fs.mkdir(root, { recursive: true });
+  const name = request?.name;
+  if (typeof name !== 'string' || name.length > 100) throw new Error('Project name is invalid.');
+  const existingId = request?.projectId;
+  const allocated = existingId
+    ? {
+        projectId: assertProjectId(existingId),
+        directory: await assertManagedProjectDirectory(root, existingId),
+      }
+    : await allocateProjectDirectory(root, name);
+  return {
+    ...allocated,
+    isNew: !existingId,
+    complete: false,
+    assets: new Set(),
+  };
+}
+
+function assertActiveSave(session) {
+  if (!session || session.complete || typeof session.directory !== 'string')
+    throw new Error('Project save is no longer active.');
+}
+
+async function writeProjectAssetBytes(session, relativePath, bytes) {
+  assertActiveSave(session);
+  if (!managedArtworkPattern.test(relativePath) || !Buffer.isBuffer(bytes))
+    throw new Error('Managed artwork is invalid.');
+  const assetsDirectory = await ensureAssetsDirectory(session.directory);
+  const target = path.join(assetsDirectory, path.basename(relativePath));
+  try {
+    await fs.writeFile(target, bytes, { flag: 'wx' });
+  } catch (error) {
+    if (error?.code !== 'EEXIST') throw error;
+    const { contents: existing } = await readRegularFile(target, {
+      minBytes: 1,
+      maxBytes: MAX_ARTWORK_BYTES,
+      errorMessage: 'Managed artwork file is unavailable.',
+    });
+    if (!existing.equals(bytes)) throw new Error('Managed artwork file is corrupted.');
+  }
+  session.assets.add(relativePath);
+  return relativePath;
+}
+
+async function saveProjectAsset(session, dataUrl) {
+  const { bytes, relativePath } = decodeEmbeddedArtwork(dataUrl);
+  return writeProjectAssetBytes(session, relativePath, bytes);
+}
+
+function assertExternalizedProject(project, assets) {
+  function assertValue(value) {
+    if (typeof value !== 'string') return;
+    if (value.startsWith('data:'))
+      throw new Error('Embedded artwork must be saved separately from the project manifest.');
+    if (value.startsWith('assets/')) {
+      if (!managedArtworkPattern.test(value) || !assets.has(value))
+        throw new Error('Project manifest references unavailable managed artwork.');
+    }
+  }
+
+  function assertFace(face) {
+    if (!face || typeof face !== 'object') return;
+    assertValue(face.image);
+    assertValue(face.preview);
+  }
+
+  for (const entry of project.entries) {
+    if (!Array.isArray(entry?.card?.faces)) continue;
+    for (const face of entry.card.faces) assertFace(face);
+  }
+  assertFace(project.backArtwork);
+}
+
+async function finishProjectSave(session, data) {
+  assertActiveSave(session);
+  const project = parseProjectData(data);
+  assertExternalizedProject(project, session.assets);
+  const target = path.join(session.directory, PROJECT_FILE);
+  const temporary = path.join(session.directory, `.${PROJECT_FILE}.${crypto.randomUUID()}.tmp`);
+  try {
+    await fs.writeFile(temporary, JSON.stringify(project, null, 2), 'utf8');
+    await fs.rename(temporary, target);
+  } finally {
+    await fs.rm(temporary, { force: true }).catch(() => {});
+  }
+  session.complete = true;
+  const stat = await fs.stat(target);
+  return projectSummary(session.projectId, project, stat);
+}
+
+async function abortProjectSave(session) {
+  if (!session || session.complete) return;
+  session.complete = true;
+  if (session.isNew) await fs.rm(session.directory, { recursive: true, force: true });
 }
 
 function projectSummary(projectId, project, stat) {
@@ -217,51 +327,45 @@ async function listProjects(root) {
 }
 
 async function saveProject(root, request) {
-  await fs.mkdir(root, { recursive: true });
   const project = parseProjectData(request?.data);
-  const existingId = request?.projectId;
-  const allocated = existingId
-    ? {
-        projectId: assertProjectId(existingId),
-        directory: await assertManagedProjectDirectory(root, existingId),
-      }
-    : await allocateProjectDirectory(root, project.name);
   const { project: savedProject, assets } = externalizeProject(project);
-  const assetsDirectory = path.join(allocated.directory, 'assets');
-  if (assets.size) {
-    try {
-      const assetsStat = await fs.lstat(assetsDirectory);
-      if (!assetsStat.isDirectory() || assetsStat.isSymbolicLink())
-        throw new Error('Managed artwork folder is unavailable.');
-    } catch (error) {
-      if (error?.code !== 'ENOENT') throw error;
-      await fs.mkdir(assetsDirectory);
-    }
-  }
-  for (const [relativePath, bytes] of assets) {
-    const target = path.join(allocated.directory, ...relativePath.split('/'));
-    try {
-      await fs.writeFile(target, bytes, { flag: 'wx' });
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      const { contents: existing } = await readRegularFile(target, {
-        minBytes: 1,
-        maxBytes: MAX_ARTWORK_BYTES,
-        errorMessage: 'Managed artwork file is unavailable.',
-      });
-      if (!existing.equals(bytes)) throw new Error('Managed artwork file is corrupted.');
-    }
-  }
-  const target = path.join(allocated.directory, PROJECT_FILE);
-  const temporary = path.join(allocated.directory, `.${PROJECT_FILE}.${crypto.randomUUID()}.tmp`);
+  const session = await beginProjectSave(root, {
+    projectId: request?.projectId,
+    name: project.name,
+  });
   try {
-    await fs.writeFile(temporary, JSON.stringify(savedProject, null, 2), 'utf8');
-    await fs.rename(temporary, target);
-  } finally {
-    await fs.rm(temporary, { force: true }).catch(() => {});
+    for (const [relativePath, bytes] of assets)
+      await writeProjectAssetBytes(session, relativePath, bytes);
+    return await finishProjectSave(session, JSON.stringify(savedProject));
+  } catch (error) {
+    await abortProjectSave(session).catch(() => {});
+    throw error;
   }
-  const stat = await fs.stat(target);
-  return projectSummary(allocated.projectId, savedProject, stat);
+}
+
+async function openProjectManifest(root, projectId) {
+  const directory = await assertManagedProjectDirectory(root, projectId);
+  const { project } = await readProjectFile(directory);
+  return project;
+}
+
+async function readProjectAsset(root, projectId, relativePath) {
+  if (typeof relativePath !== 'string' || !managedArtworkPattern.test(relativePath))
+    throw new Error('Invalid managed artwork path.');
+  const directory = await assertManagedProjectDirectory(root, projectId);
+  const assetsDirectory = path.join(directory, 'assets');
+  const assetsStat = await fs.lstat(assetsDirectory);
+  if (!assetsStat.isDirectory() || assetsStat.isSymbolicLink())
+    throw new Error('Managed artwork folder is unavailable.');
+  const absolutePath = path.join(directory, ...relativePath.split('/'));
+  const { contents: bytes } = await readRegularFile(absolutePath, {
+    minBytes: 1,
+    maxBytes: MAX_ARTWORK_BYTES,
+    errorMessage: 'Managed artwork is invalid or exceeds 20 MB.',
+  });
+  const extension = path.extname(relativePath).slice(1);
+  const mime = extension === 'jpg' ? 'jpeg' : extension;
+  return `data:image/${mime};base64,${bytes.toString('base64')}`;
 }
 
 async function openProject(root, projectId) {
@@ -293,13 +397,19 @@ async function deleteProject(root, projectId, moveToTrash) {
 
 module.exports = {
   PROJECT_FILE,
+  abortProjectSave,
   assertProjectId,
+  beginProjectSave,
   deleteProject,
   externalizeProject,
+  finishProjectSave,
   hydrateProjectAssets,
   importProjects,
   listProjects,
   openProject,
+  openProjectManifest,
   projectDirectoryName,
+  readProjectAsset,
   saveProject,
+  saveProjectAsset,
 };

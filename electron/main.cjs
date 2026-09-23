@@ -1,16 +1,21 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, net, shell } = require('electron');
+const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { deckSourceUrl } = require('./deck-source.cjs');
 const { contextMenuTemplate } = require('./context-menu.cjs');
 const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.cjs');
 const {
+  abortProjectSave,
   assertProjectId,
+  beginProjectSave,
   deleteProject,
+  finishProjectSave,
   importProjects,
   listProjects,
-  openProject,
-  saveProject,
+  openProjectManifest,
+  readProjectAsset,
+  saveProjectAsset,
 } = require('./project-library.cjs');
 const { projectLibraryPaths } = require('./project-library-paths.cjs');
 const {
@@ -196,16 +201,64 @@ ipcMain.handle('import-documents-projects', async () => {
   return { imported: imported.length, snapshot: await projectLibrarySnapshot() };
 });
 
-ipcMain.handle('save-managed-project', async (_event, request) => {
+const managedProjectSaves = new Map();
+const saveCleanupRegistered = new WeakSet();
+
+function managedProjectSave(event, saveId) {
+  const active = managedProjectSaves.get(saveId);
+  if (!active || active.sender !== event.sender)
+    throw new Error('Project save is no longer active.');
+  return active;
+}
+
+ipcMain.handle('begin-managed-project-save', async (event, request) => {
   const root = await getLibraryRoot();
-  const project = await saveProject(root, request);
+  const session = await beginProjectSave(root, request);
+  const saveId = crypto.randomUUID();
+  managedProjectSaves.set(saveId, { sender: event.sender, session });
+  if (!saveCleanupRegistered.has(event.sender)) {
+    saveCleanupRegistered.add(event.sender);
+    event.sender.once('destroyed', () => {
+      for (const [activeId, active] of managedProjectSaves) {
+        if (active.sender !== event.sender) continue;
+        managedProjectSaves.delete(activeId);
+        void abortProjectSave(active.session).catch(() => {});
+      }
+    });
+  }
+  return { saveId, projectId: session.projectId };
+});
+
+ipcMain.handle('write-managed-project-asset', (event, request) => {
+  const active = managedProjectSave(event, request?.saveId);
+  return saveProjectAsset(active.session, request?.dataUrl);
+});
+
+ipcMain.handle('finish-managed-project-save', async (event, request) => {
+  const active = managedProjectSave(event, request?.saveId);
+  const project = await finishProjectSave(active.session, request?.data);
+  managedProjectSaves.delete(request.saveId);
   return { project, snapshot: await projectLibrarySnapshot() };
 });
 
+ipcMain.handle('abort-managed-project-save', async (event, saveId) => {
+  const active = managedProjectSave(event, saveId);
+  managedProjectSaves.delete(saveId);
+  await abortProjectSave(active.session);
+});
+
 ipcMain.handle('open-managed-project', async (_event, projectId) => {
-  const project = await openProject(await getLibraryRoot(), assertProjectId(projectId));
+  const project = await openProjectManifest(await getLibraryRoot(), assertProjectId(projectId));
   return JSON.stringify(project);
 });
+
+ipcMain.handle('read-managed-project-asset', async (_event, request) =>
+  readProjectAsset(
+    await getLibraryRoot(),
+    assertProjectId(request?.projectId),
+    request?.relativePath,
+  ),
+);
 
 ipcMain.handle('delete-managed-project', async (_event, projectId) => {
   const root = await getLibraryRoot();
