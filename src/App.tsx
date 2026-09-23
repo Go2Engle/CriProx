@@ -65,6 +65,10 @@ import { importDeckSource } from './lib/deck-source';
 import { resolveDeck, searchCards, variants } from './lib/scryfall';
 import { exportBundle } from './lib/export';
 import { saveProjectAs } from './lib/save-project';
+import {
+  openManagedProject as loadManagedProject,
+  saveManagedProject,
+} from './lib/managed-project';
 import { validateProject } from './lib/project';
 import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
@@ -2167,7 +2171,7 @@ export default function App() {
     }
     setLibraryBusy(true);
     try {
-      const result = await projects.save(activeProjectId, JSON.stringify(project));
+      const result = await saveManagedProject(projects, activeProjectId, project);
       rememberActiveProject(result.project.id);
       setProjectLibrary(result.snapshot);
       setToast('Project saved to your CriProx projects folder.');
@@ -2182,7 +2186,7 @@ export default function App() {
     if (!projects) return;
     setLibraryBusy(true);
     try {
-      const next = validateProject(JSON.parse(await projects.open(projectId)));
+      const next = validateProject(await loadManagedProject(projects, projectId));
       setProject(next);
       rememberActiveProject(projectId);
       setPage(0);

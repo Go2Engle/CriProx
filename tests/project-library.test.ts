@@ -9,29 +9,52 @@ import { DEFAULT_SETTINGS } from '../src/lib/types';
 const require = createRequire(import.meta.url);
 const {
   PROJECT_FILE,
+  abortProjectSave,
   assertProjectId,
+  beginProjectSave,
   deleteProject,
+  finishProjectSave,
   importProjects,
   listProjects,
   openProject,
+  openProjectManifest,
   projectDirectoryName,
+  readProjectAsset,
   saveProject,
+  saveProjectAsset,
 } = require('../electron/project-library.cjs') as {
   PROJECT_FILE: string;
+  abortProjectSave: (session: ProjectSaveSession) => Promise<void>;
   assertProjectId: (value: unknown) => string;
+  beginProjectSave: (
+    root: string,
+    request: { projectId: string | null; name: string },
+  ) => Promise<ProjectSaveSession>;
   deleteProject: (
     root: string,
     projectId: string,
     moveToTrash: (directory: string) => Promise<void>,
   ) => Promise<void>;
+  finishProjectSave: (session: ProjectSaveSession, data: string) => Promise<ProjectSummary>;
   importProjects: (sourceRoot: string, destinationRoot: string) => Promise<ProjectSummary[]>;
   listProjects: (root: string) => Promise<ProjectSummary[]>;
   openProject: (root: string, projectId: string) => Promise<unknown>;
+  openProjectManifest: (root: string, projectId: string) => Promise<unknown>;
   projectDirectoryName: (name: string) => string;
+  readProjectAsset: (root: string, projectId: string, relativePath: string) => Promise<string>;
   saveProject: (
     root: string,
     request: { projectId: string | null; data: string },
   ) => Promise<ProjectSummary>;
+  saveProjectAsset: (session: ProjectSaveSession, dataUrl: string) => Promise<string>;
+};
+
+type ProjectSaveSession = {
+  projectId: string;
+  directory: string;
+  isNew: boolean;
+  complete: boolean;
+  assets: Set<string>;
 };
 
 const tinyPng =
@@ -99,6 +122,36 @@ test('managed projects save custom artwork as assets and hydrate it when opened'
     saveProject(root, { projectId: first.id, data: JSON.stringify(project) }),
     /corrupted/,
   );
+});
+
+test('incremental project saves externalize assets before committing the manifest', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-incremental-library-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+
+  const session = await beginProjectSave(root, { projectId: null, name: project.name });
+  const relativePath = await saveProjectAsset(session, tinyPng);
+  const stored = JSON.parse(JSON.stringify(project));
+  stored.entries[0].card.faces[0].image = relativePath;
+  stored.entries[0].card.faces[0].preview = relativePath;
+  const saved = await finishProjectSave(session, JSON.stringify(stored));
+
+  assert.equal(saved.id, 'my-commander-deck-2026');
+  assert.equal(
+    ((await openProjectManifest(root, saved.id)) as typeof stored).entries[0].card.faces[0].image,
+    relativePath,
+  );
+  assert.equal(await readProjectAsset(root, saved.id, relativePath), tinyPng);
+});
+
+test('aborting a new incremental save removes its incomplete project folder', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-aborted-library-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+
+  const session = await beginProjectSave(root, { projectId: null, name: project.name });
+  await saveProjectAsset(session, tinyPng);
+  await abortProjectSave(session);
+
+  assert.deepEqual(await fs.readdir(root), []);
 });
 
 test('managed projects allocate a non-destructive suffix for duplicate names', async (t) => {
