@@ -1,8 +1,9 @@
-const { app, BrowserWindow, dialog, ipcMain, net, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, shell } = require('electron');
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { deckSourceUrl } = require('./deck-source.cjs');
+const { contextMenuTemplate } = require('./context-menu.cjs');
 const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.cjs');
 const {
   abortProjectSave,
@@ -307,6 +308,10 @@ function createWindow() {
       shell.openExternal(url);
     else if (/^https:\/\/ko-fi\.com\/go2engle(?:\/|$)/.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+  window.webContents.on('context-menu', (_event, params) => {
+    const template = contextMenuTemplate(params);
+    if (template.length) Menu.buildFromTemplate(template).popup({ window });
   });
   window.webContents.on('will-navigate', (event) => event.preventDefault());
   window.loadFile(path.join(__dirname, '../dist/index.html'));
