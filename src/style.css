@@ -414,7 +414,6 @@ main {
   padding: 18px 24px 10px;
   min-width: 0;
   flex: 1;
-  max-width: 1800px;
   margin: 0 auto;
 }
 .page-heading {
@@ -797,9 +796,17 @@ h1 > span {
   background-size: 14px 14px;
   flex: 1;
   min-height: 603px;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+.paper-viewport {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  container-type: size;
+  scrollbar-width: thin;
 }
 .sheet-label {
   font-size: 9px;
@@ -825,17 +832,19 @@ h1 > span {
   color: #aaa7b5;
 }
 .paper-stage {
-  flex: 1;
+  /* Scroll room on every side keeps the cursor's paper point fixed while zooming. */
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: max-content;
-  min-height: max-content;
-  flex-shrink: 0;
-  padding: 6px 24px 4px;
+  width: max-content;
+  height: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 50cqh 50cqw;
 }
 .paper {
   position: relative;
+  container-type: inline-size;
   background: #fff;
   box-shadow:
     0 4px 15px #46405c15,
@@ -845,11 +854,12 @@ h1 > span {
 }
 .page-caption {
   position: absolute;
-  top: 3.8%;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 6px;
+  transform: translateY(-50%);
+  font-size: min(6px, 1.5cqw);
+  line-height: 1;
   letter-spacing: 1px;
   color: #b8b3c2;
 }
@@ -916,10 +926,11 @@ h1 > span {
 }
 .paper-bottom {
   position: absolute;
-  bottom: 4%;
   left: 0;
   right: 0;
-  font-size: 6px;
+  transform: translateY(50%);
+  font-size: min(6px, 1.5cqw);
+  line-height: 1;
   color: #b6b1c0;
   text-align: center;
   letter-spacing: 0.1px;
@@ -2659,11 +2670,8 @@ h1 > span {
   .preview-canvas {
     min-height: 680px;
   }
-  .paper-stage {
-    padding: 10px 30px;
-  }
   .paper {
-    --paper-width: 440px;
+    --paper-width: clamp(440px, calc(60vh - 100px), 760px);
   }
   .card-list {
     max-height: 600px;
@@ -2952,6 +2960,11 @@ h1 > span {
   .bottom-status {
     font-size: 8px;
     gap: 8px;
+  }
+  .status-summary,
+  .dimension-summary {
+    flex-wrap: wrap;
+    white-space: normal;
   }
   .modal-heading,
   .import-content,
@@ -3496,9 +3509,6 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
   .card-list {
     min-height: 0;
   }
-  .paper-stage {
-    flex: 1;
-  }
 }
 .field-note,
 .switch-row small,
@@ -3523,7 +3533,7 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
 .paper-bottom {
   color: #8f859b;
 }
-.preview-canvas {
+.paper-viewport {
   scrollbar-width: thin;
 }
 .settings-content {
