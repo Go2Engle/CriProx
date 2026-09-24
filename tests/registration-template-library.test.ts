@@ -37,7 +37,7 @@ test('registration templates are saved and replaced at the project library root'
   assert.deepEqual(new Uint8Array(loaded?.pdf || new ArrayBuffer(0)), second);
 });
 
-test('six-card and seven-card templates have distinct path-safe names', () => {
+test('registered templates have distinct path-safe names', () => {
   assert.equal(
     registrationTemplateFilename('CP-1234ABCD', 6),
     'CP-1234ABCD-6-cut-cricut-template.pdf',
@@ -46,8 +46,12 @@ test('six-card and seven-card templates have distinct path-safe names', () => {
     registrationTemplateFilename('CP-ABCDEF12', 7),
     'CP-ABCDEF12-7-cut-cricut-template.pdf',
   );
+  assert.equal(
+    registrationTemplateFilename('CP-ABCDEF12', 8),
+    'CP-ABCDEF12-8-cut-cricut-template.pdf',
+  );
   assert.throws(() => registrationTemplateFilename('../escape', 6));
-  assert.throws(() => registrationTemplateFilename('CP-1234ABCD', 8));
+  assert.throws(() => registrationTemplateFilename('CP-1234ABCD', 9));
 });
 
 test('registration template storage rejects non-PDF data', async (t) => {

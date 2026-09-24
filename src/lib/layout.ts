@@ -14,12 +14,17 @@ const sevenCardGeometry = (settings: Settings) => ({
   width: settings.width * 3 + settings.gap * 2,
   height: settings.width * 2 + settings.height + settings.gap * 2,
 });
+const eightCardGeometry = (settings: Settings) => ({
+  width: settings.height * 2 + settings.gap,
+  height: settings.width * 4 + settings.gap * 3,
+});
 const nineCardGeometry = (settings: Settings) => ({
   width: settings.width * 3 + settings.gap * 2,
   height: settings.height * 3 + settings.gap * 2,
 });
 export function envelope(settings: Settings) {
   if (settings.profile === 'seven') return sevenCardGeometry(settings);
+  if (settings.profile === 'eight') return eightCardGeometry(settings);
   if (settings.profile === 'nine') return nineCardGeometry(settings);
   // This is an unvalidated candidate, not the product of multiplying Cricut's
   // nonrectangular maximum extents.
@@ -34,6 +39,15 @@ export function grid(settings: Settings) {
       rows: 3,
       rotated: false,
       capacity: 7,
+    };
+  if (settings.profile === 'eight')
+    return {
+      width: settings.height,
+      height: settings.width,
+      columns: 2,
+      rows: 4,
+      rotated: true,
+      capacity: 8,
     };
   if (settings.profile === 'nine')
     return {

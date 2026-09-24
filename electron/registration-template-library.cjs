@@ -5,14 +5,14 @@ const path = require('node:path');
 
 const MAX_TEMPLATE_BYTES = 25_000_000;
 const templateIdPattern = /^CP-[A-F0-9]{8}$/;
-const supportedSlotCounts = new Set([6, 7]);
+const supportedSlotCounts = new Set([6, 7, 8]);
 const readOnlyNoFollow = fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW;
 
 function assertTemplateIdentity(templateId, slotCount) {
   if (typeof templateId !== 'string' || !templateIdPattern.test(templateId))
     throw new Error('Invalid registration template identifier.');
   if (!Number.isInteger(slotCount) || !supportedSlotCounts.has(slotCount))
-    throw new Error('Only six-card and seven-card registration templates are supported.');
+    throw new Error('Only six-card, seven-card, and eight-card registration templates are supported.');
   return { templateId, slotCount };
 }
 

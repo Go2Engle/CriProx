@@ -1,12 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PDFDocument } from 'pdf-lib';
+import { createCanvas } from '@napi-rs/canvas';
+import { PDFDocument, rgb } from 'pdf-lib';
 import { DEFAULT_SETTINGS, type Entry } from '../src/lib/types';
-import { buildBackAlignmentPdfs, mirroredBackSheet } from '../src/lib/registered-pdf';
+import {
+  buildBackAlignmentPdfs,
+  buildRegisteredBackPdf,
+  buildRegisteredPdf,
+  mirroredBackSheet,
+} from '../src/lib/registered-pdf';
 import {
   alignmentArtworkDirection,
   backAlignmentCorrection,
   detectTemplate,
+  fitTabloidCaptureToLetter,
   fixedSheets,
   fullTemplate,
   mirrorBackPlacements,
@@ -18,6 +25,10 @@ const entry = {
   face: 0,
   card: { id: 'x', name: 'x', set: 'x', setName: 'x', collector: '1', faces: [] },
 } satisfies Entry;
+Object.defineProperty(globalThis, 'document', {
+  configurable: true,
+  value: { createElement: () => createCanvas(1, 1) },
+});
 test('registration layout keeps full bounds and unused slots blank on partial pages', () => {
   const sheets = fixedSheets([entry], DEFAULT_SETTINGS);
   assert.equal(sheets.length, 2);
@@ -54,6 +65,7 @@ test('capture identity follows cutting geometry and target, not artwork output o
     { paper: 'a4' as const },
     { machine: 'explore' as const },
     { profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
+    { profile: 'eight' as const, gap: 1, bleed: 0.5 },
     { profile: 'nine' as const },
   ])
     assert.notEqual(key, registrationKey({ ...DEFAULT_SETTINGS, ...change }));
@@ -173,11 +185,13 @@ function fixture(
   settings = DEFAULT_SETTINGS,
   left = 24,
   top = 30,
+  paperWidth = 215.9,
+  paperHeight = 279.4,
 ) {
-  const w = 864,
-    h = 1118,
-    sx = w / 215.9,
-    sy = h / 279.4;
+  const w = Math.round(paperWidth * 4),
+    h = Math.round(paperHeight * 4),
+    sx = w / paperWidth,
+    sy = h / paperHeight;
   const data = new Uint8ClampedArray(w * h * 4).fill(255),
     sheet = fullTemplate(settings);
   for (let y = 0; y < h; y++)
@@ -227,6 +241,80 @@ test('capture recognizes the seven-card 2-3-2 pattern on Letter', () => {
     p = detectTemplate(f.data, f.w, f.h, 215.9, 279.4, settings);
   assert.ok(Math.abs(p.leftMm - 13) < 0.15);
   assert.ok(Math.abs(p.topMm - 32) < 0.15);
+});
+test('capture recognizes the eight-card pattern on portrait Tabloid', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+    f = fixture(1, false, true, false, settings, 21.25, 21.25, 279.4, 431.8),
+    p = detectTemplate(f.data, f.w, f.h, 279.4, 431.8, settings);
+  assert.ok(Math.abs(p.leftMm - 21.25) < 0.15);
+  assert.ok(Math.abs(p.topMm - 21.25) < 0.15);
+});
+test('Tabloid capture is centered on Letter without scaling cards or marks', () => {
+  const frame = fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
+    left: 12.7,
+    top: 12.7,
+    right: 206.4173,
+    bottom: 282.6173,
+  });
+  assert.ok(Math.abs(frame.pageWidthPt - 612) < 0.001);
+  assert.ok(Math.abs(frame.pageHeightPt - 792) < 0.001);
+  assert.ok(Math.abs(frame.marginMm - 4.74135) < 0.01);
+  assert.ok(Math.abs(frame.masterXPt + 4.56) < 0.03);
+  assert.ok(Math.abs(frame.masterYPt + 409.44) < 0.03);
+  assert.ok(Math.abs(frame.leftMm - 19.64135) < 0.01);
+  assert.ok(Math.abs(frame.topMm - 13.29135) < 0.01);
+  assert.throws(() =>
+    fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
+      left: 0,
+      top: 0,
+      right: 215,
+      bottom: 280,
+    }),
+  );
+});
+test('eight-card registered fronts and backs are both Letter pages', async () => {
+  const source = await PDFDocument.create();
+  source.addPage([792, 1224]).drawRectangle({
+    x: 36,
+    y: 1188,
+    width: 10,
+    height: 10,
+    color: rgb(0, 0, 0),
+  });
+  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+    profile = {
+      version: 1 as const,
+      key: registrationKey(settings),
+      name: 'Tabloid capture',
+      capturedAt: new Date().toISOString(),
+      pdf: await source.save(),
+      pageWidthPt: 792,
+      pageHeightPt: 1224,
+      leftMm: 21.25,
+      topMm: 21.25,
+      outputFrame: fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
+        left: 12.7,
+        top: 12.7,
+        right: 206.4173,
+        bottom: 282.6173,
+      }),
+      preview: '',
+    },
+    project = {
+      version: 1 as const,
+      name: 'Eight-card output',
+      entries: [{ ...entry, quantity: 8 }],
+      settings,
+    };
+  for (const result of [
+    await buildRegisteredPdf(project, profile, () => {}, true),
+    await buildRegisteredBackPdf(project, profile, () => {}, true),
+  ]) {
+    const output = await PDFDocument.load(result);
+    assert.equal(output.getPageCount(), 1);
+    assert.ok(Math.abs(output.getPage(0).getWidth() - 612) < 0.001);
+    assert.ok(Math.abs(output.getPage(0).getHeight() - 792) < 0.001);
+  }
 });
 test('capture rejects scaling, missing/rearranged slots, filled gaps and absent marks', () => {
   for (const f of [

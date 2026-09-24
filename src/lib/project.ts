@@ -1,4 +1,10 @@
-import { fixedBleedMm, PRINT_DPI_OPTIONS, STANDARD_CARD_RADIUS_MM, type Project } from './types';
+import {
+  fixedBleedMm,
+  isTightRegisteredProfile,
+  PRINT_DPI_OPTIONS,
+  STANDARD_CARD_RADIUS_MM,
+  type Project,
+} from './types';
 const supportedImage = (url: unknown) =>
   typeof url === 'string' &&
   /^(https:\/\/(cards\.scryfall\.io\/|cdn\.mpcautofill\.com\/images\/google_drive\/(full|large)\/)|data:image\/(png|jpeg|webp);base64,)/.test(
@@ -19,6 +25,9 @@ export function validateProject(value: unknown): Project {
   // Older projects stay valid. The removed four-slot profile migrates to the
   // six-slot layout, and any enabled custom bleed amount becomes the fixed amount.
   if ((s.profile as string) === 'conservative') s.profile = 'expanded';
+  // The first eight-card test used 0.1 mm spacing. Its capture is incompatible
+  // with the revised 1 mm geometry, so migrate saved projects before validation.
+  if (s.profile === 'eight' && s.gap === 0.1) s.gap = 1;
   s.units ??= s.paper === 'letter' ? 'in' : 'mm';
   s.bleed ??= 0;
   // Projects created with the previous 3 mm default should follow the corrected
@@ -38,7 +47,7 @@ export function validateProject(value: unknown): Project {
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
     !['maker', 'explore', 'joy-xtra'].includes(s.machine) ||
-    !['expanded', 'seven', 'nine'].includes(s.profile) ||
+    !['expanded', 'seven', 'eight', 'nine'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.backBleedEnabled !== 'boolean' ||
     typeof s.backsEnabled !== 'boolean' ||
@@ -51,7 +60,7 @@ export function validateProject(value: unknown): Project {
   for (const [n, min, max] of [
     [s.width, 40, 100],
     [s.height, 40, 120],
-    [s.gap, s.profile === 'seven' ? 0.1 : 1, 10],
+    [s.gap, isTightRegisteredProfile(s.profile) ? 0.1 : 1, 10],
     [s.radius, 0, 6],
     [s.bleed, 0, 1.5],
     [s.backOffsetX, -5, 5],
@@ -65,16 +74,16 @@ export function validateProject(value: unknown): Project {
   if (s.bleed > s.gap / 2)
     throw new Error('Artwork bleed must fit within half of the card spacing.');
   if (
-    s.profile === 'seven' &&
+    (s.profile === 'seven' || s.profile === 'eight') &&
     (s.paper !== 'letter' ||
       s.machine === 'joy-xtra' ||
       s.width !== 63 ||
       s.height !== 88 ||
-      s.gap !== 0.1 ||
+      s.gap !== (s.profile === 'seven' ? 0.1 : 1) ||
       s.radius !== STANDARD_CARD_RADIUS_MM)
   )
     throw new Error(
-      'The experimental seven-card layout requires a Maker or Explore, US Letter output, 63 × 88 mm cards, 0.1 mm spacing, and 2.5 mm corners.',
+      'The experimental seven-card and eight-card layouts require a Maker or Explore, US Letter output, 63 × 88 mm cards, 2.5 mm corners, and respectively 0.1 mm or 1 mm spacing.',
     );
   if (
     s.profile === 'nine' &&

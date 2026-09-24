@@ -384,6 +384,20 @@ export async function renderSheet(
   }
 }
 export function instructions(project: Project, sheets: Sheet[], calibration: boolean) {
+  if (project.settings.profile === 'eight')
+    return (
+      `CRIPROX — ${calibration ? 'PHYSICAL SIZE CHECK' : project.name}\n\n` +
+      `This package contains eight-card artwork PNGs and matching SVG silhouettes. It does not contain Cricut sensor marks. Use Create print PDF in CriProx for the registered Letter pages.\n\n` +
+      `EIGHT-CARD REGISTERED PRINT WORKFLOW\n1. In Create print PDF, download the magenta setup PNG. Upload it to Design Space as one flat Print Then Cut image at 6.9685 × 10.0394 in. Keep all eight cards and the transparent gaps together.\n2. Select portrait Tabloid (11 × 17 in) in Design Space and the system print dialog. Save the complete one-page Tabloid PDF at 100% / Actual size with bleed off and all four sensor marks.\n3. Import that Tabloid PDF in Create print PDF. CriProx checks the card pattern and complete marked footprint, then moves the whole capture onto US Letter without scaling.\n4. Export the registered card PDFs and print them on US Letter at 100% / Actual size, with fit-to-page disabled. Check that all four marks are complete and run a measured plain-paper cut before using card stock.\n5. Reopen the same saved Design Space cut job and mat. A change to card spacing, machine, paper, cut layout, or the saved job requires a new capture.\n\n` +
+      `SHEET SIZES\n` +
+      sheets
+        .map(
+          (s) =>
+            `Sheet ${s.index + 1}: ${formatDimensions(s.width, s.height, project.settings.units)}; ${s.placements.length} cards; ${mmToPx(s.width, project.settings.dpi)} × ${mmToPx(s.height, project.settings.dpi)} px at ${project.settings.dpi} DPI.`,
+        )
+        .join('\n') +
+      `\n\nThe SVG is a geometry reference, not a second registered cut layer. The eight-card Tabloid-to-Letter route remains experimental until the printer and Cricut read and cut a measured test sheet.\n`
+    );
   const seven = project.settings.profile === 'seven',
     printPaper = paperWorkflow(project.settings),
     cardCount = seven ? 'seven' : 'six';

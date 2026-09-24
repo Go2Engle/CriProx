@@ -17,6 +17,7 @@
 - Unsigned macOS arm64 package builds. Packaged app launches with context isolation, renderer sandboxing, and no renderer Node access. Native size-check and local-artwork exports succeed with no renderer exceptions.
 - npm dependency audit reports zero known vulnerabilities for the installed dependency set.
 - Experimental seven-card geometry: the 189.2 × 214.2 mm 2–3–2 template paginates at seven cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 0.1 mm spacing, US Letter output, and Maker/Explore targets.
+- Experimental eight-card geometry: the 177 × 255 mm 2×4 template paginates at eight horizontal cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 1 mm spacing, US Letter output, and Maker/Explore targets.
 - Manual nine-card geometry: the 191 × 266 mm 3×3 template paginates at nine cards, preserves all
   slot coordinates on partial pages, and is restricted to 63 × 88 mm cards, 1 mm spacing, and
   2.5 mm corners. Front and mirrored back placement use the same tested 6.35 mm nominal page inset;
@@ -27,6 +28,7 @@
   bounds, and first-slot trim origin. A 600 DPI rendered placement proof located the production trim
   origin within one raster pixel of the nominal 6.35 mm page coordinate.
 - A user-supplied Design Space capture was confirmed as a single, unrotated 612 × 792 point US Letter PDF. Its rendered magenta 2–3–2 pattern passed the production detector at 300 DPI with all four surrounding marks present.
+- A user-supplied eight-card Design Space capture of the earlier 0.1 mm-gap layout was confirmed as a single, unrotated 792 × 1224 point Tabloid PDF. The production pattern and mark checks passed at 300 DPI. Its 7.63 × 10.63 in printed footprint was translated at actual size into a 612 × 792 point Letter output proof with all visible content intact and at least 0.19 in clearance vertically. The revised 1 mm-gap layout needs a new capture and fit check.
 
 Browser checks caught a local-image bug: fetching a data URL was blocked by the renderer CSP. The final export code directly decodes embedded artwork without making a fetch request. The fixed browser export was validated at pixel level.
 
@@ -35,6 +37,7 @@ Browser checks caught a local-image bug: fetching a data URL was blocked by the 
 - Actual Cricut sensor acquisition, Design Space contour tracing, physical scale, alignment, and repeatability.
 - Acceptance of the experimental six-card layout on each model/paper configuration, including the Tabloid-to-Letter print workaround for Letter output.
 - Seven-card sensor acquisition, physical dimensions, edge alignment, 12 × 24 in mat behavior, and repeatability after the Tabloid-to-Letter print workaround.
+- Eight-card printer imageable-area fit, sensor acquisition, physical dimensions, edge alignment, mat behavior, and repeatability after Tabloid capture and Letter export.
 - A first nine-card Basic Cut trial completed with matching scale and a small, consistent-looking
   up/left translation. Exact correction and repeatability across multiple page placements and mat
   loads still require measurement.

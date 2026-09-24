@@ -10,11 +10,13 @@ import {
   alignmentArtworkDirection,
   PT_PER_MM,
   detectTemplate,
+  fitTabloidCaptureToLetter,
   fixedSheets,
   fullTemplate,
   mirrorBackPlacements,
   registrationKey,
   templateId,
+  type OutputFrame,
   type RegistrationProfile,
 } from './registration';
 export async function pdfRenderer() {
@@ -62,7 +64,12 @@ export async function captureProfile(
     size = page.getSize(),
     crop = page.getCropBox(),
     media = page.getMediaBox();
-  const expected = settings.paper === 'letter' ? [215.9, 279.4] : [210, 297];
+  const tabloidCapture = settings.profile === 'eight',
+    expected = tabloidCapture
+      ? [279.4, 431.8]
+      : settings.paper === 'letter'
+        ? [215.9, 279.4]
+        : [210, 297];
   if (
     page.getRotation().angle !== 0 ||
     crop.x !== 0 ||
@@ -78,7 +85,7 @@ export async function captureProfile(
     Math.abs(size.height / PT_PER_MM - expected[1]) > 0.5
   )
     throw new Error(
-      `Wrong paper size. Capture a portrait ${settings.paper === 'letter' ? 'US Letter' : 'A4'} page without cropping.`,
+      `Wrong paper size. Capture a portrait ${tabloidCapture ? 'Tabloid (11 × 17 in)' : settings.paper === 'letter' ? 'US Letter' : 'A4'} page without cropping.`,
     );
   const pdfjs = await pdfRenderer();
   const task = pdfjs.getDocument({ data: pdf.slice() });
@@ -93,7 +100,7 @@ export async function captureProfile(
     canvas.height = Math.ceil(viewport.height);
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
     await rendered.render({ canvas, canvasContext: ctx, viewport, background: '#ffffff' }).promise;
-    const position = detectTemplate(
+    const { leftMm, topMm, contentBoundsMm } = detectTemplate(
       ctx.getImageData(0, 0, canvas.width, canvas.height).data,
       canvas.width,
       canvas.height,
@@ -101,6 +108,9 @@ export async function captureProfile(
       size.height / PT_PER_MM,
       settings,
     );
+    const outputFrame = tabloidCapture
+      ? fitTabloidCaptureToLetter(size.width, size.height, leftMm, topMm, contentBoundsMm)
+      : undefined;
     const thumb = document.createElement('canvas');
     thumb.width = 380;
     thumb.height = Math.round((380 * size.height) / size.width);
@@ -115,12 +125,41 @@ export async function captureProfile(
       pdf,
       pageWidthPt: size.width,
       pageHeightPt: size.height,
-      ...position,
+      leftMm,
+      topMm,
+      outputFrame,
       preview,
     };
   } finally {
     await task.destroy();
   }
+}
+function registeredOutputFrame(profile: RegistrationProfile, settings: Settings): OutputFrame {
+  if (settings.profile === 'eight') {
+    const frame = profile.outputFrame;
+    if (
+      !frame ||
+      Math.abs(frame.pageWidthPt - 612) > 0.01 ||
+      Math.abs(frame.pageHeightPt - 792) > 0.01 ||
+      frame.marginMm < 1 ||
+      ![frame.masterXPt, frame.masterYPt, frame.leftMm, frame.topMm, frame.marginMm].every(
+        Number.isFinite,
+      )
+    )
+      throw new Error(
+        'This eight-card template needs a validated Tabloid-to-Letter capture. Import the original PDF again.',
+      );
+    return frame;
+  }
+  return {
+    pageWidthPt: profile.pageWidthPt,
+    pageHeightPt: profile.pageHeightPt,
+    masterXPt: 0,
+    masterYPt: 0,
+    leftMm: profile.leftMm,
+    topMm: profile.topMm,
+    marginMm: 0,
+  };
 }
 export async function buildRegisteredPdf(
   project: Project,
@@ -138,17 +177,23 @@ export async function buildRegisteredPdf(
   if (pages.length > 24) throw new Error('Use up to 24 sheets per registered print job.');
   const output = await PDFDocument.create();
   const source = await PDFDocument.load(profile.pdf);
+  const frame = registeredOutputFrame(profile, project.settings);
   // Embed only the page's visual content. Do not carry source document scripts,
   // attachments, annotations or forms into generated print files.
   const master = await output.embedPage(source.getPage(0));
   const pageList = calibration ? [full] : pages;
   for (const [index, sheet] of pageList.entries()) {
     progress(`Preparing registered sheet ${index + 1} of ${pageList.length}…`);
-    const page = output.addPage([profile.pageWidthPt, profile.pageHeightPt]);
-    page.drawPage(master, { x: 0, y: 0, width: profile.pageWidthPt, height: profile.pageHeightPt });
+    const page = output.addPage([frame.pageWidthPt, frame.pageHeightPt]);
+    page.drawPage(master, {
+      x: frame.masterXPt,
+      y: frame.masterYPt,
+      width: profile.pageWidthPt,
+      height: profile.pageHeightPt,
+    });
     const bleed = calibration ? 0 : frontBleedMm(project.settings),
-      x = profile.leftMm * PT_PER_MM,
-      y = profile.pageHeightPt - (profile.topMm + full.height) * PT_PER_MM;
+      x = frame.leftMm * PT_PER_MM,
+      y = frame.pageHeightPt - (frame.topMm + full.height) * PT_PER_MM;
     const pad = 0.18 * PT_PER_MM; // Erase raster edge fuzz only; capture checks a 0.4 mm guard.
     page.drawRectangle({
       x: x - pad,
@@ -242,22 +287,23 @@ export async function buildRegisteredBackPdf(
   if (!pages.length) throw new Error('Add at least one card.');
   const output = await PDFDocument.create();
   const pageList = calibration ? [full] : pages;
-  const pageWidthMm = profile.pageWidthPt / PT_PER_MM,
-    pageHeightMm = profile.pageHeightPt / PT_PER_MM;
+  const frame = registeredOutputFrame(profile, project.settings);
+  const pageWidthMm = frame.pageWidthPt / PT_PER_MM,
+    pageHeightMm = frame.pageHeightPt / PT_PER_MM;
   for (const [index, sourceSheet] of pageList.entries()) {
     progress(`Preparing back sheet ${index + 1} of ${pageList.length}…`);
-    const page = output.addPage([profile.pageWidthPt, profile.pageHeightPt]);
+    const page = output.addPage([frame.pageWidthPt, frame.pageHeightPt]);
     const sheet = mirroredBackSheet(sourceSheet, full, project),
       bleed = calibration ? 0 : backBleedMm(project.settings),
       outerBleed = calibration ? 0 : backOuterBleedMm(project.settings),
       left =
         (project.settings.backFlip === 'long-edge'
-          ? pageWidthMm - profile.leftMm - full.width
-          : profile.leftMm) + project.settings.backOffsetX,
+          ? pageWidthMm - frame.leftMm - full.width
+          : frame.leftMm) + project.settings.backOffsetX,
       top =
         (project.settings.backFlip === 'short-edge'
-          ? pageHeightMm - profile.topMm - full.height
-          : profile.topMm) + project.settings.backOffsetY;
+          ? pageHeightMm - frame.topMm - full.height
+          : frame.topMm) + project.settings.backOffsetY;
     const printableSheet = outerBleed
       ? {
           ...sheet,
@@ -281,7 +327,7 @@ export async function buildRegisteredBackPdf(
     );
     page.drawImage(art, {
       x: (left - outerBleed) * PT_PER_MM,
-      y: profile.pageHeightPt - (top + full.height + outerBleed) * PT_PER_MM,
+      y: frame.pageHeightPt - (top + full.height + outerBleed) * PT_PER_MM,
       width: (full.width + outerBleed * 2) * PT_PER_MM,
       height: (full.height + outerBleed * 2) * PT_PER_MM,
     });

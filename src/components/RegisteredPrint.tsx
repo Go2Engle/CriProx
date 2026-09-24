@@ -953,7 +953,14 @@ export default function RegisteredPrint({
                 <p>
                   In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>,
                   use the system print dialog, and{' '}
-                  {printPaper.usesLetterHack ? (
+                  {printPaper.capturesTabloid ? (
+                    <>
+                      keep the printer paper on <strong>Tabloid (11 × 17 in)</strong>. Save a{' '}
+                      <strong>one-page portrait Tabloid PDF at 100% / Actual size</strong> with all
+                      four sensor marks. CriProx will check the complete marked area and reframe it
+                      onto US Letter without scaling.
+                    </>
+                  ) : printPaper.usesLetterHack ? (
                     <>
                       change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save a{' '}
                       <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it
@@ -985,6 +992,9 @@ export default function RegisteredPrint({
                         Geometry checked · captured{' '}
                         {new Date(profile.capturedAt).toLocaleDateString()} ·{' '}
                         {registrationTemplates ? 'project library root' : 'local app storage'} ·
+                        {profile.outputFrame
+                          ? `US Letter output · ${formatMeasurement(profile.outputFrame.marginMm, project.settings.units)} minimum mark margin · `
+                          : ''}
                         hardware unverified
                       </small>
                     </span>
@@ -998,11 +1008,18 @@ export default function RegisteredPrint({
                 <h3>Save the PDF, then use the saved cut job</h3>
                 <p>
                   Prepare and inspect your pages below, then save the PDF and open it in a dedicated
-                  PDF application. Print at <strong>100% / Actual size</strong>, with no fit,
-                  shrink, headers, or margins. CriProx does not print directly because browser
-                  printing reduces output quality. If backs are enabled, print their artwork onto
-                  the same sheets; those back pages do not contain registration marks or cut lines.
-                  In Design Space, reopen this exact saved project and mat, select{' '}
+                  PDF application.{' '}
+                  {printPaper.capturesTabloid && (
+                    <>
+                      The exported pages are <strong>US Letter</strong>, with the captured marks and
+                      card positions moved together.{' '}
+                    </>
+                  )}
+                  Print at <strong>100% / Actual size</strong>, with no fit, shrink, headers, or
+                  margins. CriProx does not print directly because browser printing reduces output
+                  quality. If backs are enabled, print their artwork onto the same sheets; those
+                  back pages do not contain registration marks or cut lines. In Design Space, reopen
+                  this exact saved project and mat, select{' '}
                   <strong>Already Printed / Skip printing</strong> when available, then load the
                   sheet front-side up and cut.
                 </p>
@@ -1186,7 +1203,7 @@ export default function RegisteredPrint({
           {manualNine
             ? 'Test alignment on plain paper before committing card stock.'
             : registrationTemplates
-              ? 'Saved six-cut and seven-cut templates load automatically for matching layouts.'
+              ? 'Saved six-cut, seven-cut, and eight-cut templates load automatically for matching layouts.'
               : 'A saved template replaces artwork uploads for each deck.'}
         </span>
         <button className="secondary" disabled={!!busy} onClick={close}>

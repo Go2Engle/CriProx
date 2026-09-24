@@ -5,11 +5,11 @@ import { createCanvas } from '@napi-rs/canvas';
 import { withDpi } from '../../src/lib/png';
 
 const dpi = 600;
-const sheetWidthMm = 176.1;
-const sheetHeightMm = 252.3;
+const sheetWidthMm = 177;
+const sheetHeightMm = 255;
 const cardWidthMm = 88;
 const cardHeightMm = 63;
-const gapMm = 0.1;
+const gapMm = 1;
 const radiusMm = 2.5;
 const mmToPx = (mm: number) => Math.round((mm * dpi) / 25.4);
 
