@@ -474,7 +474,7 @@ function SettingsModal({
   const profile =
     settings.profile === 'expanded'
       ? 'Print and Cut'
-      : settings.profile === 'seven'
+      : settings.profile === 'seven' || settings.profile === 'eight'
         ? 'Experimental Print and Cut'
         : 'Manual Alignment';
   const signedMm = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)} mm`;
@@ -1274,10 +1274,10 @@ function ExportModal({
               : 'Six-card layout is experimental. Confirm it fits your machine and paper in Design Space without resizing.'}
           </div>
         )}
-        {project.settings.profile === 'seven' && (
+        {(project.settings.profile === 'seven' || project.settings.profile === 'eight') && (
           <div className="warning-box">
-            Seven-card layout is an experimental Tabloid-to-Letter workaround. Confirm one page, all
-            four sensor marks, and a measured test cut before using card stock.
+            This registered layout is experimental. Confirm one page, all four sensor marks, and a
+            measured test cut before using card stock.
           </div>
         )}
         {error && (
@@ -2694,7 +2694,9 @@ export default function App() {
                         const machine = e.target.value as Settings['machine'];
                         settings({
                           machine,
-                          ...(project.settings.profile === 'seven' && machine === 'joy-xtra'
+                          ...((project.settings.profile === 'seven' ||
+                            project.settings.profile === 'eight') &&
+                          machine === 'joy-xtra'
                             ? {
                                 profile: 'expanded' as const,
                                 gap: 1,
@@ -2730,7 +2732,8 @@ export default function App() {
                       onClick={() =>
                         settings({
                           paper: 'a4',
-                          ...(project.settings.profile === 'seven'
+                          ...(project.settings.profile === 'seven' ||
+                          project.settings.profile === 'eight'
                             ? {
                                 profile: 'expanded' as const,
                                 gap: 1,
@@ -2772,13 +2775,13 @@ export default function App() {
                     onChange={(e) => {
                       const profile = e.target.value as Settings['profile'];
                       settings(
-                        profile === 'seven'
+                        profile === 'seven' || profile === 'eight'
                           ? {
                               profile,
                               paper: 'letter',
                               width: 63,
                               height: 88,
-                              gap: 0.1,
+                              gap: profile === 'eight' ? 1 : 0.1,
                               radius: STANDARD_CARD_RADIUS_MM,
                               bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
                             }
@@ -2793,7 +2796,8 @@ export default function App() {
                               }
                             : {
                                 profile,
-                                ...(project.settings.profile === 'seven'
+                                ...(project.settings.profile === 'seven' ||
+                                project.settings.profile === 'eight'
                                   ? {
                                       gap: 1,
                                       bleed:
@@ -2811,14 +2815,19 @@ export default function App() {
                     <option value="seven" disabled={project.settings.machine === 'joy-xtra'}>
                       7 cards · Print and Cut · Experimental
                     </option>
+                    <option value="eight" disabled={project.settings.machine === 'joy-xtra'}>
+                      8 cards - Print and Cut - Experimental
+                    </option>
                     <option value="nine">9 cards · Manual Alignment · Experimental</option>
                   </select>
                   <p className="field-note">
                     {project.settings.profile === 'seven'
                       ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
-                      : project.settings.profile === 'nine'
-                        ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
-                        : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
+                      : project.settings.profile === 'eight'
+                        ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
+                        : project.settings.profile === 'nine'
+                          ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
+                          : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
                   </p>
                 </div>
                 <div className="settings-divider" />

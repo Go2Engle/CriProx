@@ -36,10 +36,11 @@ flowchart LR
 1. Imports are normalized into the local project model. Remote responses and export artwork are cached, while local images are embedded with the project data.
 2. The layout engine converts physical settings to deterministic slot positions. Preview and export consume the same geometry so they do not drift into separate implementations.
 3. Standard export clips each artwork source into its rounded card silhouette and emits corresponding vector geometry and physical-size metadata.
-4. Registered printing first verifies a captured Design Space PDF, stores six-cut and seven-cut
+4. Registered printing first verifies a captured Design Space PDF, stores six-cut, seven-cut, and eight-cut
    captures at the project-library root, and then draws artwork within the preserved template. The
    geometry-derived filename lets the app reload the exact capture without synthesizing registration
-   marks or asking for another upload.
+   marks or asking for another upload. For the eight-cut profile, the complete Tabloid capture is
+   measured and translated onto a Letter page without scaling before the artwork is placed.
 5. Manual nine-card cutting renders the print PDF and Basic Cut PNG from the same fixed 3×3 geometry.
    It uses a quarter-inch mat inset, stores machine-specific X/Y print compensation, and does not use
    or synthesize sensor registration.

@@ -3,6 +3,16 @@ import type { Entry, Settings } from './types';
 export const CAPTURE_COLOR = '#e600c8';
 export const PT_PER_MM = 72 / 25.4;
 export const BACK_ALIGNMENT_SQUARE_MM = 1;
+export type ContentBoundsMm = { left: number; top: number; right: number; bottom: number };
+export type OutputFrame = {
+  pageWidthPt: number;
+  pageHeightPt: number;
+  masterXPt: number;
+  masterYPt: number;
+  leftMm: number;
+  topMm: number;
+  marginMm: number;
+};
 export type RegistrationProfile = {
   version: 1;
   key: string;
@@ -13,8 +23,54 @@ export type RegistrationProfile = {
   pageHeightPt: number;
   leftMm: number;
   topMm: number;
+  /** Present when a Tabloid capture is reframed to Letter without scaling. */
+  outputFrame?: OutputFrame;
   preview: string;
 };
+export function fitTabloidCaptureToLetter(
+  sourceWidthPt: number,
+  sourceHeightPt: number,
+  templateLeftMm: number,
+  templateTopMm: number,
+  bounds: ContentBoundsMm,
+): OutputFrame {
+  const paperWidthMm = 215.9,
+    paperHeightMm = 279.4,
+    sourceWidthMm = sourceWidthPt / PT_PER_MM,
+    sourceHeightMm = sourceHeightPt / PT_PER_MM,
+    width = bounds.right - bounds.left,
+    height = bounds.bottom - bounds.top;
+  if (
+    ![sourceWidthMm, sourceHeightMm, templateLeftMm, templateTopMm, ...Object.values(bounds)].every(
+      Number.isFinite,
+    ) ||
+    width <= 0 ||
+    height <= 0 ||
+    bounds.left < 0 ||
+    bounds.top < 0 ||
+    bounds.right > sourceWidthMm + 0.1 ||
+    bounds.bottom > sourceHeightMm + 0.1
+  )
+    throw new Error('The captured Tabloid artwork bounds are invalid.');
+  const marginX = (paperWidthMm - width) / 2,
+    marginY = (paperHeightMm - height) / 2,
+    marginMm = Math.min(marginX, marginY);
+  if (marginMm < 1)
+    throw new Error(
+      `The complete marked area is ${width.toFixed(2)} × ${height.toFixed(2)} mm and cannot fit US Letter at actual size with 1 mm clearance.`,
+    );
+  const shiftXmm = marginX - bounds.left,
+    shiftYmm = marginY - bounds.top;
+  return {
+    pageWidthPt: paperWidthMm * PT_PER_MM,
+    pageHeightPt: paperHeightMm * PT_PER_MM,
+    masterXPt: shiftXmm * PT_PER_MM,
+    masterYPt: (paperHeightMm - sourceHeightMm - shiftYmm) * PT_PER_MM,
+    leftMm: templateLeftMm + shiftXmm,
+    topMm: templateTopMm + shiftYmm,
+    marginMm,
+  };
+}
 const placeholder: Entry = {
   id: 'registration-slot',
   quantity: 1,
@@ -105,7 +161,7 @@ export function detectTemplate(
   pageWidthMm: number,
   pageHeightMm: number,
   settings: Settings,
-): { leftMm: number; topMm: number } {
+): { leftMm: number; topMm: number; contentBoundsMm: ContentBoundsMm } {
   const sheet = fullTemplate(settings);
   const sx = width / pageWidthMm,
     sy = height / pageHeightMm;
@@ -170,10 +226,20 @@ export function detectTemplate(
   // rectangle on all four sides, while leaving a clear guard around the replacement.
   // This is a plausibility check, not authentication of Cricut sensor marks.
   const sides = [0, 0, 0, 0];
+  let contentMinX = minX,
+    contentMinY = minY,
+    contentMaxX = maxX,
+    contentMaxY = maxY;
   const guard = 0.4;
   for (let y = 0; y < height; y++)
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
+      if (data[i] < 245 || data[i + 1] < 245 || data[i + 2] < 245) {
+        contentMinX = Math.min(contentMinX, x);
+        contentMinY = Math.min(contentMinY, y);
+        contentMaxX = Math.max(contentMaxX, x);
+        contentMaxY = Math.max(contentMaxY, y);
+      }
       if (data[i] > 80 || data[i + 1] > 80 || data[i + 2] > 80) continue;
       const mx = x / sx,
         my = y / sy;
@@ -195,5 +261,14 @@ export function detectTemplate(
     throw new Error(
       'The page does not appear to contain marks surrounding the template. Import the complete one-page Design Space print PDF, not the original PNG or a cropped page.',
     );
-  return { leftMm, topMm };
+  return {
+    leftMm,
+    topMm,
+    contentBoundsMm: {
+      left: contentMinX / sx,
+      top: contentMinY / sy,
+      right: (contentMaxX + 1) / sx,
+      bottom: (contentMaxY + 1) / sy,
+    },
+  };
 }

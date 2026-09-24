@@ -133,7 +133,7 @@ npm run package   # Build an installer for the current operating system
 
 CriProx is a software-tested prototype. Its layout, export, density metadata, project validation, and registered-PDF recognition are covered by automated and manual checks. Real-world sensor acquisition, printer scaling, cutter alignment, and repeatability still depend on the exact machine, calibration, printer, paper, and mat.
 
-The default six-card layout and the seven-card 2–3–2 layout both use an experimental Tabloid-to-Letter workflow for US Letter output. Test one size-check sheet and record physical measurements before printing a full deck. The [validation record](docs/VALIDATION.md) tracks what is proven in software and what still needs hardware acceptance.
+The six-card and seven-card layouts use an experimental Tabloid-to-Letter print workflow. The eight-card layout captures a full Tabloid PDF from Design Space and reframes its complete marked area onto US Letter without scaling. Test one size-check sheet and record physical measurements before printing a full deck. The [validation record](docs/VALIDATION.md) tracks what is proven in software and what still needs hardware acceptance.
 
 ## Community
 

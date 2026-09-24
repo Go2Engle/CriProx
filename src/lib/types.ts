@@ -24,7 +24,7 @@ export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
   machine: 'maker' | 'explore' | 'joy-xtra';
-  profile: 'expanded' | 'seven' | 'nine';
+  profile: 'expanded' | 'seven' | 'eight' | 'nine';
   width: number;
   height: number;
   gap: number;
@@ -43,8 +43,9 @@ export type Settings = {
   dpi: PrintDpi;
   proxyLabel: boolean;
 };
+export const isTightRegisteredProfile = (profile: Settings['profile']) => profile === 'seven';
 export const fixedBleedMm = (settings: Pick<Settings, 'profile'>) =>
-  settings.profile === 'seven' ? 0.05 : 0.5;
+  isTightRegisteredProfile(settings.profile) ? 0.05 : 0.5;
 export const frontBleedMm = (settings: Pick<Settings, 'profile' | 'bleed'>) =>
   settings.bleed > 0 ? fixedBleedMm(settings) : 0;
 export const backBleedMm = (settings: Pick<Settings, 'profile' | 'backBleedEnabled'>) =>

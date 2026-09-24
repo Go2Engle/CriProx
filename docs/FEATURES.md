@@ -50,11 +50,11 @@ The SVG is a geometry reference or a separate Basic Cut template. It is not a re
 CriProx can import a one-page PDF captured from Design Space, recognize the surrounding marks, and place current artwork into that template without changing the saved cut geometry.
 
 - Front and back bleed are independent toggles.
-- Front bleed and the bleed between card backs are fixed at 0.5 mm for six-card sheets and
+- Front bleed and the bleed between card backs are fixed at 0.5 mm for six-card and eight-card sheets and
   0.05 mm for seven-card sheets. Back sheets extend artwork 1.5 mm past exposed outside edges to
   hide small front-to-back alignment shifts.
 - The captured PDF must correspond to the exact saved Design Space cut job.
-- The desktop app stores verified six-cut and seven-cut captures as PDFs at the root of the selected
+- The desktop app stores verified six-cut, seven-cut, and eight-cut captures as PDFs at the root of the selected
   CriProx project library and loads them automatically whenever their exact cut geometry is selected.
   Existing captures in local app storage are copied into the library on first use.
 - CriProx preserves captured marks; it does not generate or imitate them.
@@ -127,6 +127,10 @@ The default 180 × 220 mm candidate area produces six rotated cards. With US Let
 
 The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 mm corners, 0.1 mm spacing, and a 189.2 × 214.2 mm template. It also uses the Tabloid-to-Letter handoff. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
 
+### Eight-card portrait layout
+
+The Maker/Explore experimental profile uses eight fixed horizontal cards in a 2 × 4 layout with 1 mm gaps. The magenta setup image is 177 × 255 mm. Design Space produces a complete portrait Tabloid capture; CriProx checks every slot and the complete marked footprint, then moves the capture and artwork together onto US Letter pages at actual size. The earlier 0.1 mm-gap capture passed software measurement; the new geometry needs a fresh capture and fit check. Printer margins, sensor acquisition, and physical cutting remain unverified.
+
 ### Nine-card manual layout
 
 The manual profile uses nine fixed 63 × 88 mm cards, 2.5 mm corners, 1 mm spacing, and a
@@ -145,6 +149,6 @@ mat, but it bypasses optical registration and remains physically unverified.
 - Registered printing depends on a captured PDF for the exact saved cut job.
 - Manual nine-card cutting depends on repeatable page and cut-template placement on the mat.
 - Duplex alignment depends on repeatable printer feed.
-- Letter output for the six- and seven-card profiles uses an unsupported Tabloid-to-Letter paper-size workaround.
+- Letter output for the six-, seven-, and eight-card profiles uses experimental Tabloid workflows. The eight-card profile requires a full Tabloid PDF capture and produces a new Letter PDF without scaling.
 
 Always inspect the final contour in Design Space, set both dimensions from the supplied manifest, and avoid Auto-Resize. Complete a measured size-check and test cut before using a full sheet of card stock.

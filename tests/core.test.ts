@@ -280,6 +280,33 @@ test('experimental seven-card layout uses the proven 2-3-2 Letter geometry', () 
   assert.equal((svg.match(/<rect /g) || []).length, 7);
   assert.match(svg, /width="189\.2mm" height="214\.2mm"/);
 });
+test('eight-card capture layout keeps four rows of two horizontal cards with 1 mm gutters', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+    pages = layout([{ ...entry, quantity: 17 }], settings);
+  assert.equal(grid(settings).capacity, 8);
+  assert.deepEqual(
+    pages.map((page) => page.placements.length),
+    [8, 8, 1],
+  );
+  assert.equal(envelope(settings).width, 177);
+  assert.equal(envelope(settings).height, 255);
+  assert.equal(pages[0].width, 177);
+  assert.equal(pages[0].height, 255);
+  assert.deepEqual(
+    pages[0].placements.map(({ x, y, width, height, rotated }) => ({
+      x: Number(x.toFixed(1)),
+      y: Number(y.toFixed(1)),
+      width,
+      height,
+      rotated,
+    })),
+    [0, 1, 2, 3].flatMap((row) => [
+      { x: 0, y: row * 64, width: 88, height: 63, rotated: true },
+      { x: 89, y: row * 64, width: 88, height: 63, rotated: true },
+    ]),
+  );
+  assert.match(templateSvg(pages[0], settings), /width="177mm" height="255mm"/);
+});
 test('manual nine-card layout uses a fixed 3-by-3 block on every page', () => {
   const settings = { ...DEFAULT_SETTINGS, profile: 'nine' as const },
     pages = layout([{ ...entry, quantity: 20 }], settings);
@@ -416,6 +443,7 @@ test('display units convert labels without changing millimeter geometry', () => 
 test('bleed amounts are fixed by layout profile', () => {
   assert.equal(fixedBleedMm(DEFAULT_SETTINGS), 0.5);
   assert.equal(fixedBleedMm({ profile: 'seven' }), 0.05);
+  assert.equal(fixedBleedMm({ profile: 'eight' }), 0.5);
   assert.equal(frontBleedMm({ profile: 'expanded', bleed: 0 }), 0);
   assert.equal(frontBleedMm({ profile: 'expanded', bleed: 1.25 }), 0.5);
   assert.equal(backBleedMm({ profile: 'expanded', backBleedEnabled: true }), 0.5);
@@ -429,21 +457,31 @@ test('paper workflow uses Tabloid for Letter hacks and native A4 for A4 output',
     designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'US Letter',
     usesLetterHack: true,
+    capturesTabloid: false,
   });
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'seven' }), {
     designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'US Letter',
     usesLetterHack: true,
+    capturesTabloid: false,
+  });
+  assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'eight' }), {
+    designSpacePaper: 'Tabloid (11 × 17 in)',
+    systemPaper: 'Tabloid (11 × 17 in)',
+    usesLetterHack: true,
+    capturesTabloid: true,
   });
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'nine' }), {
     designSpacePaper: 'US Letter',
     systemPaper: 'US Letter',
     usesLetterHack: false,
+    capturesTabloid: false,
   });
   assert.deepEqual(paperWorkflow({ paper: 'a4', profile: 'expanded' }), {
     designSpacePaper: 'A4',
     systemPaper: 'A4',
     usesLetterHack: false,
+    capturesTabloid: false,
   });
 });
 test('project Save As names are portable across desktop platforms', () => {
@@ -529,6 +567,14 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   );
   assert.throws(() => validateProject({ ...good, settings: { ...seven, paper: 'a4' as const } }));
   assert.throws(() => validateProject({ ...good, settings: { ...seven, gap: 1 } }));
+  const eight = { ...seven, profile: 'eight' as const, gap: 1, bleed: 0.5 };
+  assert.equal(validateProject({ ...good, settings: eight }).settings.profile, 'eight');
+  assert.throws(() => validateProject({ ...good, settings: { ...eight, paper: 'a4' as const } }));
+  assert.throws(() => validateProject({ ...good, settings: { ...eight, gap: 2 } }));
+  assert.equal(
+    validateProject({ ...good, settings: { ...eight, gap: 0.1, bleed: 0.05 } }).settings.gap,
+    1,
+  );
   const nine = { ...DEFAULT_SETTINGS, profile: 'nine' as const };
   assert.equal(validateProject({ ...good, settings: nine }).settings.profile, 'nine');
   assert.equal(

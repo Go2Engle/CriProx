@@ -81,9 +81,20 @@ The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fi
 7. Reopen the same saved Design Space project and mat for the cut. Design Space may require a 12 × 24 in mat because the declared page is Tabloid, even though the printed sheet is Letter.
 8. Record sensor acquisition, every cut dimension, edge displacement, and repeatability. The successful one-page PDF capture confirms only the software geometry—not that a physical machine will read or cut it accurately.
 
+## Experimental eight-card Tabloid capture
+
+The eight-card profile fixes two horizontal cards per row across four rows at 63 × 88 mm per card, 1 mm gaps, and 2.5 mm corners. The complete magenta template is 177 × 255 mm.
+
+1. Select the eight-card profile in CriProx, download its magenta setup PNG, and upload it to Design Space as one flat Print Then Cut image. Set both Canvas dimensions to 177 × 255 mm.
+2. Select portrait **Tabloid (11 × 17 in)** in Design Space and the system print dialog. Turn bleed off and save one complete Tabloid PDF at **100% / Actual size**. Keep every card and all four sensor marks on one page.
+3. Import that PDF into **Create print PDF**. CriProx verifies the eight-card pattern and checks that all printed content fits on portrait US Letter with at least 1 mm clearance. It moves the complete captured page content and card artwork together, without changing their size.
+4. Save the resulting US Letter size-check PDF and print it at **100% / Actual size**. Check all four marks on plain paper, then confirm the machine reads them and cuts a 63 × 88 mm card before printing a full deck.
+
+The earlier 0.1 mm-gap sample capture had a 7.63 × 10.63 in marked footprint and about 0.19 in top and bottom clearance after centering on Letter. The revised spacing needs a fresh Tabloid capture and Letter-fit check. Printer imageable area and borderless expansion can still clip marks. Reuse the same saved Design Space cut job and mat; a successful PDF fit alone does not prove sensor acquisition.
+
 ## Exact SVG template
 
-Front and back bleed controls are independent on/off toggles. Front bleed and the bleed between card backs are fixed at 0.5 mm for the six-card profile and 0.05 mm for the tightly spaced seven-card profile. Because back pages do not contain registration marks, enabled back bleed extends 1.5 mm past exposed outside edges to cover small front-to-back alignment shifts without changing card positions or cut geometry.
+Front and back bleed controls are independent on/off toggles. Front bleed and the bleed between card backs are fixed at 0.5 mm for the six-card and eight-card profiles and 0.05 mm for the tightly spaced seven-card profile. Because back pages do not contain registration marks, enabled back bleed extends 1.5 mm past exposed outside edges to cover small front-to-back alignment shifts without changing card positions or cut geometry.
 
 When a selected Scryfall card has two faces, CriProx warns that card-back printing is required. With
 card backs enabled, the face opposite the selected front is placed in that card's mirrored back-side
