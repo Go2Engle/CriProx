@@ -2,7 +2,15 @@ import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { get, set } from 'idb-keyval';
 import {
   ArrowLeft,
@@ -1628,6 +1636,10 @@ function SheetPreview({
   const paper = settings.paper === 'letter' ? { w: 215.9, h: 279.4 } : { w: 210, h: 297 };
   const area = envelope(settings),
     manualNine = settings.profile === 'nine',
+    topMargin = manualNine
+      ? MANUAL_CUT_INSET_MM - settings.manualCutCorrectionY
+      : (paper.h - area.height) / 2,
+    bottomMargin = paper.h - topMargin - area.height,
     manualPosition = manualNine
       ? {
           left: `${((MANUAL_CUT_INSET_MM - settings.manualCutCorrectionX) / paper.w) * 100}%`,
@@ -1644,9 +1656,11 @@ function SheetPreview({
           aspectRatio: `${paper.w} / ${paper.h}`,
         }}
       >
-        <span className="page-caption">
-          {settings.paper === 'letter' ? 'US LETTER' : 'A4'} · LAYOUT PREVIEW
-        </span>
+        {topMargin >= 4 && (
+          <span className="page-caption" style={{ top: `${(topMargin / 2 / paper.h) * 100}%` }}>
+            {settings.paper === 'letter' ? 'US LETTER' : 'A4'} · LAYOUT PREVIEW
+          </span>
+        )}
         <div
           className="safe-area"
           style={{
@@ -1716,7 +1730,14 @@ function SheetPreview({
             <span>Paste a card list or add your own artwork.</span>
           </div>
         )}
-        <span className="paper-bottom">Artwork preview · cut geometry stays fixed</span>
+        {bottomMargin >= 4 && (
+          <span
+            className="paper-bottom"
+            style={{ bottom: `${(bottomMargin / 2 / paper.h) * 100}%` }}
+          >
+            Artwork preview · cut geometry stays fixed
+          </span>
+        )}
       </div>
     </div>
   );
@@ -1829,8 +1850,95 @@ export default function App() {
       localStorage.getItem('criprox-active-project'),
     );
   const imageInput = useRef<HTMLInputElement>(null),
-    projectInput = useRef<HTMLInputElement>(null);
+    projectInput = useRef<HTMLInputElement>(null),
+    paperViewport = useRef<HTMLDivElement>(null),
+    zoomAnchor = useRef<{
+      x: number;
+      y: number;
+      paperX: number;
+      paperY: number;
+    } | null>(null),
+    zoomInitialized = useRef(false),
+    paperSize = useRef<{ width: number; height: number } | null>(null);
   const saveQueue = useRef(Promise.resolve());
+  function changeZoom(update: (current: number) => number, point?: { x: number; y: number }) {
+    const viewport = paperViewport.current;
+    const paper = viewport?.querySelector<HTMLElement>('.paper');
+    if (viewport && paper) {
+      const viewportRect = viewport.getBoundingClientRect();
+      const x = point?.x ?? viewportRect.left + viewportRect.width / 2;
+      const y = point?.y ?? viewportRect.top + viewportRect.height / 2;
+      const paperRect = paper.getBoundingClientRect();
+      zoomAnchor.current = {
+        x,
+        y,
+        paperX: (x - paperRect.left) / paperRect.width,
+        paperY: (y - paperRect.top) / paperRect.height,
+      };
+    }
+    setZoom(update);
+  }
+  useLayoutEffect(() => {
+    const viewport = paperViewport.current;
+    const paper = viewport?.querySelector<HTMLElement>('.paper');
+    if (!viewport || !paper) return;
+
+    if (!zoomInitialized.current) {
+      viewport.scrollLeft = paper.offsetWidth / 2;
+      viewport.scrollTop = paper.offsetHeight / 2;
+      zoomInitialized.current = true;
+    } else if (zoomAnchor.current) {
+      const { x, y, paperX, paperY } = zoomAnchor.current;
+      const paperRect = paper.getBoundingClientRect();
+      viewport.scrollLeft += paperRect.left + paperX * paperRect.width - x;
+      viewport.scrollTop += paperRect.top + paperY * paperRect.height - y;
+    }
+    const paperRect = paper.getBoundingClientRect();
+    paperSize.current = { width: paperRect.width, height: paperRect.height };
+    zoomAnchor.current = null;
+  }, [zoom]);
+  useEffect(() => {
+    const viewport = paperViewport.current;
+    const paper = viewport?.querySelector<HTMLElement>('.paper');
+    if (!viewport || !paper) return;
+
+    const observer = new ResizeObserver(() => {
+      const rect = paper.getBoundingClientRect();
+      const previous = paperSize.current;
+      if (previous) {
+        viewport.scrollLeft += (rect.width - previous.width) / 2;
+        viewport.scrollTop += (rect.height - previous.height) / 2;
+      }
+      paperSize.current = { width: rect.width, height: rect.height };
+    });
+    observer.observe(paper);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    const viewport = paperViewport.current;
+    if (!viewport) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.deltaY) return;
+      event.preventDefault();
+      const pixels =
+        event.deltaY *
+        (event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? 16
+          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+            ? viewport.clientHeight
+            : 1);
+      // Limit unusually large wheel events while keeping trackpad scrolling smooth.
+      const delta = Math.max(-200, Math.min(200, pixels));
+      changeZoom((current) => Math.max(70, Math.min(400, current * Math.exp(-delta / 1000))), {
+        x: event.clientX,
+        y: event.clientY,
+      });
+    };
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', handleWheel);
+  }, []);
   useEffect(() => {
     applyColorTheme(colorTheme);
     saveColorTheme(colorTheme);
@@ -2600,15 +2708,15 @@ export default function App() {
                   <button
                     aria-label="Zoom out"
                     disabled={zoom <= 70}
-                    onClick={() => setZoom((z) => Math.max(70, z - 10))}
+                    onClick={() => changeZoom((z) => Math.max(70, z - 10))}
                   >
                     <ZoomOut size={15} />
                   </button>
-                  <span>{zoom}%</span>
+                  <span>{Math.round(zoom)}%</span>
                   <button
                     aria-label="Zoom in"
                     disabled={zoom >= 400}
-                    onClick={() => setZoom((z) => Math.min(400, z + 10))}
+                    onClick={() => changeZoom((z) => Math.min(400, z + 10))}
                   >
                     <ZoomIn size={15} />
                   </button>
@@ -2622,14 +2730,16 @@ export default function App() {
                     : 'Your canvas is ready'}
                   <span className="view-label">PREVIEW ONLY</span>
                 </div>
-                <SheetPreview
-                  sheet={sheet}
-                  settings={project.settings}
-                  mode={mode}
-                  zoom={zoom}
-                  select={setSelected}
-                  inspect={inspect}
-                />
+                <div className="paper-viewport" ref={paperViewport}>
+                  <SheetPreview
+                    sheet={sheet}
+                    settings={project.settings}
+                    mode={mode}
+                    zoom={zoom}
+                    select={setSelected}
+                    inspect={inspect}
+                  />
+                </div>
                 <div className="page-nav">
                   <button
                     className="icon-button"
