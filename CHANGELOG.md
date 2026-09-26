@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/Go2Engle/CriProx/compare/v0.8.0...v0.9.0) (2026-09-24)
+
+
+### Features
+
+* **canvas:** expand workspace and anchor zoom to cursor ([#57](https://github.com/Go2Engle/CriProx/issues/57)) ([9e4b161](https://github.com/Go2Engle/CriProx/commit/9e4b16158cfb1c410f79e5225eeeed1af75d22c9))
+* **desktop:** add native text editing context menus ([#50](https://github.com/Go2Engle/CriProx/issues/50)) ([b2633b9](https://github.com/Go2Engle/CriProx/commit/b2633b93d417faf46de9509b2b962c111c1dbb5f))
+* **layout:** add eight-card Tabloid-to-Letter print workflow ([#54](https://github.com/Go2Engle/CriProx/issues/54)) ([1f2ddfe](https://github.com/Go2Engle/CriProx/commit/1f2ddfe706338c7719b6434415a8d97bf96cce2b))
+
+
+### Bug Fixes
+
+* **projects:** stream artwork during managed saves ([#53](https://github.com/Go2Engle/CriProx/issues/53)) ([8fb3926](https://github.com/Go2Engle/CriProx/commit/8fb3926e67cc3777cfd68071b62d86ddc63d5372))
+
 ## [0.8.0](https://github.com/Go2Engle/CriProx/compare/v0.7.0...v0.8.0) (2026-09-21)
 
 
