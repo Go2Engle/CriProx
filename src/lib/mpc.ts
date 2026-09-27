@@ -7,6 +7,12 @@ export type MpcArtwork = {
   dpi: number;
   face: CardFace;
 };
+export type MpcArtworkType = 'CARD' | 'TOKEN' | 'CARDBACK';
+
+export function mpcArtworkType(card: Card): 'CARD' | 'TOKEN' {
+  // Older saved Scryfall tokens predate the explicit kind field.
+  return card.kind === 'token' || /\bTokens$/i.test(card.setName) ? 'TOKEN' : 'CARD';
+}
 
 type MpcSource = { pk: number };
 type MpcResult = {
@@ -18,6 +24,7 @@ type MpcResult = {
 };
 
 let sources: Promise<MpcSource[]> | undefined;
+const PAGE_SIZE = 24;
 
 async function request<T>(
   path: string,
@@ -73,40 +80,53 @@ export function normalizeMpcArtwork(result: MpcResult): MpcArtwork {
   };
 }
 
+export function mpcExploreSearchPayload(
+  query: string,
+  type: MpcArtworkType,
+  page: number,
+  sourceIds: number[],
+) {
+  return {
+    cardTypes: [type],
+    pageSize: PAGE_SIZE,
+    pageStart: page * PAGE_SIZE,
+    query: query.trim() || null,
+    sortBy: type === 'CARDBACK' && !query.trim() ? 'dateModifiedDescending' : 'nameAscending',
+    searchSettings: {
+      searchTypeSettings: { fuzzySearch: true, filterCardbacks: type === 'CARDBACK' },
+      sourceSettings: { sources: sourceIds.map((id) => [id, true] as const) },
+      filterSettings: {
+        minimumDPI: 0,
+        maximumDPI: 1500,
+        maximumSize: 30,
+        languages: [],
+        includesTags: [],
+        excludesTags: ['NSFW'],
+      },
+    },
+  };
+}
+
 export async function searchMpcArtwork(
   query: string,
-  type: 'CARD' | 'CARDBACK',
+  type: MpcArtworkType,
   page = 0,
 ): Promise<{ artwork: MpcArtwork[]; total: number; more: boolean }> {
   const sourceList = await sourceRows();
-  const pageSize = 24;
   const response = await request<{ cards: MpcResult[]; count: number }>(
     '/2/exploreSearch/',
     'POST',
-    {
-      cardTypes: [type],
-      pageSize,
-      pageStart: page * pageSize,
-      query: query.trim() || null,
-      sortBy: type === 'CARDBACK' && !query.trim() ? 'dateModifiedDescending' : 'nameAscending',
-      searchSettings: {
-        searchTypeSettings: { fuzzySearch: true, filterCardbacks: type === 'CARDBACK' },
-        sourceSettings: { sources: sourceList.map((source) => [source.pk, true]) },
-        filterSettings: {
-          minimumDPI: 0,
-          maximumDPI: 1500,
-          maximumSize: 30,
-          languages: [],
-          includesTags: [],
-          excludesTags: ['NSFW'],
-        },
-      },
-    },
+    mpcExploreSearchPayload(
+      query,
+      type,
+      page,
+      sourceList.map((source) => source.pk),
+    ),
   );
   const artwork = response.cards
     .filter((card) => card.sourceType === 'Google Drive')
     .map(normalizeMpcArtwork);
-  return { artwork, total: response.count, more: (page + 1) * pageSize < response.count };
+  return { artwork, total: response.count, more: (page + 1) * PAGE_SIZE < response.count };
 }
 
 export function mpcArtworkAsCard(artwork: MpcArtwork, cardName: string): Card {

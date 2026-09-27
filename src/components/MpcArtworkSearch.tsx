@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, LoaderCircle, Search } from 'lucide-react';
-import { searchMpcArtwork, type MpcArtwork } from '../lib/mpc';
+import { searchMpcArtwork, type MpcArtwork, type MpcArtworkType } from '../lib/mpc';
 
 export default function MpcArtworkSearch({
   type,
@@ -9,7 +9,7 @@ export default function MpcArtworkSearch({
   openByDefault = false,
   hideTrigger = false,
 }: {
-  type: 'CARD' | 'CARDBACK';
+  type: MpcArtworkType;
   initialQuery?: string;
   choose: (artwork: MpcArtwork) => void;
   openByDefault?: boolean;
@@ -56,7 +56,8 @@ export default function MpcArtworkSearch({
   if (!open)
     return (
       <button className="secondary mpc-open" onClick={reveal}>
-        <Search size={15} /> Browse MPC Autofill {type === 'CARDBACK' ? 'card backs' : 'art'}
+        <Search size={15} /> Browse MPC Autofill{' '}
+        {type === 'CARDBACK' ? 'card backs' : type === 'TOKEN' ? 'token art' : 'art'}
       </button>
     );
 
@@ -80,12 +81,18 @@ export default function MpcArtworkSearch({
       >
         <Search size={16} />
         <input
-          aria-label={`Search MPC Autofill ${type === 'CARDBACK' ? 'card backs' : 'card art'}`}
+          aria-label={`Search MPC Autofill ${type === 'CARDBACK' ? 'card backs' : type === 'TOKEN' ? 'token art' : 'card art'}`}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={type === 'CARDBACK' ? 'Search card backs, or leave blank…' : 'Card name…'}
+          placeholder={
+            type === 'CARDBACK'
+              ? 'Search card backs, or leave blank…'
+              : type === 'TOKEN'
+                ? 'Token name…'
+                : 'Card name…'
+          }
         />
-        <button className="secondary" disabled={busy || (type === 'CARD' && !query.trim())}>
+        <button className="secondary" disabled={busy || (type !== 'CARDBACK' && !query.trim())}>
           Search
         </button>
       </form>

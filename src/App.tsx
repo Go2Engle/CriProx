@@ -81,7 +81,7 @@ import {
 import { validateProject } from './lib/project';
 import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
-import { mpcArtworkAsCard } from './lib/mpc';
+import { mpcArtworkAsCard, mpcArtworkType } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
 import { MANUAL_CUT_INSET_MM } from './lib/manual-cut';
 import { looksLikeMpcPrintCanvas, usesMpcTrim, withMpcTrim } from './lib/artwork';
@@ -923,7 +923,7 @@ function CardSearchModal({
       wide
       className="card-search-modal"
       title="Find a card"
-      subtitle="Search Scryfall and add cards to your project one at a time."
+      subtitle="Search Scryfall for cards and tokens to add to your project."
       close={() => {
         if (!busy) close();
       }}
@@ -934,8 +934,8 @@ function CardSearchModal({
             <Search size={17} />
             <input
               autoFocus
-              aria-label="Search Scryfall cards"
-              placeholder="Search by card name…"
+              aria-label="Search Scryfall cards and tokens"
+              placeholder="Search by card or token name…"
               value={query}
               disabled={!!busy}
               onChange={(event) => setQuery(event.target.value)}
@@ -971,7 +971,7 @@ function CardSearchModal({
           <div className="card-search-empty">
             <Search size={31} strokeWidth={1.3} />
             <strong>Search the card catalog</strong>
-            <span>Try a full or partial name, such as “Sol Ring” or “Lightning”.</span>
+            <span>Try “Sol Ring”, “Goblin”, or “Goblin token” to see only tokens.</span>
           </div>
         )}
         {!!cards.length && (
@@ -1372,6 +1372,7 @@ function ArtworkInspector({
   changeArtworkTrim: (enabled: boolean) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const mpcType = mpcArtworkType(entry.card);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [source, setSource] = useState<'scryfall' | 'mpc'>('scryfall'),
@@ -1560,8 +1561,11 @@ function ArtworkInspector({
           ) : (
             <div className="art-source-panel">
               <MpcArtworkSearch
-                type="CARD"
-                initialQuery={entry.card.name}
+                key={`${entry.id}:${entry.face}:${mpcType}`}
+                type={mpcType}
+                initialQuery={
+                  mpcType === 'TOKEN' ? entry.card.faces[entry.face].name : entry.card.name
+                }
                 openByDefault
                 hideTrigger
                 choose={(artwork) => chooseMpcArt(mpcArtworkAsCard(artwork, entry.card.name))}
