@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type DragEvent,
   type ReactNode,
 } from 'react';
 import { get, set } from 'idb-keyval';
@@ -1727,7 +1728,7 @@ function SheetPreview({
           <div className="empty-paper">
             <Layers3 size={38} strokeWidth={1} />
             <strong>Make room for your next deck.</strong>
-            <span>Paste a card list or add your own artwork.</span>
+            <span>Drop images here or use Add artwork.</span>
           </div>
         )}
         {bottomMargin >= 4 && (
@@ -1844,6 +1845,7 @@ export default function App() {
     [toast, setToast] = useState(''),
     [releaseUpdate, setReleaseUpdate] = useState<ReleaseUpdate | null>(null),
     [uploading, setUploading] = useState(false),
+    [draggingArtwork, setDraggingArtwork] = useState(false),
     [projectLibrary, setProjectLibrary] = useState<ProjectLibrarySnapshot | null>(null),
     [libraryBusy, setLibraryBusy] = useState(false),
     [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
@@ -1852,6 +1854,7 @@ export default function App() {
   const imageInput = useRef<HTMLInputElement>(null),
     projectInput = useRef<HTMLInputElement>(null),
     paperViewport = useRef<HTMLDivElement>(null),
+    artworkDragDepth = useRef(0),
     zoomAnchor = useRef<{
       x: number;
       y: number;
@@ -2233,6 +2236,29 @@ export default function App() {
       setUploading(false);
       if (imageInput.current) imageInput.current.value = '';
     }
+  }
+  function artworkDragEnter(event: DragEvent<HTMLElement>) {
+    if (!loaded || uploading || !event.dataTransfer.types.includes('Files')) return;
+    event.preventDefault();
+    artworkDragDepth.current += 1;
+    setDraggingArtwork(true);
+  }
+  function artworkDragOver(event: DragEvent<HTMLElement>) {
+    if (!loaded || uploading || !event.dataTransfer.types.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }
+  function artworkDragLeave() {
+    if (!artworkDragDepth.current) return;
+    artworkDragDepth.current = Math.max(0, artworkDragDepth.current - 1);
+    if (!artworkDragDepth.current) setDraggingArtwork(false);
+  }
+  function artworkDrop(event: DragEvent<HTMLElement>) {
+    if (!event.dataTransfer.files.length) return;
+    event.preventDefault();
+    artworkDragDepth.current = 0;
+    setDraggingArtwork(false);
+    if (loaded && !uploading) void uploadImages(event.dataTransfer.files);
   }
   async function uploadBackArtwork(file?: File) {
     if (!file) return;
@@ -2722,7 +2748,20 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <div className="preview-canvas">
+              <div
+                className="preview-canvas"
+                onDragEnter={artworkDragEnter}
+                onDragOver={artworkDragOver}
+                onDragLeave={artworkDragLeave}
+                onDrop={artworkDrop}
+              >
+                {draggingArtwork && (
+                  <div className="artwork-drop-overlay" aria-hidden="true">
+                    <ImagePlus size={32} />
+                    <strong>Drop artwork to add it</strong>
+                    <span>PNG, JPG, or WebP · up to 20 MB each</span>
+                  </div>
+                )}
                 <div className="sheet-label">
                   <span className="status-dot" />{' '}
                   {count

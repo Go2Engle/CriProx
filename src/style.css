@@ -791,6 +791,7 @@ h1 > span {
   color: #9995a6;
 }
 .preview-canvas {
+  position: relative;
   background-color: #f0f1f5;
   background-image: radial-gradient(#d7d9e3 0.6px, transparent 0.6px);
   background-size: 14px 14px;
@@ -799,6 +800,28 @@ h1 > span {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+.artwork-drop-overlay {
+  position: absolute;
+  z-index: 5;
+  inset: 12px;
+  border: 2px dashed #8b73b4;
+  border-radius: 10px;
+  background: #f8f5ffed;
+  color: #65517f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  pointer-events: none;
+}
+.artwork-drop-overlay strong {
+  font-size: 16px;
+}
+.artwork-drop-overlay span {
+  font-size: 11px;
 }
 .paper-viewport {
   flex: 1;
@@ -3243,6 +3266,11 @@ html[data-theme='dark'] .app-shell .library-controls .import-button {
 }
 html[data-theme='dark'] .app-shell .library-controls .import-button:not(:disabled):hover {
   background: var(--surface-selected);
+}
+html[data-theme='dark'] .app-shell .artwork-drop-overlay {
+  border-color: #a98bd3;
+  background: #292233ee;
+  color: #d7c4f1;
 }
 html[data-theme='dark'] .app-shell .project-delete-button:not(:disabled):hover {
   border-color: #6b3b46;
