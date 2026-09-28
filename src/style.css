@@ -3119,6 +3119,7 @@ html[data-theme='dark']
     .mpc-picker,
     .project-art-grid button,
     .registration-preferences,
+    .upscale-toggle,
     .back-print-panel,
     .back-bleed-toggle,
     .back-alignment-tool,
@@ -3212,6 +3213,7 @@ html[data-theme='dark']
     .release-notice,
     .registration-summary,
     .registration-preferences,
+    .upscale-toggle,
     .back-print-panel,
     .back-bleed-toggle,
     .back-alignment-tool,
@@ -3650,6 +3652,17 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
 .registration-preferences label strong {
   color: #8a789f;
   font-weight: 550;
+}
+.upscale-toggle {
+  gap: 18px;
+  margin: 14px 0 0;
+  padding: 14px 15px;
+  border: 1px solid #ece6f3;
+  border-radius: 8px;
+  background: #fff;
+}
+.upscale-toggle > span:first-child {
+  max-width: calc(100% - 48px);
 }
 .back-print-panel {
   margin-top: 14px;

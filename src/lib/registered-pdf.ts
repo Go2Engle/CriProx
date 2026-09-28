@@ -166,6 +166,7 @@ export async function buildRegisteredPdf(
   profile: RegistrationProfile,
   progress: (text: string) => void,
   calibration = false,
+  upscaleScryfall = false,
 ): Promise<Uint8Array> {
   if (profile.key !== registrationKey(project.settings))
     throw new Error(
@@ -215,7 +216,10 @@ export async function buildRegisteredPdf(
         }
       : sheet;
     const art = await output.embedPng(
-      await renderSheet(printableSheet, project.settings, calibration, bleed),
+      await renderSheet(printableSheet, project.settings, calibration, bleed, bleed, {
+        enabled: upscaleScryfall && !calibration,
+        progress,
+      }),
     );
     page.drawImage(art, {
       x: x - bleed * PT_PER_MM,
@@ -275,6 +279,7 @@ export async function buildRegisteredBackPdf(
   profile: RegistrationProfile,
   progress: (text: string) => void,
   calibration = false,
+  upscaleScryfall = false,
 ): Promise<Uint8Array> {
   if (profile.key !== registrationKey(project.settings))
     throw new Error('This template belongs to different sheet settings.');
@@ -323,6 +328,7 @@ export async function buildRegisteredBackPdf(
         calibration,
         bleed,
         outerBleed,
+        { enabled: upscaleScryfall && !calibration, progress },
       ),
     );
     page.drawImage(art, {

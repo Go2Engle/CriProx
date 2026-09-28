@@ -31,6 +31,8 @@ Deck-list requests are batched in groups of at most 75 unique identifiers. Reque
 
 The selected DPI controls export density; it cannot add detail absent from the source image. The 900 and 1200 DPI modes are intended for high-resolution MPC Autofill or custom artwork and use substantially more memory.
 
+The print PDF dialog also offers **Upscale Scryfall card images (high detail)**. It is off by default and applies only when preparing card sheets, including matching reverse faces. When selected, CriProx downloads the ~28 MB 4× ESRGAN Thick model from a package CDN, runs it locally in a separate worker, and caches each enhanced card image. Choose 600 DPI or higher in Sheet setup to retain the extra detail in the PDF. MPC Autofill and uploaded artwork keep their original pixels. The original Scryfall image remains available by turning the option off. Model inference can take much longer than a standard export and may change fine text or illustrated detail, so inspect the PDF before printing. Size-check and alignment pages do not run the model.
+
 ## Export packages
 
 A normal export can include:

@@ -7,6 +7,7 @@ import { drawBleedTile, repairTransparentCorners, replicateBorder } from './blee
 import { formatDimensions, formatMeasurement } from './units';
 import { paperWorkflow } from './paper-workflow';
 import { artworkSourceRect, usesMpcTrim, type SourceRect } from './artwork';
+import { isScryfallArtwork, upscaleScryfallArtwork } from './upscale';
 
 type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
 type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -266,6 +267,7 @@ export async function renderSheet(
   calibration: boolean | 'manual' = false,
   artworkBleedMm = 0,
   exteriorArtworkBleedMm = artworkBleedMm,
+  upscale?: { enabled: boolean; progress: (text: string) => void },
 ): Promise<Uint8Array> {
   const canvas = renderCanvas(
     mmToPx(sheet.width, settings.dpi),
@@ -284,7 +286,24 @@ export async function renderSheet(
         );
         try {
           bitmap = await imageBitmap(artworkSource);
-        } catch {
+          if (upscale?.enabled && isScryfallArtwork(artworkSource)) {
+            const original = bitmap;
+            try {
+              bitmap = await upscaleScryfallArtwork(
+                artworkSource,
+                original,
+                upscale.progress,
+                p.entry.card.faces[p.entry.face].name,
+              );
+            } finally {
+              original.close();
+            }
+          }
+        } catch (error) {
+          if (upscale?.enabled && isScryfallArtwork(artworkSource))
+            throw new Error(
+              `Could not upscale ${p.entry.card.name}: ${error instanceof Error ? error.message : String(error)}. Turn off upscaling to export the original image.`,
+            );
           throw new Error(
             `Could not load artwork for ${p.entry.card.name}. Check your connection and retry. No partial sheet was exported.`,
           );

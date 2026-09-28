@@ -25,10 +25,11 @@ export type PdfWorkerPayload =
       project: Project;
       profile: RegistrationProfile;
       calibration: boolean;
+      upscaleScryfall?: boolean;
     }
   | { kind: 'alignment'; project: Project }
   | { kind: 'manual-calibration'; project: Project }
-  | { kind: 'manual-nine'; project: Project };
+  | { kind: 'manual-nine'; project: Project; upscaleScryfall?: boolean };
 
 export type PdfWorkerRequest = PdfWorkerPayload & { id: string };
 
@@ -47,9 +48,9 @@ export async function executePdfJob(
   }
   if (request.kind === 'manual-nine') {
     const cutPng = await manualCutTemplatePng(request.project.settings),
-      fronts = await buildManualCutPdf(request.project, progress);
+      fronts = await buildManualCutPdf(request.project, progress, false, request.upscaleScryfall);
     if (!request.project.settings.backsEnabled) return { pdf: fronts, cutPng, mode: 'front' };
-    const backs = await buildManualCutPdf(request.project, progress, true);
+    const backs = await buildManualCutPdf(request.project, progress, true, request.upscaleScryfall);
     if (request.project.settings.backPrintMode === 'duplex') {
       progress('Combining duplex pages…');
       return {
@@ -77,6 +78,7 @@ export async function executePdfJob(
     request.profile,
     progress,
     request.calibration,
+    request.upscaleScryfall,
   );
   if (!request.project.settings.backsEnabled) return { pdf: fronts, mode: 'front' };
   const backs = await buildRegisteredBackPdf(
@@ -84,6 +86,7 @@ export async function executePdfJob(
     request.profile,
     progress,
     request.calibration,
+    request.upscaleScryfall,
   );
   if (request.project.settings.backPrintMode === 'duplex') {
     progress('Combining duplex pages…');
@@ -102,17 +105,29 @@ function nextPaint() {
 export async function preparePdfJob(
   request: PdfWorkerPayload,
   progress: (text: string) => void,
+  signal?: AbortSignal,
 ): Promise<PreparedPdfJob> {
+  if (signal?.aborted) throw new DOMException('PDF preparation cancelled.', 'AbortError');
   const job = { ...request, id: crypto.randomUUID() } as PdfWorkerRequest;
   if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined') {
     await nextPaint();
-    return executePdfJob(job, progress);
+    const result = await executePdfJob(job, progress);
+    if (signal?.aborted) throw new DOMException('PDF preparation cancelled.', 'AbortError');
+    return result;
   }
   return new Promise<PreparedPdfJob>((resolve, reject) => {
     const worker = new Worker(new URL('../workers/pdf.worker.ts', import.meta.url), {
       type: 'module',
     });
-    const finish = () => worker.terminate();
+    const abort = () => {
+      finish();
+      reject(new DOMException('PDF preparation cancelled.', 'AbortError'));
+    };
+    const finish = () => {
+      signal?.removeEventListener('abort', abort);
+      worker.terminate();
+    };
+    signal?.addEventListener('abort', abort, { once: true });
     worker.onmessage = ({ data }: MessageEvent<PdfWorkerResponse>) => {
       if (data.id !== job.id) return;
       if (data.type === 'progress') progress(data.text);

@@ -313,6 +313,7 @@ export async function buildManualCutPdf(
   project: Project,
   progress: (text: string) => void,
   back = false,
+  upscaleScryfall = false,
 ): Promise<Uint8Array> {
   if (back && needsSharedCardBack(project.entries) && !project.backArtwork)
     throw new Error(
@@ -340,6 +341,7 @@ export async function buildManualCutPdf(
           false,
           innerBleed,
           outerBleed,
+          { enabled: upscaleScryfall, progress },
         ),
       );
     page.drawRectangle({

@@ -64,10 +64,13 @@ export default function RegisteredPrint({
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
     input = useRef<HTMLInputElement>(null),
-    backInput = useRef<HTMLInputElement>(null);
+    backInput = useRef<HTMLInputElement>(null),
+    pdfAbort = useRef<AbortController | null>(null);
   const [profile, setProfile] = useState<RegistrationProfile>(),
     [busy, setBusy] = useState('Loading template…'),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [upscaleScryfall, setUpscaleScryfall] = useState(false),
+    [pdfJobRunning, setPdfJobRunning] = useState(false);
   const [pdf, setPdf] = useState<Uint8Array>(),
     [backPdf, setBackPdf] = useState<Uint8Array>(),
     [cutPng, setCutPng] = useState<Uint8Array>(),
@@ -207,41 +210,58 @@ export default function RegisteredPrint({
   }
   async function prepare(calibration: boolean) {
     if (!profile) return;
+    const controller = new AbortController();
+    pdfAbort.current = controller;
+    setPdfJobRunning(true);
     setBusy('Building registered pages…');
     setError('');
     setPdf(undefined);
     setBackPdf(undefined);
     try {
       const result = await preparePdfJob(
-        { kind: 'registered', project, profile, calibration },
+        { kind: 'registered', project, profile, calibration, upscaleScryfall },
         setBusy,
+        controller.signal,
       );
       setPdf(result.pdf);
       setBackPdf(result.backPdf);
       setPreparedMode(result.mode);
       setPreparedKind(calibration ? 'size' : 'cards');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not generate registered pages.');
+      if (!(e instanceof DOMException && e.name === 'AbortError'))
+        setError(e instanceof Error ? e.message : 'Could not generate registered pages.');
     } finally {
+      pdfAbort.current = null;
+      setPdfJobRunning(false);
       setBusy('');
     }
   }
   async function prepareManualCut() {
+    const controller = new AbortController();
+    pdfAbort.current = controller;
+    setPdfJobRunning(true);
     setBusy('Building manual cut files…');
     setError('');
     setPdf(undefined);
     setBackPdf(undefined);
     setCutPng(undefined);
     try {
-      const result = await preparePdfJob({ kind: 'manual-nine', project }, setBusy);
+      const result = await preparePdfJob(
+        { kind: 'manual-nine', project, upscaleScryfall },
+        setBusy,
+        controller.signal,
+      );
       setPdf(result.pdf);
       setBackPdf(result.backPdf);
       setCutPng(result.cutPng);
       setPreparedMode(result.mode);
       setPreparedKind('manual-nine');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not generate the manual cut files.');
+      if (!(e instanceof DOMException && e.name === 'AbortError'))
+        setError(e instanceof Error ? e.message : 'Could not generate the manual cut files.');
     } finally {
+      pdfAbort.current = null;
+      setPdfJobRunning(false);
       setBusy('');
     }
   }
@@ -458,6 +478,28 @@ export default function RegisteredPrint({
           </div>
           <FrontBleedControl settings={project.settings} change={changePrintSettings} />
         </div>
+        <label className="switch-row upscale-toggle">
+          <span>
+            Upscale Scryfall card images (high detail)
+            <small>
+              Optional · off by default. Downloads a ~28 MB model when needed and processes locally;
+              exports can take much longer. Choose 600+ DPI in Sheet setup to retain the extra
+              detail, and review card text before printing.
+            </small>
+          </span>
+          <input
+            type="checkbox"
+            checked={upscaleScryfall}
+            disabled={!!busy}
+            onChange={(event) => {
+              setUpscaleScryfall(event.target.checked);
+              setPdf(undefined);
+              setBackPdf(undefined);
+              setCutPng(undefined);
+            }}
+          />
+          <span className="switch" />
+        </label>
         <div className={`back-print-panel ${project.settings.backsEnabled ? 'enabled' : ''}`}>
           <label className="switch-row back-toggle">
             <span>
@@ -1077,6 +1119,11 @@ export default function RegisteredPrint({
           <div role="status" className="loading">
             <LoaderCircle className="spin" size={19} />
             {busy}
+            {pdfJobRunning && (
+              <button className="secondary compact" onClick={() => pdfAbort.current?.abort()}>
+                Cancel
+              </button>
+            )}
           </div>
         )}
         {pdf && (
