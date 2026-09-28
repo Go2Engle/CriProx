@@ -24,7 +24,7 @@ export type Entry = { id: string; card: Card; quantity: number; face: number };
 export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
-  machine: 'maker' | 'explore' | 'joy-xtra';
+  machine: 'maker' | 'explore' | 'joy-xtra' | 'manual';
   profile: 'expanded' | 'seven' | 'eight' | 'nine';
   width: number;
   height: number;
@@ -41,6 +41,16 @@ export type Settings = {
   /** Desired physical cut correction relative to the printed artwork. Positive is right/down. */
   manualCutCorrectionX: number;
   manualCutCorrectionY: number;
+  manualGuidesEnabled: boolean;
+  manualGuideColor: string;
+  /** CSS pixels at 96 DPI, so physical line width stays fixed across export DPI choices. */
+  manualGuideWidthPx: number;
+  manualGuidePlacement: 'outside' | 'center' | 'inside';
+  manualGuideCardStyle: 'none' | 'corners' | 'full';
+  manualGuideLineStyle: 'solid' | 'dashed';
+  manualGuideCornerStyle: 'square' | 'round';
+  manualGuideLengthMm: number;
+  manualGuidePageStyle: 'none' | 'edge' | 'full';
   dpi: PrintDpi;
   proxyLabel: boolean;
 };
@@ -79,6 +89,15 @@ export const DEFAULT_SETTINGS: Settings = {
   backOffsetY: 0,
   manualCutCorrectionX: 0,
   manualCutCorrectionY: 0,
+  manualGuidesEnabled: true,
+  manualGuideColor: '#222222',
+  manualGuideWidthPx: 1,
+  manualGuidePlacement: 'outside',
+  manualGuideCardStyle: 'none',
+  manualGuideLineStyle: 'solid',
+  manualGuideCornerStyle: 'square',
+  manualGuideLengthMm: 7.5,
+  manualGuidePageStyle: 'edge',
   dpi: 300,
   proxyLabel: false,
 };

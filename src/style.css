@@ -869,36 +869,47 @@ h1 > span {
   position: relative;
   container-type: inline-size;
   background: #fff;
+  /* The eight-card master is Tabloid-sized; the exported Letter page clips it. */
+  overflow: hidden;
   box-shadow:
     0 4px 15px #46405c15,
     0 1px 3px #51405b16;
   flex-shrink: 0;
   max-width: none;
 }
-.page-caption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
-  transform: translateY(-50%);
-  font-size: min(6px, 1.5cqw);
-  line-height: 1;
-  letter-spacing: 1px;
-  color: #b8b3c2;
-}
-.safe-area {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border: 1px dashed #d7cfea;
-  border-radius: 2px;
-}
 .sheet-art {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.registered-master,
+.registration-art-mask {
+  position: absolute;
+  pointer-events: none;
+}
+.registered-master {
+  object-fit: fill;
+  max-width: none;
+  z-index: 0;
+}
+.registration-art-mask {
+  background: #fff;
+  z-index: 1;
+}
+.sheet-guide-overlay,
+.mock-registration-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+.mock-registration-overlay polygon,
+.mock-registration-overlay rect {
+  fill: #181818;
 }
 .placed-card {
   position: absolute;
@@ -946,17 +957,6 @@ h1 > span {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.paper-bottom {
-  position: absolute;
-  left: 0;
-  right: 0;
-  transform: translateY(50%);
-  font-size: min(6px, 1.5cqw);
-  line-height: 1;
-  color: #b6b1c0;
-  text-align: center;
-  letter-spacing: 0.1px;
 }
 .placed-card.cut-only {
   background: #f9f6ff;
@@ -1140,6 +1140,106 @@ h1 > span {
   height: 1px;
   background: #efedf3;
   margin: 19px 0 17px;
+}
+.manual-guide-controls {
+  border-top: 1px solid #efedf3;
+  padding-top: 18px;
+  margin-top: 3px;
+}
+.manual-guide-controls .section-label {
+  margin-bottom: 12px;
+}
+.manual-guide-controls .switch-row {
+  margin-bottom: 16px;
+}
+.manual-guide-fields {
+  padding: 13px 11px 1px;
+  border: 1px solid var(--control-border);
+  border-radius: 9px;
+  background: var(--surface-raised);
+}
+.guide-save-defaults {
+  padding-bottom: 13px;
+}
+.guide-save-defaults button {
+  width: 100%;
+}
+.guide-save-defaults .field-note {
+  margin-top: 8px;
+}
+.manual-guide-controls--defaults {
+  margin: 17px 0 0 46px;
+  padding: 0;
+  border: 0;
+}
+.manual-guide-controls--defaults .manual-guide-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+}
+.manual-guide-controls--defaults .guide-save-defaults {
+  grid-column: 1 / -1;
+}
+.guide-color-row {
+  display: flex;
+  gap: 8px;
+}
+.guide-color-row input[type='color'] {
+  width: 42px;
+  height: 34px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  padding: 2px;
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+.guide-color-row input[type='text'],
+.manual-guide-fields input[type='number'] {
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  padding: 0 9px;
+  font-size: 11px;
+}
+.guide-color-row input[type='text'] {
+  flex: 1;
+}
+.manual-guide-fields input[type='number'] {
+  width: 100%;
+}
+.guide-choice {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 7px;
+  background: #f1eef6;
+}
+.guide-choice button {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  justify-content: center;
+  border-radius: 5px;
+  color: #746a83;
+  font-size: 9px;
+  padding: 4px;
+}
+.guide-choice button.selected {
+  color: #4d3b70;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 4px #26203b16;
+}
+html[data-theme='dark'] .app-shell .manual-guide-fields {
+  background: var(--surface);
+}
+html[data-theme='dark'] .app-shell .guide-choice {
+  background: #222432;
+}
+html[data-theme='dark'] .app-shell .guide-choice button.selected {
+  color: #d8c8fa;
+  background: #3b344b;
 }
 .section-label {
   color: #a29aaf;
@@ -3559,10 +3659,6 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
 .bottom-status {
   color: #80788e;
 }
-.page-caption,
-.paper-bottom {
-  color: #8f859b;
-}
 .paper-viewport {
   scrollbar-width: thin;
 }
@@ -4151,8 +4247,12 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
   .settings-theme-options,
   .defaults-summary-grid,
   .app-settings-actions,
-  .settings-library-location {
+  .settings-library-location,
+  .manual-guide-controls--defaults {
     margin-left: 0;
+  }
+  .manual-guide-controls--defaults .manual-guide-fields {
+    grid-template-columns: 1fr;
   }
   .defaults-summary-grid {
     grid-template-columns: 1fr;

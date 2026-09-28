@@ -43,10 +43,19 @@ export function validateProject(value: unknown): Project {
   s.backOffsetY ??= 0;
   s.manualCutCorrectionX ??= 0;
   s.manualCutCorrectionY ??= 0;
+  s.manualGuidesEnabled ??= true;
+  s.manualGuideColor ??= '#222222';
+  s.manualGuideWidthPx ??= 1;
+  s.manualGuidePlacement ??= 'outside';
+  s.manualGuideCardStyle ??= 'none';
+  s.manualGuideLineStyle ??= 'solid';
+  s.manualGuideCornerStyle ??= 'square';
+  s.manualGuideLengthMm ??= 7.5;
+  s.manualGuidePageStyle ??= 'edge';
   if (
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
-    !['maker', 'explore', 'joy-xtra'].includes(s.machine) ||
+    !['maker', 'explore', 'joy-xtra', 'manual'].includes(s.machine) ||
     !['expanded', 'seven', 'eight', 'nine'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.backBleedEnabled !== 'boolean' ||
@@ -54,7 +63,14 @@ export function validateProject(value: unknown): Project {
     !['manual', 'duplex'].includes(s.backPrintMode) ||
     !['long-edge', 'short-edge'].includes(s.backFlip) ||
     ![0, 180].includes(s.backRotation) ||
-    typeof s.proxyLabel !== 'boolean'
+    typeof s.proxyLabel !== 'boolean' ||
+    typeof s.manualGuidesEnabled !== 'boolean' ||
+    !/^#[0-9a-f]{6}$/i.test(s.manualGuideColor) ||
+    !['outside', 'center', 'inside'].includes(s.manualGuidePlacement) ||
+    !['none', 'corners', 'full'].includes(s.manualGuideCardStyle) ||
+    !['solid', 'dashed'].includes(s.manualGuideLineStyle) ||
+    !['square', 'round'].includes(s.manualGuideCornerStyle) ||
+    !['none', 'edge', 'full'].includes(s.manualGuidePageStyle)
   )
     throw new Error('Invalid sheet settings.');
   for (const [n, min, max] of [
@@ -67,16 +83,21 @@ export function validateProject(value: unknown): Project {
     [s.backOffsetY, -5, 5],
     [s.manualCutCorrectionX, -5, 5],
     [s.manualCutCorrectionY, -5, 5],
+    [s.manualGuideWidthPx, 0.5, 8],
+    [s.manualGuideLengthMm, 2.5, 20],
   ]) {
     if (!Number.isFinite(n) || n < min || n > max)
       throw new Error('Card dimensions are outside the supported range.');
   }
   if (s.bleed > s.gap / 2)
     throw new Error('Artwork bleed must fit within half of the card spacing.');
+  if (s.machine === 'manual' && s.profile !== 'nine')
+    throw new Error('Manual cutting requires the nine-card layout.');
   if (
     (s.profile === 'seven' || s.profile === 'eight') &&
     (s.paper !== 'letter' ||
       s.machine === 'joy-xtra' ||
+      s.machine === 'manual' ||
       s.width !== 63 ||
       s.height !== 88 ||
       s.gap !== (s.profile === 'seven' ? 0.1 : 1) ||

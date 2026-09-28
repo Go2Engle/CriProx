@@ -47,7 +47,10 @@ export async function executePdfJob(
     return { pdf: await buildManualCutCalibrationPdf(request.project), mode: 'front' };
   }
   if (request.kind === 'manual-nine') {
-    const cutPng = await manualCutTemplatePng(request.project.settings),
+    const cutPng =
+        request.project.settings.machine === 'manual'
+          ? undefined
+          : await manualCutTemplatePng(request.project.settings),
       fronts = await buildManualCutPdf(request.project, progress, false, request.upscaleScryfall);
     if (!request.project.settings.backsEnabled) return { pdf: fronts, cutPng, mode: 'front' };
     const backs = await buildManualCutPdf(request.project, progress, true, request.upscaleScryfall);

@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FACTORY_PROJECT_DEFAULTS,
+  manualGuideDefaultsMatch,
   projectDefaultsFrom,
   projectFromDefaults,
   validateProjectDefaults,
+  withManualGuideDefaults,
 } from '../src/lib/project-defaults';
 import { DEFAULT_SETTINGS, type CardFace, type Project } from '../src/lib/types';
 
@@ -69,4 +71,52 @@ test('factory project defaults produce independent settings', () => {
   const second = projectFromDefaults(FACTORY_PROJECT_DEFAULTS);
   first.settings.units = 'mm';
   assert.equal(second.settings.units, 'in');
+});
+
+test('saving manual guide defaults changes only guide settings', () => {
+  const defaults = projectDefaultsFrom({
+    settings: { ...DEFAULT_SETTINGS, machine: 'maker', dpi: 600 },
+    backArtwork,
+  });
+  const edited = {
+    ...DEFAULT_SETTINGS,
+    machine: 'manual' as const,
+    profile: 'nine' as const,
+    manualGuidesEnabled: false,
+    manualGuideColor: '#39ff14',
+    manualGuideWidthPx: 2,
+    manualGuidePlacement: 'inside' as const,
+    manualGuideCardStyle: 'corners' as const,
+    manualGuideLineStyle: 'dashed' as const,
+    manualGuideCornerStyle: 'round' as const,
+    manualGuideLengthMm: 12,
+    manualGuidePageStyle: 'full' as const,
+  };
+  assert.equal(manualGuideDefaultsMatch(edited, defaults.settings), false);
+  const updated = withManualGuideDefaults(defaults, edited);
+  assert.equal(manualGuideDefaultsMatch(edited, updated.settings), true);
+  assert.deepEqual(
+    [
+      updated.settings.manualGuidesEnabled,
+      updated.settings.manualGuideColor,
+      updated.settings.manualGuideWidthPx,
+      updated.settings.manualGuidePlacement,
+      updated.settings.manualGuideCardStyle,
+      updated.settings.manualGuideLineStyle,
+      updated.settings.manualGuideCornerStyle,
+      updated.settings.manualGuideLengthMm,
+      updated.settings.manualGuidePageStyle,
+    ],
+    [false, '#39ff14', 2, 'inside', 'corners', 'dashed', 'round', 12, 'full'],
+  );
+  assert.equal(updated.settings.machine, 'maker');
+  assert.equal(updated.settings.profile, 'expanded');
+  assert.equal(updated.settings.dpi, 600);
+  assert.deepEqual(updated.backArtwork, backArtwork);
+  assert.equal(defaults.settings.manualGuideColor, DEFAULT_SETTINGS.manualGuideColor);
+  assert.deepEqual(projectFromDefaults(updated).settings, updated.settings);
+  assert.equal(
+    manualGuideDefaultsMatch({ ...edited, manualGuideColor: '#39FF14' }, updated.settings),
+    true,
+  );
 });

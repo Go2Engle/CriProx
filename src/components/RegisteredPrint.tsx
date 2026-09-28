@@ -46,6 +46,7 @@ import {
 export default function RegisteredPrint({
   project,
   close,
+  onCapture,
   openGuide,
   notify,
   updateSettings,
@@ -55,6 +56,7 @@ export default function RegisteredPrint({
 }: {
   project: Project;
   close: () => void;
+  onCapture: () => void;
   openGuide: () => void;
   notify: (text: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -87,6 +89,7 @@ export default function RegisteredPrint({
     [manualVerticalSquares, setManualVerticalSquares] = useState(0),
     [manualVerticalDirection, setManualVerticalDirection] = useState<'up' | 'down'>('up');
   const manualNine = project.settings.profile === 'nine',
+    handCut = project.settings.machine === 'manual',
     key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
     id = templateId(project.settings),
@@ -196,6 +199,7 @@ export default function RegisteredPrint({
         await set(`registration:${key}`, next);
       }
       setProfile(next);
+      onCapture();
       notify(
         registrationTemplates
           ? 'Template captured and saved in the CriProx project library. Run a test cut before printing a full deck.'
@@ -378,7 +382,8 @@ export default function RegisteredPrint({
   }
   function savePdf(bytes: Uint8Array | undefined, suffix: string) {
     if (!bytes) return;
-    const calibrationTag = manualNine ? `-${manualCutCorrectionFileTag(project.settings)}` : '';
+    const calibrationTag =
+      manualNine && !handCut ? `-${manualCutCorrectionFileTag(project.settings)}` : '';
     download(
       new Blob([bytes.slice().buffer], { type: 'application/pdf' }),
       `${id}-${suffix}${calibrationTag}.pdf`,
@@ -402,15 +407,23 @@ export default function RegisteredPrint({
         <div>
           <div className="registration-tag">
             {manualNine
-              ? 'MANUAL MAT ALIGNMENT · EXPERIMENTAL'
+              ? handCut
+                ? 'MANUAL CUTTING'
+                : 'MANUAL MAT ALIGNMENT · EXPERIMENTAL'
               : 'REUSABLE TEMPLATE · EXPERIMENTAL'}
           </div>
           <h2 id="registered-title">
-            {manualNine ? 'Create manual 9-card cut' : 'Create registered print PDF'}
+            {manualNine
+              ? handCut
+                ? 'Create 9-card cutting sheet'
+                : 'Create manual 9-card cut'
+              : 'Create registered print PDF'}
           </h2>
           <p>
             {manualNine
-              ? 'Print nine cards per page, then align the matching Basic Cut template on your mat.'
+              ? handCut
+                ? 'Print nine cards per page with guides that reach the paper edges.'
+                : 'Print nine cards per page, then align the matching Basic Cut template on your mat.'
               : 'Capture Cricut’s marks once, then save full-quality PDFs for printing.'}
           </p>
           {!manualNine && (
@@ -451,11 +464,13 @@ export default function RegisteredPrint({
             </span>
           </div>
           <span className="mini-badge">
-            {project.settings.machine === 'maker'
-              ? 'MAKER'
-              : project.settings.machine === 'explore'
-                ? 'EXPLORE'
-                : 'JOY XTRA'}
+            {handCut
+              ? 'MANUAL'
+              : project.settings.machine === 'maker'
+                ? 'MAKER'
+                : project.settings.machine === 'explore'
+                  ? 'EXPLORE'
+                  : 'JOY XTRA'}
           </span>
         </div>
         <div className="registration-preferences">
@@ -773,16 +788,63 @@ export default function RegisteredPrint({
                 {project.settings.backPrintMode === 'manual'
                   ? 'CriProx will make separate front and back PDFs. Print the fronts, refeed the same sheets, then print the backs.'
                   : `CriProx will alternate front and back pages. Enable duplex and ${project.settings.backFlip === 'long-edge' ? 'long-edge' : 'short-edge'} binding in the printer dialog.`}{' '}
-                Back pages contain artwork only—no Cricut registration marks or cut lines. The front
-                and back bleed settings apply independently. Double-sided cards use the opposite
-                face from the selected front; the shared back applies only to single-sided cards.
-                Back orientation rotates the artwork only; it does not move the cards or change the
-                cut template.
+                Back pages contain artwork only—no registration marks or cut lines. The front and
+                back bleed settings apply independently. Double-sided cards use the opposite face
+                from the selected front; the shared back applies only to single-sided cards. Back
+                orientation rotates the artwork only; it does not move the cards or change the front
+                cut positions.
               </p>
             </div>
           )}
         </div>
-        {manualNine ? (
+        {manualNine && handCut ? (
+          <>
+            <div className="manual-cut-banner">
+              <Scissors size={28} />
+              <div>
+                <strong>Manual guides matched to your editor preview.</strong>
+                <span>
+                  Set the guide color, width, card corners, and page marks in the sheet editor
+                  before preparing the PDF. The preview and front PDF use the same guide positions.
+                  The final sheet marks only occupied card slots. Back sheets have no cut guides.
+                </span>
+              </div>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">1</span>
+              <div>
+                <h3>Prepare and review the sheets</h3>
+                <p>
+                  CriProx creates portrait {printPaper.systemPaper} print pages with a fixed 3 × 3
+                  layout. Review each page before saving the PDF.
+                </p>
+                <button
+                  className="primary"
+                  disabled={
+                    !!busy ||
+                    !project.entries.length ||
+                    (project.settings.backsEnabled && sharedBackRequired && !project.backArtwork)
+                  }
+                  onClick={prepareManualCut}
+                >
+                  Prepare 9-card PDF
+                </button>
+              </div>
+            </div>
+            <div className="registration-step">
+              <span className="step-number">2</span>
+              <div>
+                <h3>Print at actual size and cut</h3>
+                <p>
+                  Print the saved PDF in portrait at <strong>100% / Actual size</strong> with fit
+                  and shrink disabled. Check one card with a ruler. Follow the selected guides to
+                  trim the cards; page-edge marks let you align a straight cutter at both ends of a
+                  cut. Round the corners with a corner punch if desired.
+                </p>
+              </div>
+            </div>
+          </>
+        ) : manualNine ? (
           <>
             <div className="manual-cut-banner">
               <Scissors size={28} />
@@ -1148,7 +1210,9 @@ export default function RegisteredPrint({
                   : preparedKind === 'manual-calibration'
                     ? 'Print this target on plain paper, place it flush at the mat grid origin, and cut it with the unchanged saved 9-card Basic Cut project. '
                     : preparedKind === 'manual-nine'
-                      ? 'Review every print page, then save the separate Basic Cut PNG for Design Space. '
+                      ? handCut
+                        ? 'Review each page and its paper-edge cut guides before saving the print PDF. '
+                        : 'Review every print page, then save the separate Basic Cut PNG for Design Space. '
                       : 'Review every sheet using the page selector or arrows. Confirm the front marks are unobstructed and check the matching backs. '}
                 {preparedMode === 'manual' &&
                   'Print fronts first, refeed those sheets, then print the matching backs in the same order.'}
@@ -1175,7 +1239,7 @@ export default function RegisteredPrint({
                     <Download size={15} />{' '}
                     {preparedKind === 'alignment' ? 'Save front test PDF' : 'Save fronts PDF'}
                   </button>
-                  {preparedKind === 'manual-nine' && (
+                  {preparedKind === 'manual-nine' && !handCut && (
                     <button className="secondary" disabled={!!busy || !cutPng} onClick={saveCutPng}>
                       <Download size={15} /> Save Basic Cut PNG
                     </button>
@@ -1220,7 +1284,7 @@ export default function RegisteredPrint({
                           ? 'Save print PDF'
                           : 'Save registered PDF'}
                   </button>
-                  {preparedKind === 'manual-nine' && (
+                  {preparedKind === 'manual-nine' && !handCut && (
                     <button className="secondary" disabled={!!busy || !cutPng} onClick={saveCutPng}>
                       <Download size={15} /> Save Basic Cut PNG
                     </button>
@@ -1248,7 +1312,9 @@ export default function RegisteredPrint({
       <div className="modal-footer">
         <span className="muted">
           {manualNine
-            ? 'Test alignment on plain paper before committing card stock.'
+            ? handCut
+              ? 'Print one sheet at actual size and check its dimensions before cutting.'
+              : 'Test alignment on plain paper before committing card stock.'
             : registrationTemplates
               ? 'Saved six-cut, seven-cut, and eight-cut templates load automatically for matching layouts.'
               : 'A saved template replaces artwork uploads for each deck.'}
