@@ -11,3 +11,8 @@ or MPC Autofill.
 Magic: The Gathering card names, images, and related marks belong to Wizards
 of the Coast and/or their respective rights holders. Those third-party
 materials are not licensed under CriProx's GNU GPL license.
+
+The optional card-image upscale feature uses UpscalerJS and the ESRGAN Thick
+model, Copyright (c) 2022 Kevin Scott, under the MIT License. It also uses
+TensorFlow.js under the Apache License 2.0. See THIRD_PARTY_LICENSES.txt for
+the complete license texts distributed with CriProx.

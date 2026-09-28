@@ -25,19 +25,22 @@
     "format": "prettier --write src tests electron vite.config.ts"
   },
   "dependencies": {
+    "@tensorflow/tfjs": "^4.11.0",
     "idb-keyval": "^6.2.2",
     "jszip": "^3.10.2",
     "lucide-react": "^1.47.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "upscaler": "^1.0.0"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.0.9",
     "@types/node": "^22.0.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@upscalerjs/esrgan-thick": "^1.0.0",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "^44.4.2",
     "electron-builder": "^26.0.0",
@@ -56,6 +59,7 @@
       "package.json",
       "LICENSE",
       "NOTICE",
+      "THIRD_PARTY_LICENSES.txt",
       "!node_modules/@napi-rs/canvas{,/**/*}",
       "!node_modules/@napi-rs/canvas-*/**/*"
     ],

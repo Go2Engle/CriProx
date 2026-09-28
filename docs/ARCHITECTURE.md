@@ -35,7 +35,7 @@ flowchart LR
 
 1. Imports are normalized into the local project model. Remote responses and export artwork are cached, while local images are embedded with the project data.
 2. The layout engine converts physical settings to deterministic slot positions. Preview and export consume the same geometry so they do not drift into separate implementations.
-3. Standard export clips each artwork source into its rounded card silhouette and emits corresponding vector geometry and physical-size metadata.
+3. Standard export clips each artwork source into its rounded card silhouette and emits corresponding vector geometry and physical-size metadata. When the user opts in from the print PDF dialog, the PDF worker sends Scryfall card faces to a separate upscale worker before this drawing step. The model runtime and weights are never loaded for a normal export. Enhanced WebP images are cached separately in IndexedDB by source URL and model version; the original image remains unchanged.
 4. Registered printing first verifies a captured Design Space PDF, stores six-cut, seven-cut, and eight-cut
    captures at the project-library root, and then draws artwork within the preserved template. The
    geometry-derived filename lets the app reload the exact capture without synthesizing registration
