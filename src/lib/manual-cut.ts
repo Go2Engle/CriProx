@@ -6,6 +6,7 @@ import { fixedSheets, fullTemplate, PT_PER_MM } from './registration';
 import { mirroredBackSheet } from './registered-pdf';
 import { needsSharedCardBack } from './entries';
 import { withDpi } from './png';
+import { manualGuideDashMm, manualGuidePaths, manualGuideWidthMm } from './cut-guides';
 
 type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
 type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -45,11 +46,16 @@ export function manualCutPlacement(settings: Settings, back = false) {
     full.height + MANUAL_CUT_INSET_MM > paper.height
   )
     throw new Error('The nine-card layout does not fit the selected paper at the required inset.');
-  // Design Space fixes the Basic Cut group at the quarter-inch mat inset. To move a
-  // physical cut right/down relative to the artwork, move the printed artwork by the
-  // same amount left/up. Mirror that corrected front origin for back-side printing.
-  const frontLeft = MANUAL_CUT_INSET_MM - settings.manualCutCorrectionX,
-    frontTop = MANUAL_CUT_INSET_MM - settings.manualCutCorrectionY;
+  // Hand-cut sheets use equal page margins. Design Space fixes the Basic Cut
+  // group at the quarter-inch mat inset, so keep that origin and apply physical
+  // cut corrections only to Cricut printing. Mirror the front origin for backs.
+  const handCut = settings.machine === 'manual',
+    frontLeft = handCut
+      ? (paper.width - full.width) / 2
+      : MANUAL_CUT_INSET_MM - settings.manualCutCorrectionX,
+    frontTop = handCut
+      ? (paper.height - full.height) / 2
+      : MANUAL_CUT_INSET_MM - settings.manualCutCorrectionY;
   return {
     paper,
     full,
@@ -85,6 +91,26 @@ export function manualCutFirstSlotBounds(settings: Settings) {
     width: target.width,
     height: target.height,
   };
+}
+
+export function manualCutLineBounds(sheet: Sheet, settings: Settings) {
+  const { left, top } = manualCutPlacement(settings);
+  return sheet.placements.map(({ x, y, width, height }) => ({
+    left: left + x,
+    top: top + y,
+    width,
+    height,
+  }));
+}
+
+export function manualCutEdgeGuides(sheet: Sheet, settings: Settings) {
+  const { paper } = manualCutPlacement(settings);
+  return manualGuidePaths(manualCutLineBounds(sheet, settings), paper, {
+    ...settings,
+    manualGuidesEnabled: true,
+    manualGuideCardStyle: 'none',
+    manualGuidePageStyle: 'edge',
+  }).map(([start, end]) => ({ x1: start.x, y1: start.y, x2: end.x, y2: end.y }));
 }
 
 export function manualCutCorrection(
@@ -357,13 +383,44 @@ export async function buildManualCutPdf(
       width: raster.width * PT_PER_MM,
       height: raster.height * PT_PER_MM,
     });
+    if (!back && project.settings.machine === 'manual') {
+      const settings = project.settings,
+        hex = settings.manualGuideColor,
+        color = rgb(
+          parseInt(hex.slice(1, 3), 16) / 255,
+          parseInt(hex.slice(3, 5), 16) / 255,
+          parseInt(hex.slice(5, 7), 16) / 255,
+        ),
+        paths = manualGuidePaths(
+          manualCutLineBounds(sourceSheet, settings),
+          placement.paper,
+          settings,
+        );
+      for (const path of paths) {
+        for (let point = 1; point < path.length; point++) {
+          const start = path[point - 1],
+            end = path[point];
+          page.drawLine({
+            start: { x: start.x * PT_PER_MM, y: (placement.paper.height - start.y) * PT_PER_MM },
+            end: { x: end.x * PT_PER_MM, y: (placement.paper.height - end.y) * PT_PER_MM },
+            thickness: manualGuideWidthMm(settings) * PT_PER_MM,
+            color,
+            ...(settings.manualGuideLineStyle === 'dashed'
+              ? { dashArray: manualGuideDashMm(settings).map((mm) => mm * PT_PER_MM) }
+              : {}),
+          });
+        }
+      }
+    }
   }
   output.catalog.getOrCreateViewerPreferences().setPrintScaling(PrintScaling.None);
   output.setTitle(
-    `${project.name} - Manual 9-card cut${back ? ' - Backs' : ''} - ${manualCutCorrectionLabel(project.settings)}`,
+    `${project.name} - Manual 9-card cut${back ? ' - Backs' : ''}${project.settings.machine === 'manual' ? '' : ` - ${manualCutCorrectionLabel(project.settings)}`}`,
   );
   output.setSubject(
-    'Experimental manual mat-alignment layout. Print at actual size and validate alignment on plain paper.',
+    project.settings.machine === 'manual'
+      ? 'Nine-card sheet with configurable manual trim guides. Print at actual size.'
+      : 'Experimental manual mat-alignment layout. Print at actual size and validate alignment on plain paper.',
   );
   return output.save();
 }

@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { PDFDocument } from 'pdf-lib';
+import { decodePDFRawStream, PDFArray, PDFDocument, PDFRawStream } from 'pdf-lib';
 import { renderSheet } from '../src/lib/export';
-import { buildManualCutCalibrationPdf } from '../src/lib/manual-cut';
+import { buildManualCutCalibrationPdf, buildManualCutPdf } from '../src/lib/manual-cut';
 import { DEFAULT_SETTINGS, type Entry } from '../src/lib/types';
 import { mmToPx, type Sheet } from '../src/lib/layout';
 import { repairTransparentCorners, replicateBorder } from '../src/lib/bleed';
@@ -146,6 +146,52 @@ function artwork(color: string, detailed = false, rounded = false): Entry {
     },
   };
 }
+
+test('manual front PDF prints paper-edge vector guides while backs stay unmarked', async () => {
+  const entry = artwork('#111111');
+  const project = {
+    version: 1 as const,
+    name: 'Manual guide test',
+    entries: [entry],
+    settings: {
+      ...DEFAULT_SETTINGS,
+      machine: 'manual' as const,
+      profile: 'nine' as const,
+      manualGuideColor: '#ff0000',
+    },
+    backArtwork: entry.card.faces[0],
+  };
+  const operators = async (bytes: Uint8Array) => {
+    const document = await PDFDocument.load(bytes),
+      contents = document.getPage(0).node.Contents();
+    assert.ok(contents instanceof PDFArray);
+    return Array.from({ length: contents.size() }, (_, index) => {
+      const stream = contents.lookup(index, PDFRawStream);
+      return new TextDecoder().decode(decodePDFRawStream(stream).decode());
+    }).join('\n');
+  };
+  const front = await operators(await buildManualCutPdf(project, () => {})),
+    back = await operators(await buildManualCutPdf(project, () => {}, true));
+  assert.equal(front.match(/\nS\n/g)?.length, 8);
+  assert.match(front, /1 0 0 RG/);
+  assert.doesNotMatch(back, /1 0 0 RG/);
+  const customized = await operators(
+    await buildManualCutPdf(
+      {
+        ...project,
+        settings: {
+          ...project.settings,
+          manualGuidePageStyle: 'none',
+          manualGuideCardStyle: 'full',
+          manualGuideLineStyle: 'dashed',
+        },
+      },
+      () => {},
+    ),
+  );
+  assert.equal(customized.match(/\nS\n/g)?.length, 4);
+  assert.match(customized, /\[[\d.]+ [\d.]+\] 0 d/);
+});
 
 async function decode(bytes: Uint8Array) {
   const image = await loadImage(bytes),

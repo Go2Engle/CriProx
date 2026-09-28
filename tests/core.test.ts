@@ -5,6 +5,7 @@ import { parseArchidektDeck, parseDeckSource, parseMoxfieldDeck } from '../src/l
 import { envelope, grid, layout, mmToPx, templateSvg } from '../src/lib/layout';
 import { formatDimensions, formatMeasurement } from '../src/lib/units';
 import { projectFilename } from '../src/lib/save-project';
+import { manualGuidePaths } from '../src/lib/cut-guides';
 import {
   backBleedMm,
   backOuterBleedMm,
@@ -37,6 +38,8 @@ import {
   manualCutCorrectionFileTag,
   manualCutCorrectionLabel,
   manualCutFirstSlotBounds,
+  manualCutEdgeGuides,
+  manualCutLineBounds,
   manualCutPlacement,
 } from '../src/lib/manual-cut';
 import {
@@ -393,6 +396,70 @@ test('manual nine-card layout uses a fixed 3-by-3 block on every page', () => {
   );
   assert.equal(templateSvg(pages[0], settings).match(/<rect /g)?.length, 9);
 });
+test('hand cutting centers occupied slots and extends guides to paper edges', () => {
+  const settings = { ...DEFAULT_SETTINGS, machine: 'manual' as const, profile: 'nine' as const },
+    pages = layout([{ ...entry, quantity: 10 }], settings);
+  const first = manualCutLineBounds(pages[0], settings)[0],
+    last = manualCutLineBounds(pages[0], settings)[8];
+  assert.ok(Math.abs(first.left - 12.45) < 1e-9);
+  assert.ok(Math.abs(first.top - 6.7) < 1e-9);
+  assert.equal(first.width, 63);
+  assert.equal(first.height, 88);
+  assert.ok(Math.abs(last.left - 140.45) < 1e-9);
+  assert.ok(Math.abs(last.top - 184.7) < 1e-9);
+  assert.equal(manualCutLineBounds(pages[1], settings).length, 1);
+  const guides = manualCutEdgeGuides(pages[0], settings);
+  assert.equal(guides.length, 24);
+  assert.equal(manualCutEdgeGuides(pages[1], settings).length, 8);
+  assert.ok(
+    guides.every(
+      (guide) =>
+        guide.x1 === 0 ||
+        Math.abs(guide.x2 - 215.9) < 1e-9 ||
+        guide.y1 === 0 ||
+        Math.abs(guide.y2 - 279.4) < 1e-9,
+    ),
+  );
+  const a4 = manualCutPlacement({ ...settings, paper: 'a4' });
+  assert.equal(a4.left, 9.5);
+  assert.equal(a4.top, 15.5);
+  const back = manualCutPlacement(settings, true);
+  assert.ok(Math.abs(back.left - first.left) < 1e-9);
+  assert.ok(Math.abs(back.top - first.top) < 1e-9);
+});
+
+test('manual guide choices change the shared sheet geometry', () => {
+  const card = [{ left: 20, top: 30, width: 63, height: 88 }],
+    paper = { width: 215.9, height: 279.4 },
+    base = { ...DEFAULT_SETTINGS, machine: 'manual' as const, profile: 'nine' as const };
+  const edges = manualGuidePaths(card, paper, base);
+  assert.equal(edges.length, 8);
+  assert.deepEqual(edges[0], [
+    { x: 20, y: 0 },
+    { x: 20, y: 30 },
+  ]);
+  assert.deepEqual(manualGuidePaths(card, paper, { ...base, manualGuidePageStyle: 'full' })[0], [
+    { x: 20, y: 0 },
+    { x: 20, y: paper.height },
+  ]);
+  assert.equal(
+    manualGuidePaths(card, paper, {
+      ...base,
+      manualGuidePageStyle: 'none',
+      manualGuideCardStyle: 'corners',
+    }).length,
+    4,
+  );
+  const rounded = manualGuidePaths(card, paper, {
+    ...base,
+    manualGuidePageStyle: 'none',
+    manualGuideCardStyle: 'full',
+    manualGuideCornerStyle: 'round',
+  });
+  assert.equal(rounded.length, 1);
+  assert.ok(rounded[0].length > 5);
+  assert.equal(manualGuidePaths(card, paper, { ...base, manualGuidesEnabled: false }).length, 0);
+});
 test('manual nine-card print placement matches the first quarter-inch mat inset', () => {
   const settings = { ...DEFAULT_SETTINGS, profile: 'nine' as const },
     placement = manualCutPlacement(settings);
@@ -579,6 +646,15 @@ test('project import validates geometry, IDs, totals, image schemes and selected
     backOffsetY: _oldBackY,
     manualCutCorrectionX: _oldManualCutX,
     manualCutCorrectionY: _oldManualCutY,
+    manualGuidesEnabled: _oldManualGuidesEnabled,
+    manualGuideColor: _oldManualGuideColor,
+    manualGuideWidthPx: _oldManualGuideWidth,
+    manualGuidePlacement: _oldManualGuidePlacement,
+    manualGuideCardStyle: _oldManualGuideCardStyle,
+    manualGuideLineStyle: _oldManualGuideLineStyle,
+    manualGuideCornerStyle: _oldManualGuideCornerStyle,
+    manualGuideLengthMm: _oldManualGuideLength,
+    manualGuidePageStyle: _oldManualGuidePageStyle,
     ...oldSettings
   } = DEFAULT_SETTINGS;
   const migrated = validateProject({ ...good, settings: oldSettings });
@@ -590,6 +666,8 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   assert.equal(migrated.settings.backRotation, 180);
   assert.equal(migrated.settings.manualCutCorrectionX, 0);
   assert.equal(migrated.settings.manualCutCorrectionY, 0);
+  assert.equal(migrated.settings.manualGuidePageStyle, 'edge');
+  assert.equal(migrated.settings.manualGuideColor, '#222222');
   assert.equal(
     validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, radius: 3 } }).settings.radius,
     2.5,
@@ -633,6 +711,13 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   const nine = { ...DEFAULT_SETTINGS, profile: 'nine' as const };
   assert.equal(validateProject({ ...good, settings: nine }).settings.profile, 'nine');
   assert.equal(
+    validateProject({ ...good, settings: { ...nine, machine: 'manual' } }).settings.machine,
+    'manual',
+  );
+  assert.throws(() =>
+    validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, machine: 'manual' } }),
+  );
+  assert.equal(
     validateProject({
       ...good,
       settings: { ...nine, manualCutCorrectionX: 0.5, manualCutCorrectionY: 1.75 },
@@ -641,6 +726,9 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   );
   assert.throws(() =>
     validateProject({ ...good, settings: { ...nine, manualCutCorrectionX: 5.25 } }),
+  );
+  assert.throws(() =>
+    validateProject({ ...good, settings: { ...nine, manualGuideColor: 'lime' } }),
   );
   assert.throws(() => validateProject({ ...good, settings: { ...nine, gap: 0.1 } }));
   assert.throws(() => validateProject({ ...good, settings: { ...nine, width: 63.5 } }));

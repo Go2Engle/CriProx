@@ -1,4 +1,5 @@
 import { PDFDocument, PrintScaling, rgb, StandardFonts } from 'pdf-lib';
+import * as pdfjs from 'pdfjs-dist';
 import { backBleedMm, backOuterBleedMm, frontBleedMm, type Project, type Settings } from './types';
 import { renderSheet, download } from './export';
 import { mmToPx, type Sheet } from './layout';
@@ -19,8 +20,8 @@ import {
   type OutputFrame,
   type RegistrationProfile,
 } from './registration';
+export const REGISTERED_ART_MASK_PAD_MM = 0.35;
 export async function pdfRenderer() {
-  const pdfjs = await import('pdfjs-dist');
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
@@ -112,8 +113,8 @@ export async function captureProfile(
       ? fitTabloidCaptureToLetter(size.width, size.height, leftMm, topMm, contentBoundsMm)
       : undefined;
     const thumb = document.createElement('canvas');
-    thumb.width = 380;
-    thumb.height = Math.round((380 * size.height) / size.width);
+    thumb.width = 1000;
+    thumb.height = Math.round((1000 * size.height) / size.width);
     thumb.getContext('2d')!.drawImage(canvas, 0, 0, thumb.width, thumb.height);
     const preview = thumb.toDataURL('image/png');
     canvas.width = canvas.height = 0;
@@ -129,12 +130,16 @@ export async function captureProfile(
       topMm,
       outputFrame,
       preview,
+      previewWidth: thumb.width,
     };
   } finally {
     await task.destroy();
   }
 }
-function registeredOutputFrame(profile: RegistrationProfile, settings: Settings): OutputFrame {
+export function registeredOutputFrame(
+  profile: RegistrationProfile,
+  settings: Settings,
+): OutputFrame {
   if (settings.profile === 'eight') {
     const frame = profile.outputFrame;
     if (
@@ -195,7 +200,7 @@ export async function buildRegisteredPdf(
     const bleed = calibration ? 0 : frontBleedMm(project.settings),
       x = frame.leftMm * PT_PER_MM,
       y = frame.pageHeightPt - (frame.topMm + full.height) * PT_PER_MM;
-    const pad = 0.18 * PT_PER_MM; // Erase raster edge fuzz only; capture checks a 0.4 mm guard.
+    const pad = REGISTERED_ART_MASK_PAD_MM * PT_PER_MM; // Inside the verified 0.4 mm guard.
     page.drawRectangle({
       x: x - pad,
       y: y - pad,

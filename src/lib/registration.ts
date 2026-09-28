@@ -26,6 +26,7 @@ export type RegistrationProfile = {
   /** Present when a Tabloid capture is reframed to Letter without scaling. */
   outputFrame?: OutputFrame;
   preview: string;
+  previewWidth?: number;
 };
 export function fitTabloidCaptureToLetter(
   sourceWidthPt: number,

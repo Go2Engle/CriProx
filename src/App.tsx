@@ -2,6 +2,7 @@ import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
+import ManualGuideControls from './components/ManualGuideControls';
 import {
   useCallback,
   useEffect,
@@ -63,12 +64,15 @@ import {
 } from './lib/types';
 import {
   FACTORY_PROJECT_DEFAULTS,
+  manualGuideDefaultsFrom,
   projectDefaultsFrom,
   projectFromDefaults,
   validateProjectDefaults,
+  withManualGuideDefaults,
+  type ManualGuideDefaults,
   type ProjectDefaults,
 } from './lib/project-defaults';
-import { envelope, grid, layout, type Sheet } from './lib/layout';
+import { grid, type Sheet } from './lib/layout';
 import { parseDeck } from './lib/deck';
 import { importDeckSource } from './lib/deck-source';
 import { resolveDeck, searchCards, variants } from './lib/scryfall';
@@ -83,7 +87,22 @@ import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard, mpcArtworkType } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
-import { MANUAL_CUT_INSET_MM } from './lib/manual-cut';
+import { manualCutLineBounds } from './lib/manual-cut';
+import { manualGuideDashMm, manualGuidePaths, manualGuideWidthMm } from './lib/cut-guides';
+import {
+  fixedSheets,
+  fullTemplate,
+  registrationKey,
+  templateId,
+  type RegistrationProfile,
+} from './lib/registration';
+import {
+  captureProfile,
+  registeredOutputFrame,
+  REGISTERED_ART_MASK_PAD_MM,
+} from './lib/registered-pdf';
+import { MOCK_REGISTRATION_MARKS, sheetPreviewFrame } from './lib/sheet-preview';
+import { registrationPreviewImage } from './lib/registration-preview-image';
 import { looksLikeMpcPrintCanvas, usesMpcTrim, withMpcTrim } from './lib/artwork';
 import {
   applyColorTheme,
@@ -454,6 +473,7 @@ function SettingsModal({
   close,
   changeTheme,
   saveDefaults,
+  saveGuideDefaults,
   applyDefaults,
   restoreFactoryDefaults,
   changeDirectory,
@@ -467,6 +487,7 @@ function SettingsModal({
   close: () => void;
   changeTheme: (theme: ColorTheme) => void;
   saveDefaults: () => void;
+  saveGuideDefaults: (settings: Settings) => Promise<void>;
   applyDefaults: () => void;
   restoreFactoryDefaults: () => void;
   changeDirectory: () => void;
@@ -474,12 +495,19 @@ function SettingsModal({
   reveal: () => void;
 }) {
   const settings = defaults.settings;
+  const [guideDraft, setGuideDraft] = useState<ManualGuideDefaults>(() =>
+    manualGuideDefaultsFrom(settings),
+  );
+  useEffect(() => setGuideDraft(manualGuideDefaultsFrom(settings)), [settings]);
+  const guideSettings = { ...settings, ...guideDraft };
   const machine =
     settings.machine === 'maker'
       ? 'Cricut Maker series'
       : settings.machine === 'explore'
         ? 'Cricut Explore series'
-        : 'Cricut Joy Xtra';
+        : settings.machine === 'manual'
+          ? 'Manual cutting'
+          : 'Cricut Joy Xtra';
   const profile =
     settings.profile === 'expanded'
       ? 'Print and Cut'
@@ -607,6 +635,32 @@ function SettingsModal({
               Restore factory defaults
             </button>
           </div>
+        </section>
+
+        <section className="app-settings-section">
+          <div className="app-settings-heading">
+            <span>
+              <Ruler size={17} />
+            </span>
+            <div>
+              <h3>Manual cut guide defaults</h3>
+              <p>
+                Choose the guides for new manual cutting projects. Save guide changes here without
+                replacing your machine, paper, or other project defaults.
+              </p>
+            </div>
+          </div>
+          <ManualGuideControls
+            mode="defaults"
+            settings={guideSettings}
+            change={(patch) =>
+              setGuideDraft((current) =>
+                manualGuideDefaultsFrom({ ...settings, ...current, ...patch }),
+              )
+            }
+            savedDefaults={settings}
+            saveDefaults={saveGuideDefaults}
+          />
         </section>
 
         <section className="app-settings-section">
@@ -1623,11 +1677,71 @@ function ArtworkInspector({
     </Modal>
   );
 }
+function useCapturedRegistration(settings: Settings, refresh: number) {
+  const key = registrationKey(settings);
+  const [saved, setSaved] = useState<{ key: string; profile: RegistrationProfile }>();
+  useEffect(() => {
+    let active = true;
+    setSaved(undefined);
+    if (settings.machine === 'manual' || settings.profile === 'nine') return;
+    void (async () => {
+      let cached: RegistrationProfile | undefined;
+      const show = async (profile: RegistrationProfile) => {
+        const preview = await registrationPreviewImage(profile, settings).catch(
+          () => profile.preview,
+        );
+        if (active) setSaved({ key, profile: { ...profile, preview } });
+      };
+      try {
+        let value = await get<RegistrationProfile>(`registration:${key}`);
+        if (value?.version === 1 && value.key === key && value.pdf instanceof Uint8Array) {
+          registeredOutputFrame(value, settings);
+          if ((value.previewWidth ?? 380) < 800) {
+            try {
+              const upgraded = await captureProfile(value.pdf, settings, value.name);
+              upgraded.capturedAt = value.capturedAt;
+              value = upgraded;
+              await set(`registration:${key}`, upgraded).catch(() => {});
+            } catch {
+              // The saved thumbnail remains usable if a legacy PDF cannot be rerendered.
+            }
+          }
+          cached = value;
+          await show(value);
+        }
+      } catch {
+        // The project library can still provide the captured template.
+      }
+      try {
+        const library = window.criprox?.registrationTemplates;
+        if (!library) return;
+        const stored = await library.load(
+          templateId(settings),
+          fullTemplate(settings).placements.length,
+        );
+        if (!stored || (cached?.name === stored.name && cached.capturedAt === stored.capturedAt))
+          return;
+        const profile = await captureProfile(new Uint8Array(stored.pdf), settings, stored.name);
+        profile.capturedAt = stored.capturedAt;
+        await set(`registration:${key}`, profile).catch(() => {});
+        await show(profile);
+      } catch {
+        // Keep a valid local capture, or show the approximate layout until one is available.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [key, refresh]);
+  return saved?.key === key ? saved.profile : undefined;
+}
+
 function SheetPreview({
   sheet,
   settings,
   mode,
   zoom,
+  registrationRefresh,
   select,
   inspect,
 }: {
@@ -1635,23 +1749,38 @@ function SheetPreview({
   settings: Settings;
   mode: string;
   zoom: number;
+  registrationRefresh: number;
   select: (target: EntryCopy) => void;
   inspect: (target: EntryCopy) => void;
 }) {
-  const paper = settings.paper === 'letter' ? { w: 215.9, h: 279.4 } : { w: 210, h: 297 };
-  const area = envelope(settings),
+  const captured = useCapturedRegistration(settings, registrationRefresh),
+    frame = sheetPreviewFrame(settings, captured),
+    paper = frame.paper,
+    area = fullTemplate(settings),
     manualNine = settings.profile === 'nine',
-    topMargin = manualNine
-      ? MANUAL_CUT_INSET_MM - settings.manualCutCorrectionY
-      : (paper.h - area.height) / 2,
-    bottomMargin = paper.h - topMargin - area.height,
-    manualPosition = manualNine
-      ? {
-          left: `${((MANUAL_CUT_INSET_MM - settings.manualCutCorrectionX) / paper.w) * 100}%`,
-          top: `${((MANUAL_CUT_INSET_MM - settings.manualCutCorrectionY) / paper.h) * 100}%`,
-          transform: 'none',
-        }
-      : undefined;
+    manualHandCut = manualNine && settings.machine === 'manual',
+    registered = settings.machine !== 'manual' && !manualNine,
+    cutOnly = mode === 'cuts' && !registered,
+    sheetPosition = {
+      left: `${(frame.left / paper.w) * 100}%`,
+      top: `${(frame.top / paper.h) * 100}%`,
+      transform: 'none',
+    },
+    guidePaths =
+      manualHandCut && sheet
+        ? manualGuidePaths(
+            manualCutLineBounds(sheet, settings),
+            { width: paper.w, height: paper.h },
+            settings,
+          )
+        : [],
+    markLeft = frame.left - MOCK_REGISTRATION_MARKS.offset,
+    markRight = frame.left + area.width + MOCK_REGISTRATION_MARKS.offset,
+    markTop = frame.top - MOCK_REGISTRATION_MARKS.offset,
+    markBottom = frame.top + area.height + MOCK_REGISTRATION_MARKS.offset,
+    markWidth = MOCK_REGISTRATION_MARKS.thickness,
+    markLength = MOCK_REGISTRATION_MARKS.armLength,
+    markGap = MOCK_REGISTRATION_MARKS.cornerGap;
   return (
     <div className="paper-stage">
       <div
@@ -1661,34 +1790,46 @@ function SheetPreview({
           aspectRatio: `${paper.w} / ${paper.h}`,
         }}
       >
-        {topMargin >= 4 && (
-          <span className="page-caption" style={{ top: `${(topMargin / 2 / paper.h) * 100}%` }}>
-            {settings.paper === 'letter' ? 'US LETTER' : 'A4'} · LAYOUT PREVIEW
-          </span>
+        {registered && captured && frame.master && (
+          <>
+            <img
+              className="registered-master"
+              src={captured.preview}
+              alt=""
+              draggable={false}
+              style={{
+                left: `${(frame.master.left / paper.w) * 100}%`,
+                top: `${(frame.master.top / paper.h) * 100}%`,
+                width: `${(frame.master.width / paper.w) * 100}%`,
+                height: `${(frame.master.height / paper.h) * 100}%`,
+              }}
+            />
+            <div
+              className="registration-art-mask"
+              style={{
+                left: `${((frame.left - REGISTERED_ART_MASK_PAD_MM) / paper.w) * 100}%`,
+                top: `${((frame.top - REGISTERED_ART_MASK_PAD_MM) / paper.h) * 100}%`,
+                width: `${((area.width + 2 * REGISTERED_ART_MASK_PAD_MM) / paper.w) * 100}%`,
+                height: `${((area.height + 2 * REGISTERED_ART_MASK_PAD_MM) / paper.h) * 100}%`,
+              }}
+            />
+          </>
         )}
-        <div
-          className="safe-area"
-          style={{
-            width: `${(area.width / paper.w) * 100}%`,
-            height: `${(area.height / paper.h) * 100}%`,
-            ...manualPosition,
-          }}
-        />
         {sheet ? (
           <div
             className="sheet-art"
             style={{
               width: `${(sheet.width / paper.w) * 100}%`,
               height: `${(sheet.height / paper.h) * 100}%`,
-              ...manualPosition,
+              ...sheetPosition,
             }}
           >
             {sheet.placements.map((p, i) => (
               <button
                 key={`${p.entry.id}-${p.copy}`}
                 aria-label={`Select ${p.entry.card.name}, copy ${p.copy + 1}`}
-                title={mode === 'cuts' ? 'Select card' : 'Open artwork preview'}
-                className={`placed-card ${mode === 'cuts' ? 'cut-only' : ''}`}
+                title={cutOnly ? 'Select card' : 'Open artwork preview'}
+                className={`placed-card ${cutOnly ? 'cut-only' : ''}`}
                 style={{
                   left: `${(p.x / sheet.width) * 100}%`,
                   top: `${(p.y / sheet.height) * 100}%`,
@@ -1696,11 +1837,9 @@ function SheetPreview({
                   height: `${(p.height / sheet.height) * 100}%`,
                   borderRadius: `${(settings.radius / p.width) * 100}% / ${(settings.radius / p.height) * 100}%`,
                 }}
-                onClick={() =>
-                  (mode === 'cuts' ? select : inspect)({ entryId: p.entry.id, copy: p.copy })
-                }
+                onClick={() => (cutOnly ? select : inspect)({ entryId: p.entry.id, copy: p.copy })}
               >
-                {mode === 'cuts' ? (
+                {cutOnly ? (
                   <span>
                     {String(i + 1).padStart(2, '0')}
                     <small>
@@ -1735,13 +1874,67 @@ function SheetPreview({
             <span>Drop images here or use Add artwork.</span>
           </div>
         )}
-        {bottomMargin >= 4 && (
-          <span
-            className="paper-bottom"
-            style={{ bottom: `${(bottomMargin / 2 / paper.h) * 100}%` }}
+        {manualHandCut && guidePaths.length > 0 && (
+          <svg
+            className="sheet-guide-overlay"
+            viewBox={`0 0 ${paper.w} ${paper.h}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
           >
-            Artwork preview · cut geometry stays fixed
-          </span>
+            {guidePaths.map((path, index) => (
+              <polyline
+                key={index}
+                points={path.map(({ x, y }) => `${x},${y}`).join(' ')}
+                fill="none"
+                stroke={settings.manualGuideColor}
+                strokeWidth={manualGuideWidthMm(settings)}
+                strokeDasharray={
+                  settings.manualGuideLineStyle === 'dashed'
+                    ? manualGuideDashMm(settings).join(' ')
+                    : undefined
+                }
+              />
+            ))}
+          </svg>
+        )}
+        {registered && !captured && (
+          <svg
+            className="mock-registration-overlay"
+            viewBox={`0 0 ${paper.w} ${paper.h}`}
+            aria-label="Approximate Cricut registration marks; capture a template for an exact preview"
+          >
+            <polygon
+              points={`${markLeft},${markTop + markWidth} ${markLeft + markWidth / 2},${markTop} ${markLeft + markWidth},${markTop + markWidth}`}
+            />
+            <rect
+              x={markLeft + markWidth + markGap}
+              y={markTop}
+              width={markLength}
+              height={markWidth}
+            />
+            <rect
+              x={markLeft}
+              y={markTop + markWidth + markGap}
+              width={markWidth}
+              height={markLength}
+            />
+            <rect x={markRight - markLength} y={markTop} width={markLength} height={markWidth} />
+            <rect x={markRight - markWidth} y={markTop} width={markWidth} height={markLength} />
+            <rect x={markLeft} y={markBottom - markLength} width={markWidth} height={markLength} />
+            <rect x={markLeft} y={markBottom - markWidth} width={markLength} height={markWidth} />
+            <rect
+              x={markRight - markLength}
+              y={markBottom - markWidth}
+              width={markLength}
+              height={markWidth}
+            />
+            <rect
+              x={markRight - markWidth}
+              y={markBottom - markLength}
+              width={markWidth}
+              height={markLength}
+            />
+          </svg>
         )}
       </div>
     </div>
@@ -1846,6 +2039,7 @@ export default function App() {
     [page, setPage] = useState(0),
     [mode, setMode] = useState('art'),
     [zoom, setZoom] = useState(100),
+    [registrationRefresh, setRegistrationRefresh] = useState(0),
     [toast, setToast] = useState(''),
     [releaseUpdate, setReleaseUpdate] = useState<ReleaseUpdate | null>(null),
     [uploading, setUploading] = useState(false),
@@ -2047,7 +2241,7 @@ export default function App() {
     }
   }, [toast]);
   const sheets = useMemo(
-    () => layout(project.entries, project.settings),
+    () => fixedSheets(project.entries, project.settings),
     [project.entries, project.settings],
   );
   const currentPage = Math.min(page, Math.max(0, sheets.length - 1)),
@@ -2081,6 +2275,16 @@ export default function App() {
       setToast('Current setup will be used for new projects.');
     } catch {
       setToast('Could not save project defaults on this device.');
+    }
+  }
+  async function saveManualGuideSettingsAsDefaults(source: Settings) {
+    const next = withManualGuideDefaults(projectDefaults, source);
+    try {
+      await set(PROJECT_DEFAULTS_KEY, next);
+      setProjectDefaults(next);
+      setToast('Manual cut guide defaults saved for new projects.');
+    } catch {
+      setToast('Could not save manual cut guide defaults on this device.');
     }
   }
   async function restoreFactoryProjectDefaults() {
@@ -2720,20 +2924,29 @@ export default function App() {
             </section>
             <section className="preview-panel panel">
               <div className="preview-toolbar">
-                <div className="segmented" aria-label="Preview mode">
-                  <button
-                    className={mode === 'art' ? 'selected' : ''}
-                    onClick={() => setMode('art')}
-                  >
-                    <Layers3 size={14} /> Artwork
-                  </button>
-                  <button
-                    className={mode === 'cuts' ? 'selected' : ''}
-                    onClick={() => setMode('cuts')}
-                  >
-                    <Scissors size={14} /> Cut paths
-                  </button>
-                </div>
+                {project.settings.machine !== 'manual' && project.settings.profile !== 'nine' ? (
+                  <div className="segmented" aria-label="Preview mode">
+                    <button className="selected" type="button">
+                      <Layers3 size={14} /> Print sheet
+                    </button>
+                  </div>
+                ) : (
+                  <div className="segmented" aria-label="Preview mode">
+                    <button
+                      className={mode === 'art' ? 'selected' : ''}
+                      onClick={() => setMode('art')}
+                    >
+                      <Layers3 size={14} /> Artwork
+                    </button>
+                    <button
+                      className={mode === 'cuts' ? 'selected' : ''}
+                      onClick={() => setMode('cuts')}
+                    >
+                      <Scissors size={14} />{' '}
+                      {project.settings.machine === 'manual' ? 'Cut guides' : 'Cut paths'}
+                    </button>
+                  </div>
+                )}
                 <div className="zoom-control">
                   <button
                     aria-label="Zoom out"
@@ -2779,6 +2992,7 @@ export default function App() {
                     settings={project.settings}
                     mode={mode}
                     zoom={zoom}
+                    registrationRefresh={registrationRefresh}
                     select={setSelected}
                     inspect={inspect}
                   />
@@ -2837,7 +3051,7 @@ export default function App() {
               </div>
               <div className="settings-content">
                 <div className="setting-group">
-                  <label htmlFor="machine">Cutting machine</label>
+                  <label htmlFor="machine">Cutting method</label>
                   <div className="select-wrap">
                     <Scissors size={15} />
                     <select
@@ -2847,6 +3061,18 @@ export default function App() {
                         const machine = e.target.value as Settings['machine'];
                         settings({
                           machine,
+                          ...(machine === 'manual'
+                            ? {
+                                profile: 'nine' as const,
+                                width: 63,
+                                height: 88,
+                                gap: 1,
+                                radius: STANDARD_CARD_RADIUS_MM,
+                                bleed: project.settings.bleed > 0 ? 0.5 : 0,
+                                manualCutCorrectionX: 0,
+                                manualCutCorrectionY: 0,
+                              }
+                            : {}),
                           ...((project.settings.profile === 'seven' ||
                             project.settings.profile === 'eight') &&
                           machine === 'joy-xtra'
@@ -2865,6 +3091,7 @@ export default function App() {
                       <option value="maker">Cricut Maker series</option>
                       <option value="explore">Cricut Explore series</option>
                       <option value="joy-xtra">Cricut Joy Xtra</option>
+                      <option value="manual">Manual cutting</option>
                     </select>
                   </div>
                 </div>
@@ -2964,14 +3191,33 @@ export default function App() {
                       setPage(0);
                     }}
                   >
-                    <option value="expanded">6 cards · Print and Cut</option>
-                    <option value="seven" disabled={project.settings.machine === 'joy-xtra'}>
+                    <option value="expanded" disabled={project.settings.machine === 'manual'}>
+                      6 cards · Print and Cut
+                    </option>
+                    <option
+                      value="seven"
+                      disabled={
+                        project.settings.machine === 'joy-xtra' ||
+                        project.settings.machine === 'manual'
+                      }
+                    >
                       7 cards · Print and Cut · Experimental
                     </option>
-                    <option value="eight" disabled={project.settings.machine === 'joy-xtra'}>
+                    <option
+                      value="eight"
+                      disabled={
+                        project.settings.machine === 'joy-xtra' ||
+                        project.settings.machine === 'manual'
+                      }
+                    >
                       8 cards - Print and Cut - Experimental
                     </option>
-                    <option value="nine">9 cards · Manual Alignment · Experimental</option>
+                    <option value="nine">
+                      9 cards ·{' '}
+                      {project.settings.machine === 'manual'
+                        ? 'Manual cutting'
+                        : 'Manual Alignment · Experimental'}
+                    </option>
                   </select>
                   <p className="field-note">
                     {project.settings.profile === 'seven'
@@ -2979,10 +3225,20 @@ export default function App() {
                       : project.settings.profile === 'eight'
                         ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
                         : project.settings.profile === 'nine'
-                          ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
+                          ? project.settings.machine === 'manual'
+                            ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
+                            : `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
                           : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
                   </p>
                 </div>
+                {project.settings.machine === 'manual' && (
+                  <ManualGuideControls
+                    settings={project.settings}
+                    change={settings}
+                    savedDefaults={projectDefaults.settings}
+                    saveDefaults={saveManualGuideSettingsAsDefaults}
+                  />
+                )}
                 <div className="settings-divider" />
                 <div className="section-label">
                   <Settings2 size={14} /> PRINT DETAILS
@@ -3183,6 +3439,7 @@ export default function App() {
           close={() => setModal(null)}
           changeTheme={setColorTheme}
           saveDefaults={() => void saveCurrentSetupAsDefaults()}
+          saveGuideDefaults={saveManualGuideSettingsAsDefaults}
           applyDefaults={applyProjectDefaults}
           restoreFactoryDefaults={() => void restoreFactoryProjectDefaults()}
           changeDirectory={() => void changeProjectsDirectory()}
@@ -3193,7 +3450,11 @@ export default function App() {
       {modal === 'registered' && (
         <RegisteredPrint
           project={project}
-          close={() => setModal(null)}
+          close={() => {
+            setModal(null);
+            setRegistrationRefresh((value) => value + 1);
+          }}
+          onCapture={() => setRegistrationRefresh((value) => value + 1)}
           openGuide={() => setModal('guide')}
           notify={setToast}
           updateSettings={settings}

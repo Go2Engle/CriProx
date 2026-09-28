@@ -12,6 +12,54 @@ export const FACTORY_PROJECT_DEFAULTS: ProjectDefaults = {
   settings: { ...DEFAULT_SETTINGS },
 };
 
+export type ManualGuideDefaults = Pick<
+  Settings,
+  | 'manualGuidesEnabled'
+  | 'manualGuideColor'
+  | 'manualGuideWidthPx'
+  | 'manualGuidePlacement'
+  | 'manualGuideCardStyle'
+  | 'manualGuideLineStyle'
+  | 'manualGuideCornerStyle'
+  | 'manualGuideLengthMm'
+  | 'manualGuidePageStyle'
+>;
+
+export function manualGuideDefaultsFrom(settings: Settings): ManualGuideDefaults {
+  return {
+    manualGuidesEnabled: settings.manualGuidesEnabled,
+    manualGuideColor: settings.manualGuideColor,
+    manualGuideWidthPx: settings.manualGuideWidthPx,
+    manualGuidePlacement: settings.manualGuidePlacement,
+    manualGuideCardStyle: settings.manualGuideCardStyle,
+    manualGuideLineStyle: settings.manualGuideLineStyle,
+    manualGuideCornerStyle: settings.manualGuideCornerStyle,
+    manualGuideLengthMm: settings.manualGuideLengthMm,
+    manualGuidePageStyle: settings.manualGuidePageStyle,
+  };
+}
+
+export function manualGuideDefaultsMatch(a: Settings, b: Settings): boolean {
+  const first = manualGuideDefaultsFrom(a),
+    second = manualGuideDefaultsFrom(b);
+  return Object.keys(first).every((key) => {
+    const field = key as keyof ManualGuideDefaults;
+    return field === 'manualGuideColor'
+      ? first.manualGuideColor.toLowerCase() === second.manualGuideColor.toLowerCase()
+      : first[field] === second[field];
+  });
+}
+
+export function withManualGuideDefaults(
+  defaults: ProjectDefaults,
+  source: Settings,
+): ProjectDefaults {
+  return {
+    ...defaults,
+    settings: { ...defaults.settings, ...manualGuideDefaultsFrom(source) },
+  };
+}
+
 const copyFace = (face?: CardFace) => (face ? { ...face } : undefined);
 
 export function projectDefaultsFrom(project: Pick<Project, 'settings' | 'backArtwork'>) {

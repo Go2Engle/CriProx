@@ -24,7 +24,8 @@ Deck-list requests are batched in groups of at most 75 unique identifiers. Reque
 - 1 mm spacing in the standard layout profiles.
 - US Letter and A4 planning modes.
 - Millimeter-based placement and vector geometry shared by preview and export.
-- Artwork and cut-path preview modes, sheet pagination, and zoom controls.
+- Print-sheet preview with captured Cricut registration marks when available, sheet pagination,
+  and zoom controls.
 - 300, 600, 900, and 1200 DPI output.
 - Optional playtest label along the bottom edge.
 - Size-check card with a 5 mm measurement grid.
@@ -68,6 +69,22 @@ See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the comple
 
 ## Manual nine-card cutting
 
+Choosing **Manual cutting** in the machine menu automatically selects the nine-card layout. The
+portrait Letter or A4 PDF centers the nine-card block. The sheet editor previews configurable
+vector guides before PDF generation: color, stroke width, placement, card corner or full outlines,
+solid or dashed lines, square or round corners, corner-guide length, and page-edge or full-page
+cut lines. Guides can also be disabled. Front PDFs use the same geometry as the preview; back
+pages remain artwork-only. Print at 100% / Actual size and check one card with a ruler before
+cutting a full sheet.
+
+For registered Cricut layouts, the sheet editor shows the saved Design Space page and places cards
+at the same origin used by PDF export. Partial sheets keep the full layout's occupied-slot positions.
+The eight-card preview applies the same Tabloid-to-Letter translation as export. Before a matching
+capture is available, the editor shows approximate marks.
+
+For Cricut machines, the existing experimental manual alignment profile uses the same nine-card
+geometry with a separate Basic Cut file:
+
 The experimental manual profile fits nine fixed 63 × 88 mm cards in a 191 × 266 mm 3×3 block
 with 1 mm gutters. It produces:
 
@@ -107,6 +124,9 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 - A dedicated Settings area for appearance, the project library location, and user-defined new-project
   defaults. Defaults include every sheet, print, back-side, and alignment setting plus optional shared
   card-back artwork.
+- Manual cut guide options can be edited in Settings and saved as defaults. The sheet editor also has
+  a guide-only Save as defaults button below Page cut guides; it is disabled when guides already match
+  the saved defaults.
 - A desktop project explorer backed by the app's private Application Support directory by default.
 - A one-time macOS importer for projects created in the earlier `Documents/CriProx` library.
 - A configurable projects folder, with one subfolder per saved project.

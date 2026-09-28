@@ -18,7 +18,9 @@ import {
   fullTemplate,
   mirrorBackPlacements,
   registrationKey,
+  type RegistrationProfile,
 } from '../src/lib/registration';
+import { MOCK_REGISTRATION_MARKS, sheetPreviewFrame } from '../src/lib/sheet-preview';
 const entry = {
   id: 'a',
   quantity: 7,
@@ -37,6 +39,100 @@ test('registration layout keeps full bounds and unused slots blank on partial pa
   assert.equal(sheets[1].height, sheets[0].height);
   assert.equal(sheets[1].placements[0].x, 0);
   assert.equal(sheets[1].placements[0].y, 0);
+});
+test('sheet preview places partial 6, 7, and 8-card pages at the exported capture origin', () => {
+  for (const settings of [
+    DEFAULT_SETTINGS,
+    { ...DEFAULT_SETTINGS, profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
+    { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+  ]) {
+    const full = fullTemplate(settings),
+      partial = fixedSheets([{ ...entry, quantity: 1 }], settings)[0];
+    assert.equal(partial.width, full.width);
+    assert.equal(partial.height, full.height);
+    assert.deepEqual(
+      { x: partial.placements[0].x, y: partial.placements[0].y },
+      { x: full.placements[0].x, y: full.placements[0].y },
+    );
+    if (settings.profile === 'eight') continue;
+    const profile = {
+      version: 1 as const,
+      key: registrationKey(settings),
+      name: 'Captured marks',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+      pdf: new Uint8Array(),
+      pageWidthPt: 612,
+      pageHeightPt: 792,
+      leftMm: 14,
+      topMm: 23,
+      preview: 'data:image/png;base64,',
+    } satisfies RegistrationProfile;
+    const frame = sheetPreviewFrame(settings, profile);
+    assert.equal(frame.left, 14);
+    assert.equal(frame.top, 23);
+    assert.equal(frame.master?.left, 0);
+    assert.equal(frame.master?.top, 0);
+    assert.ok(Math.abs(frame.master!.width - 215.9) < 0.001);
+    assert.ok(Math.abs(frame.master!.height - 279.4) < 0.001);
+  }
+});
+test('eight-card preview uses the same Tabloid-to-Letter translation as export', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+    outputFrame = fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
+      left: 12.7,
+      top: 12.7,
+      right: 206.4173,
+      bottom: 282.6173,
+    }),
+    profile = {
+      version: 1 as const,
+      key: registrationKey(settings),
+      name: 'Tabloid capture',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+      pdf: new Uint8Array(),
+      pageWidthPt: 792,
+      pageHeightPt: 1224,
+      leftMm: 21.25,
+      topMm: 21.25,
+      outputFrame,
+      preview: 'data:image/png;base64,',
+    } satisfies RegistrationProfile,
+    frame = sheetPreviewFrame(settings, profile);
+  assert.ok(Math.abs(frame.paper.w - 215.9) < 0.001);
+  assert.ok(Math.abs(frame.paper.h - 279.4) < 0.001);
+  assert.equal(frame.left, outputFrame.leftMm);
+  assert.equal(frame.top, outputFrame.topMm);
+  assert.ok(Math.abs(frame.master!.left - outputFrame.masterXPt / (72 / 25.4)) < 1e-9);
+  assert.ok(
+    Math.abs(frame.master!.top - (279.4 - 431.8 - outputFrame.masterYPt / (72 / 25.4))) < 1e-9,
+  );
+});
+test('uncaptured registered layouts keep the artwork and mock marks on the output page', () => {
+  for (const settings of [
+    DEFAULT_SETTINGS,
+    { ...DEFAULT_SETTINGS, paper: 'a4' as const },
+    { ...DEFAULT_SETTINGS, profile: 'seven' as const, gap: 0.1, bleed: 0.05 },
+    { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+  ]) {
+    const frame = sheetPreviewFrame(settings),
+      full = fullTemplate(settings),
+      offset = MOCK_REGISTRATION_MARKS.offset;
+    assert.ok(Math.abs(frame.left - (frame.paper.w - full.width) / 2) < 1e-9);
+    assert.ok(frame.left - offset > 0);
+    assert.ok(frame.top - offset > 0);
+    assert.ok(frame.left + full.width + offset < frame.paper.w);
+    assert.ok(frame.top + full.height + offset < frame.paper.h);
+    assert.ok(frame.top < (frame.paper.h - full.height) / 2 + 0.001);
+  }
+});
+test('nine-card preview follows manual and Cricut export origins', () => {
+  const manual = sheetPreviewFrame({ ...DEFAULT_SETTINGS, machine: 'manual', profile: 'nine' });
+  const cricut = sheetPreviewFrame({ ...DEFAULT_SETTINGS, profile: 'nine' });
+  const full = fullTemplate({ ...DEFAULT_SETTINGS, profile: 'nine' });
+  assert.ok(Math.abs(manual.left - (215.9 - full.width) / 2) < 1e-9);
+  assert.ok(Math.abs(manual.top - (279.4 - full.height) / 2) < 1e-9);
+  assert.equal(cricut.left, 6.35);
+  assert.equal(cricut.top, 6.35);
 });
 test('capture identity follows cutting geometry and target, not artwork output options', () => {
   const key = registrationKey(DEFAULT_SETTINGS);

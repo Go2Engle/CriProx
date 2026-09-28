@@ -30,16 +30,16 @@
 
 CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, preview the physical layout, and export the matched files needed to finish the job in Design Space.
 
-|                              |                                                                                                                      |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                         |
-| 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.               |
-| 🃏 **Flexible artwork**      | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.                |
+|                              |                                                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                                     |
+| 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
+| 🃏 **Flexible artwork**      | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.                            |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
-| ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.             |
-| 📐 **Manual nine-card cuts** | Print a 3×3 PDF and reuse its matched transparent Basic Cut PNG with a fixed quarter-inch mat inset.                 |
-| 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.  |
-| 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.       |
+| ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.                         |
+| 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
+| 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
+| 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.                   |
 
 > [!IMPORTANT]
 > CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. The manual nine-card profile deliberately bypasses sensor registration and requires repeatable physical mat placement. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
@@ -56,6 +56,13 @@ CriProx also supports a registered-print workflow: save a one-page PDF from Desi
 For higher sheet density, the experimental manual profile prints nine cards on Letter or A4 and
 downloads a matched 191 × 266 mm Basic Cut PNG. It is a physical alignment workflow, not Print Then
 Cut, so validate the page and mat position on plain paper first.
+
+Selecting **Manual cutting** as the machine also uses the nine-card layout. The sheet editor previews
+configurable card and page cut guides as you change their color, width, placement, line style, corners,
+length, and page style. The front PDF uses those guides; backs remain artwork-only. Cricut registered
+layouts show their saved Design Space registration marks and exported card positions in the sheet
+preview. Until a matching capture is saved, the preview uses approximate marks. Print at actual size
+and check the dimensions before cutting.
 
 ## Download
 
