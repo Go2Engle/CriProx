@@ -8,6 +8,7 @@ type RawCard = {
   set_name: string;
   collector_number: string;
   oracle_id: string;
+  layout?: string;
   image_uris?: { png: string; normal: string };
   card_faces?: { name: string; image_uris?: { png: string; normal: string } }[];
 };
@@ -52,7 +53,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   );
   return run;
 }
-function normalize(raw: RawCard): Card {
+export function normalizeScryfallCard(raw: RawCard): Card {
   const faces = raw.image_uris
     ? [{ name: raw.name, image: raw.image_uris.png, preview: raw.image_uris.normal }]
     : (raw.card_faces || [])
@@ -66,6 +67,9 @@ function normalize(raw: RawCard): Card {
     id: raw.id,
     oracleId: raw.oracle_id,
     name: raw.name,
+    ...(raw.layout === 'token' || raw.layout === 'double_faced_token'
+      ? { kind: 'token' as const }
+      : {}),
     set: raw.set,
     setName: raw.set_name,
     collector: raw.collector_number,
@@ -131,7 +135,7 @@ export async function resolveDeck(lines: DeckLine[], progress: (value: string) =
       data = response.data;
       await set(key, { time: Date.now(), data }).catch(() => {});
     }
-    results.push(...data.map(normalize));
+    results.push(...data.map(normalizeScryfallCard));
   }
   for (const line of lines) {
     const card = results.find((candidate) => cardMatchesDeckLine(candidate, line));
@@ -147,9 +151,7 @@ export async function variants(
   card: Card,
   next?: string,
 ): Promise<{ cards: Card[]; next?: string }> {
-  const path = next
-    ? new URL(next).pathname + new URL(next).search
-    : `/cards/search?q=${encodeURIComponent(`oracleid:${card.oracleId} game:paper`)}&unique=prints&order=released`;
+  const path = next ? new URL(next).pathname + new URL(next).search : scryfallVariantsPath(card);
   const key = `variants:${path}`;
   const cached = await get<{ time: number; data: Collection }>(key).catch(() => undefined);
   const result =
@@ -157,15 +159,24 @@ export async function variants(
   if (!cached || Date.now() - cached.time >= 86400000)
     await set(key, { time: Date.now(), data: result }).catch(() => {});
   return {
-    cards: result.data.map(normalize).filter((c) => c.faces.length),
+    cards: result.data.map(normalizeScryfallCard).filter((c) => c.faces.length),
     next: result.has_more ? result.next_page : undefined,
   };
 }
 
+export function scryfallVariantsPath(card: Card) {
+  return `/cards/search?q=${encodeURIComponent(`oracleid:${card.oracleId} game:paper`)}&unique=prints&order=released&include_extras=true`;
+}
+
 export function scryfallSearchPath(query: string) {
-  const name = query.trim().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const trimmed = query.trim();
+  const tokenSearch = /\s+tokens?$/i.test(trimmed);
+  const name = (tokenSearch ? trimmed.replace(/\s+tokens?$/i, '') : trimmed)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"');
   if (!name) throw new Error('Enter a card name to search.');
-  return `/cards/search?q=${encodeURIComponent(`name:"${name}" game:paper`)}&unique=cards&order=name`;
+  const search = `name:"${name}" game:paper${tokenSearch ? ' is:token' : ''}`;
+  return `/cards/search?q=${encodeURIComponent(search)}&unique=cards&order=name&include_extras=true`;
 }
 
 export async function searchCards(
@@ -180,7 +191,7 @@ export async function searchCards(
   if (!cached || Date.now() - cached.time >= 86400000)
     await set(key, { time: Date.now(), data: result }).catch(() => {});
   return {
-    cards: result.data.map(normalize).filter((card) => card.faces.length),
+    cards: result.data.map(normalizeScryfallCard).filter((card) => card.faces.length),
     next: result.has_more ? result.next_page : undefined,
   };
 }

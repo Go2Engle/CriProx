@@ -16,8 +16,19 @@ import {
 } from '../src/lib/types';
 import { validateProject } from '../src/lib/project';
 import { withDpi } from '../src/lib/png';
-import { mpcArtworkAsCard, normalizeMpcArtwork } from '../src/lib/mpc';
-import { cardMatchesDeckLine, scryfallLookupName, scryfallSearchPath } from '../src/lib/scryfall';
+import {
+  mpcArtworkAsCard,
+  mpcArtworkType,
+  mpcExploreSearchPayload,
+  normalizeMpcArtwork,
+} from '../src/lib/mpc';
+import {
+  cardMatchesDeckLine,
+  normalizeScryfallCard,
+  scryfallLookupName,
+  scryfallSearchPath,
+  scryfallVariantsPath,
+} from '../src/lib/scryfall';
 import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
 import { paperWorkflow } from '../src/lib/paper-workflow';
 import {
@@ -98,16 +109,60 @@ test('double-faced deck names use the front face for Scryfall lookup and retain 
   }
   assert.equal(scryfallLookupName('Silundi Vision//Silundi Isle'), 'Silundi Vision');
 });
-test('single-card search constrains partial names to paper cards', () => {
+test('card search includes printable tokens and supports token-only names', () => {
   assert.equal(
     scryfallSearchPath('  Sol Ring  '),
-    '/cards/search?q=name%3A%22Sol%20Ring%22%20game%3Apaper&unique=cards&order=name',
+    '/cards/search?q=name%3A%22Sol%20Ring%22%20game%3Apaper&unique=cards&order=name&include_extras=true',
   );
   assert.equal(
     decodeURIComponent(scryfallSearchPath("Gandalf, Goblins' Bane")),
-    '/cards/search?q=name:"Gandalf, Goblins\' Bane" game:paper&unique=cards&order=name',
+    '/cards/search?q=name:"Gandalf, Goblins\' Bane" game:paper&unique=cards&order=name&include_extras=true',
+  );
+  assert.equal(
+    decodeURIComponent(scryfallSearchPath('Goblin token')),
+    '/cards/search?q=name:"Goblin" game:paper is:token&unique=cards&order=name&include_extras=true',
+  );
+  assert.equal(
+    decodeURIComponent(scryfallSearchPath('Treasure Tokens')),
+    '/cards/search?q=name:"Treasure" game:paper is:token&unique=cards&order=name&include_extras=true',
+  );
+  assert.equal(
+    scryfallVariantsPath({ ...entry.card, oracleId: 'token-oracle-id' }),
+    '/cards/search?q=oracleid%3Atoken-oracle-id%20game%3Apaper&unique=prints&order=released&include_extras=true',
   );
   assert.throws(() => scryfallSearchPath('   '), /card name/);
+});
+test('Scryfall tokens retain their type for MPC artwork searches', () => {
+  const raw = {
+    id: 'goblin-token',
+    oracle_id: 'goblin-oracle',
+    name: 'Goblin',
+    layout: 'token',
+    set: 'tst',
+    set_name: 'Sample Tokens',
+    collector_number: '1',
+    image_uris: {
+      png: 'https://cards.scryfall.io/goblin.png',
+      normal: 'https://cards.scryfall.io/goblin.jpg',
+    },
+  };
+  const card = normalizeScryfallCard(raw);
+  assert.equal(card.kind, 'token');
+  assert.equal(mpcArtworkType(card), 'TOKEN');
+  assert.equal(
+    mpcArtworkType(normalizeScryfallCard({ ...raw, layout: 'double_faced_token' })),
+    'TOKEN',
+  );
+});
+test('MPC artwork searches select the matching card or token category', () => {
+  assert.equal(mpcArtworkType(entry.card), 'CARD');
+  assert.equal(mpcArtworkType({ ...entry.card, setName: 'Older Set Tokens' }), 'TOKEN');
+  const payload = mpcExploreSearchPayload('  Goblin  ', 'TOKEN', 1, [12]);
+  assert.deepEqual(payload.cardTypes, ['TOKEN']);
+  assert.equal(payload.query, 'Goblin');
+  assert.equal(payload.pageStart, 24);
+  assert.equal(payload.searchSettings.searchTypeSettings.filterCardbacks, false);
+  assert.deepEqual(mpcExploreSearchPayload('Sol Ring', 'CARD', 0, [12]).cardTypes, ['CARD']);
 });
 test('deck parser rejects unreasonable counts and caps total', () => {
   assert.equal(parseDeck('0 Island\n101 Forest').errors.length, 2);

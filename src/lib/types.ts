@@ -12,6 +12,7 @@ export type PrintDpi = (typeof PRINT_DPI_OPTIONS)[number];
 export type Card = {
   id: string;
   name: string;
+  kind?: 'token';
   set: string;
   setName: string;
   collector: string;
