@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/Go2Engle/CriProx/compare/v0.9.0...v0.10.0) (2026-09-28)
+
+
+### Features
+
+* **artwork:** import images dropped onto the board ([#58](https://github.com/Go2Engle/CriProx/issues/58)) ([9aec845](https://github.com/Go2Engle/CriProx/commit/9aec8459387c1542ce9c2883a3547f324ea403fb))
+* **cutting:** add manual guides and accurate sheet previews ([#69](https://github.com/Go2Engle/CriProx/issues/69)) ([9fb174b](https://github.com/Go2Engle/CriProx/commit/9fb174bb03adaf403217464aebe0cab7cb0ee34f))
+* **print:** add optional high-detail Scryfall upscaling ([#61](https://github.com/Go2Engle/CriProx/issues/61)) ([b9615d3](https://github.com/Go2Engle/CriProx/commit/b9615d36a6508560c9fc5ead7eb6338ae3175a3f))
+
+
+### Bug Fixes
+
+* **search:** support token cards and token artwork ([#60](https://github.com/Go2Engle/CriProx/issues/60)) ([d6a813a](https://github.com/Go2Engle/CriProx/commit/d6a813a68391a8fef7a360177121d369b3ba50aa))
+
 ## [0.9.0](https://github.com/Go2Engle/CriProx/compare/v0.8.0...v0.9.0) (2026-09-24)
 
 
