@@ -14,6 +14,12 @@ Windows and Linux installers are built on their respective GitHub-hosted runners
 
 CriProx checks the repository for a newer stable release when the desktop app starts. The notice is informational: downloads and installation remain under your control, and automatic update installation is not configured.
 
+## Test installers from a branch
+
+To share a feature build, push the branch to GitHub, open **Actions → Test installers → Run workflow**, select that branch, and start the run. The workflow builds the selected commit on macOS, Windows, and Linux. After the run completes, open it and download the `test-installer-macos`, `test-installer-windows`, or `test-installer-linux` artifact from **Artifacts**. Extract the artifact ZIP to get the DMG, EXE, or AppImage, then share the run link with testers. Testers need to sign in to GitHub and have read access to the repository to download Actions artifacts. The workflow requests 30 days of artifact retention, subject to the repository's retention limit.
+
+These builds use the branch's current application version and are for testing; they are not published as stable releases. Give testers the branch name and commit shown in the run title so they can identify the build when reporting an issue. The same unsigned-installer notes above apply.
+
 ## Opening the unsigned macOS app
 
 Only use a copy downloaded from the official CriProx repository. Move `CriProx.app` to **Applications**, then run:
