@@ -30,6 +30,11 @@ declare global {
       mpcRequest: (path: string, method: 'GET' | 'POST', body?: unknown) => Promise<unknown>;
       deckRequest?: (provider: 'moxfield' | 'archidekt', id: string) => Promise<unknown>;
       saveProject?: (defaultName: string, data: string) => Promise<boolean>;
+      upscayl?: {
+        detect: () => Promise<{ cacheKey: string } | null>;
+        run: (id: string, input: Uint8Array) => Promise<Uint8Array>;
+        cancel: (id: string) => Promise<void>;
+      };
       projects?: {
         list: () => Promise<ProjectLibrarySnapshot>;
         chooseDirectory: () => Promise<ProjectLibrarySnapshot | null>;

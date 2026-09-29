@@ -2,6 +2,11 @@ import { get, set } from 'idb-keyval';
 
 // The worker and its model are constructed only after an explicit opt-in.
 const MODEL_ID = 'esrgan-thick-4x-1.0.0';
+export type UpscaleBackend = 'built-in' | 'upscayl';
+let upscaylRunner: ((id: string, input: Uint8Array) => Promise<Uint8Array>) | undefined;
+export function setUpscaylRunner(runner: typeof upscaylRunner) {
+  upscaylRunner = runner;
+}
 let worker: Worker | undefined;
 const pending = new Map<
   string,
@@ -50,10 +55,47 @@ export async function upscaleScryfallArtwork(
   original: ImageBitmap,
   progress: (text: string) => void,
   name: string,
+  backend: UpscaleBackend = 'built-in',
+  upscaylCacheKey = '',
 ): Promise<ImageBitmap> {
-  const key = `upscaled:${MODEL_ID}:${source}`;
+  const key =
+    backend === 'upscayl'
+      ? `upscaled:ultramix-balanced-4x:${upscaylCacheKey}:${source}`
+      : `upscaled:${MODEL_ID}:${source}`;
   const cached = await get<Blob>(key).catch(() => undefined);
   if (cached) return createImageBitmap(cached);
+
+  if (backend === 'upscayl') {
+    if (!upscaylRunner || !upscaylCacheKey) throw new Error('Upscayl is unavailable.');
+    progress(`Upscaling ${name} with Upscayl…`);
+    const canvas = new OffscreenCanvas(original.width, original.height);
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Could not read the Scryfall card image.');
+    context.drawImage(original, 0, 0);
+    const input = new Uint8Array(
+      await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer(),
+    );
+    canvas.width = canvas.height = 0;
+    const output = await upscaylRunner(crypto.randomUUID(), input);
+    const enhanced = await createImageBitmap(
+      new Blob([new Uint8Array(output)], { type: 'image/png' }),
+    );
+    try {
+      // Upscayl's RGB model may discard transparency. Retain the source corners.
+      const merged = new OffscreenCanvas(enhanced.width, enhanced.height);
+      const mergedContext = merged.getContext('2d');
+      if (!mergedContext) throw new Error('Could not create the upscaled card image.');
+      mergedContext.drawImage(original, 0, 0, merged.width, merged.height);
+      mergedContext.globalCompositeOperation = 'source-in';
+      mergedContext.drawImage(enhanced, 0, 0);
+      const blob = await merged.convertToBlob({ type: 'image/png' });
+      merged.width = merged.height = 0;
+      await set(key, blob).catch(() => {});
+      return createImageBitmap(blob);
+    } finally {
+      enhanced.close();
+    }
+  }
 
   progress(`Loading optional upscale model for ${name}…`);
   const id = crypto.randomUUID();

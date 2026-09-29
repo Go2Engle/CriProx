@@ -7,7 +7,7 @@ import { drawBleedTile, repairTransparentCorners, replicateBorder } from './blee
 import { formatDimensions, formatMeasurement } from './units';
 import { paperWorkflow } from './paper-workflow';
 import { artworkSourceRect, usesMpcTrim, type SourceRect } from './artwork';
-import { isScryfallArtwork, upscaleScryfallArtwork } from './upscale';
+import { isScryfallArtwork, upscaleScryfallArtwork, type UpscaleBackend } from './upscale';
 
 type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
 type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -267,7 +267,12 @@ export async function renderSheet(
   calibration: boolean | 'manual' = false,
   artworkBleedMm = 0,
   exteriorArtworkBleedMm = artworkBleedMm,
-  upscale?: { enabled: boolean; progress: (text: string) => void },
+  upscale?: {
+    enabled: boolean;
+    backend?: UpscaleBackend;
+    upscaylCacheKey?: string;
+    progress: (text: string) => void;
+  },
 ): Promise<Uint8Array> {
   const canvas = renderCanvas(
     mmToPx(sheet.width, settings.dpi),
@@ -294,6 +299,8 @@ export async function renderSheet(
                 original,
                 upscale.progress,
                 p.entry.card.faces[p.entry.face].name,
+                upscale.backend,
+                upscale.upscaylCacheKey,
               );
             } finally {
               original.close();
@@ -302,7 +309,7 @@ export async function renderSheet(
         } catch (error) {
           if (upscale?.enabled && isScryfallArtwork(artworkSource))
             throw new Error(
-              `Could not upscale ${p.entry.card.name}: ${error instanceof Error ? error.message : String(error)}. Turn off upscaling to export the original image.`,
+              `Could not upscale ${p.entry.card.name}: ${error instanceof Error ? error.message : String(error)}. Choose another engine or turn off upscaling to export the original image.`,
             );
           throw new Error(
             `Could not load artwork for ${p.entry.card.name}. Check your connection and retry. No partial sheet was exported.`,

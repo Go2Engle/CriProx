@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld(
     mpcRequest: (path, method, body) => ipcRenderer.invoke('mpc-request', { path, method, body }),
     deckRequest: (provider, id) => ipcRenderer.invoke('deck-request', { provider, id }),
     saveProject: (defaultName, data) => ipcRenderer.invoke('save-project', { defaultName, data }),
+    upscayl: Object.freeze({
+      detect: () => ipcRenderer.invoke('upscayl-detect'),
+      run: (id, input) => ipcRenderer.invoke('upscayl-run', { id, input }),
+      cancel: (id) => ipcRenderer.invoke('upscayl-cancel', id),
+    }),
     projects: Object.freeze({
       list: () => ipcRenderer.invoke('list-projects'),
       chooseDirectory: () => ipcRenderer.invoke('choose-projects-directory'),

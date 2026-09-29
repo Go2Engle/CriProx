@@ -3778,6 +3778,23 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
 .upscale-toggle > span:first-child {
   max-width: calc(100% - 48px);
 }
+.upscale-backend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0;
+  color: #584b65;
+  font-size: 12px;
+}
+.upscale-backend select {
+  max-width: 70%;
+  padding: 8px 10px;
+  border: 1px solid #dcd0ed;
+  border-radius: 7px;
+  background: #fff;
+  color: #34293d;
+}
 .back-print-panel {
   margin-top: 14px;
   padding: 14px 15px;
