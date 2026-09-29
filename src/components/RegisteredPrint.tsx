@@ -72,6 +72,8 @@ export default function RegisteredPrint({
     [busy, setBusy] = useState('Loading template…'),
     [error, setError] = useState(''),
     [upscaleScryfall, setUpscaleScryfall] = useState(false),
+    [upscaleBackend, setUpscaleBackend] = useState<'built-in' | 'upscayl'>('built-in'),
+    [upscaylCacheKey, setUpscaylCacheKey] = useState(''),
     [pdfJobRunning, setPdfJobRunning] = useState(false);
   const [pdf, setPdf] = useState<Uint8Array>(),
     [backPdf, setBackPdf] = useState<Uint8Array>(),
@@ -99,6 +101,18 @@ export default function RegisteredPrint({
     onlyDoubleSided = doubleSidedCount > 0 && !sharedBackRequired,
     registrationTemplates = window.criprox?.registrationTemplates,
     slotCount = full.placements.length;
+  useEffect(() => {
+    let active = true;
+    void window.criprox?.upscayl
+      ?.detect()
+      .then((installation) => {
+        if (active) setUpscaylCacheKey(installation?.cacheKey || '');
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     dialog.current?.showModal();
     if (manualNine) {
@@ -223,7 +237,15 @@ export default function RegisteredPrint({
     setBackPdf(undefined);
     try {
       const result = await preparePdfJob(
-        { kind: 'registered', project, profile, calibration, upscaleScryfall },
+        {
+          kind: 'registered',
+          project,
+          profile,
+          calibration,
+          upscaleScryfall,
+          upscaleBackend,
+          upscaylCacheKey,
+        },
         setBusy,
         controller.signal,
       );
@@ -251,7 +273,7 @@ export default function RegisteredPrint({
     setCutPng(undefined);
     try {
       const result = await preparePdfJob(
-        { kind: 'manual-nine', project, upscaleScryfall },
+        { kind: 'manual-nine', project, upscaleScryfall, upscaleBackend, upscaylCacheKey },
         setBusy,
         controller.signal,
       );
@@ -497,9 +519,8 @@ export default function RegisteredPrint({
           <span>
             Upscale Scryfall card images (high detail)
             <small>
-              Optional · off by default. Downloads a ~28 MB model when needed and processes locally;
-              exports can take much longer. Choose 600+ DPI in Sheet setup to retain the extra
-              detail, and review card text before printing.
+              Optional · off by default. Choose 600+ DPI in Sheet setup to retain extra detail;
+              exports can take much longer. Review card text before printing.
             </small>
           </span>
           <input
@@ -515,6 +536,27 @@ export default function RegisteredPrint({
           />
           <span className="switch" />
         </label>
+        {upscaleScryfall && (
+          <label className="upscale-backend">
+            Upscaling engine
+            <select
+              value={upscaleBackend}
+              disabled={!!busy}
+              onChange={(event) => {
+                setUpscaleBackend(event.target.value as 'built-in' | 'upscayl');
+                setPdf(undefined);
+                setBackPdf(undefined);
+                setCutPng(undefined);
+              }}
+            >
+              <option value="built-in">Built-in ESRGAN · downloads a ~28 MB model</option>
+              <option value="upscayl" disabled={!upscaylCacheKey}>
+                Upscayl · Ultramix (Non-Commercial), 4×
+                {upscaylCacheKey ? '' : ' · not detected'}
+              </option>
+            </select>
+          </label>
+        )}
         <div className={`back-print-panel ${project.settings.backsEnabled ? 'enabled' : ''}`}>
           <label className="switch-row back-toggle">
             <span>

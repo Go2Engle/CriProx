@@ -18,6 +18,7 @@ const {
   saveProjectAsset,
 } = require('./project-library.cjs');
 const { projectLibraryPaths } = require('./project-library-paths.cjs');
+const { findUpscayl, runUpscayl } = require('./upscayl.cjs');
 const {
   loadRegistrationTemplate,
   saveRegistrationTemplate,
@@ -151,6 +152,31 @@ ipcMain.handle('release-check', () => {
 ipcMain.handle('open-release-page', (_event, releaseUrl) => {
   if (!isTrustedReleaseUrl(releaseUrl)) throw new Error('Unsupported release URL.');
   return shell.openExternal(releaseUrl);
+});
+
+const upscaylJobs = new Map();
+ipcMain.handle('upscayl-detect', async () => {
+  const installation = await findUpscayl();
+  return installation ? { cacheKey: installation.cacheKey } : null;
+});
+ipcMain.handle('upscayl-run', async (event, request) => {
+  if (typeof request?.id !== 'string' || !/^[a-f0-9-]{36}$/i.test(request.id))
+    throw new Error('Invalid Upscayl job ID.');
+  const input = request.input;
+  if (!(input instanceof Uint8Array)) throw new Error('Invalid Upscayl image.');
+  const controller = new AbortController();
+  const key = `${event.sender.id}:${request.id}`;
+  if (upscaylJobs.has(key)) throw new Error('Upscayl job is already running.');
+  upscaylJobs.set(key, controller);
+  try {
+    const installation = await findUpscayl();
+    return await runUpscayl(input, installation, { signal: controller.signal });
+  } finally {
+    upscaylJobs.delete(key);
+  }
+});
+ipcMain.handle('upscayl-cancel', (event, id) => {
+  if (typeof id === 'string') upscaylJobs.get(`${event.sender.id}:${id}`)?.abort();
 });
 
 ipcMain.handle('save-project', async (event, request) => {

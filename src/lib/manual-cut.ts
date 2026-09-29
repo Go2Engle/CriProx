@@ -345,6 +345,8 @@ export async function buildManualCutPdf(
   progress: (text: string) => void,
   back = false,
   upscaleScryfall = false,
+  upscaleBackend: 'built-in' | 'upscayl' = 'built-in',
+  upscaylCacheKey = '',
 ): Promise<Uint8Array> {
   if (back && needsSharedCardBack(project.entries) && !project.backArtwork)
     throw new Error(
@@ -372,7 +374,7 @@ export async function buildManualCutPdf(
           false,
           innerBleed,
           outerBleed,
-          { enabled: upscaleScryfall, progress },
+          { enabled: upscaleScryfall, backend: upscaleBackend, upscaylCacheKey, progress },
         ),
       );
     page.drawRectangle({
