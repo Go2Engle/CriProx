@@ -55,7 +55,7 @@ export function validateProject(value: unknown): Project {
   if (
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
-    !['maker', 'explore', 'joy-xtra', 'manual'].includes(s.machine) ||
+    !['maker', 'explore', 'joy-xtra', 'silhouette', 'manual'].includes(s.machine) ||
     !['expanded', 'seven', 'eight', 'nine'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.backBleedEnabled !== 'boolean' ||
@@ -98,13 +98,14 @@ export function validateProject(value: unknown): Project {
     (s.paper !== 'letter' ||
       s.machine === 'joy-xtra' ||
       s.machine === 'manual' ||
+      (s.machine === 'silhouette' && s.profile !== 'eight') ||
       s.width !== 63 ||
       s.height !== 88 ||
       s.gap !== (s.profile === 'seven' ? 0.1 : 1) ||
       s.radius !== STANDARD_CARD_RADIUS_MM)
   )
     throw new Error(
-      'The experimental seven-card and eight-card layouts require a Maker or Explore, US Letter output, 63 × 88 mm cards, 2.5 mm corners, and respectively 0.1 mm or 1 mm spacing.',
+      'The experimental seven-card and eight-card layouts require US Letter output, 63 × 88 mm cards, 2.5 mm corners, and respectively 0.1 mm or 1 mm spacing. Seven cards require a Maker or Explore; eight cards also support experimental Silhouette capture.',
     );
   if (
     s.profile === 'nine' &&
@@ -113,6 +114,12 @@ export function validateProject(value: unknown): Project {
     throw new Error(
       'The manual nine-card layout requires 63 × 88 mm cards, 1 mm spacing, and 2.5 mm corners.',
     );
+  if (s.machine === 'silhouette' && !['expanded', 'eight'].includes(s.profile))
+    throw new Error(
+      'Silhouette Studio supports the four-card layout or experimental eight-card Letter layout.',
+    );
+  if (s.machine === 'silhouette' && s.backsEnabled)
+    throw new Error('Silhouette Studio printing currently supports front sheets only.');
   if (
     p.backArtwork &&
     (typeof p.backArtwork.name !== 'string' ||

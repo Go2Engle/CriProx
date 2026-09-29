@@ -1,4 +1,5 @@
 import RegisteredPrint from './components/RegisteredPrint';
+import SilhouetteRegisteredPrint from './components/SilhouetteRegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
@@ -77,6 +78,7 @@ import { parseDeck } from './lib/deck';
 import { importDeckSource } from './lib/deck-source';
 import { resolveDeck, searchCards, variants } from './lib/scryfall';
 import { exportBundle } from './lib/export';
+import { SILHOUETTE_EIGHT_REGISTRATION_INSET_IN, exportSilhouetteBundle } from './lib/silhouette';
 import { saveProjectAs } from './lib/save-project';
 import {
   openManagedProject as loadManagedProject,
@@ -505,12 +507,16 @@ function SettingsModal({
       ? 'Cricut Maker series'
       : settings.machine === 'explore'
         ? 'Cricut Explore series'
-        : settings.machine === 'manual'
-          ? 'Manual cutting'
-          : 'Cricut Joy Xtra';
+        : settings.machine === 'silhouette'
+          ? 'Silhouette Studio'
+          : settings.machine === 'manual'
+            ? 'Manual cutting'
+            : 'Cricut Joy Xtra';
   const profile =
     settings.profile === 'expanded'
-      ? 'Print and Cut'
+      ? settings.machine === 'silhouette'
+        ? 'Four-card Print & Cut'
+        : 'Print and Cut'
       : settings.profile === 'seven' || settings.profile === 'eight'
         ? 'Experimental Print and Cut'
         : 'Manual Alignment';
@@ -1364,6 +1370,121 @@ function ExportModal({
     </Modal>
   );
 }
+function SilhouetteExportModal({
+  project,
+  sheets,
+  current,
+  close,
+  notify,
+}: {
+  project: Project;
+  sheets: Sheet[];
+  current: number;
+  close: () => void;
+  notify: (text: string) => void;
+}) {
+  const [scope, setScope] = useState<'all' | 'current'>('all');
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+  const selected = scope === 'all' ? sheets : [sheets[current]];
+  async function run() {
+    setBusy('Preparing Silhouette export…');
+    setError('');
+    try {
+      await exportSilhouetteBundle(project, selected, setBusy);
+      notify('Silhouette package downloaded. Start with START-HERE.txt.');
+      close();
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy('');
+    }
+  }
+  return (
+    <Modal
+      title="Ready for Silhouette Studio"
+      subtitle="Artwork and matched cut paths for Print & Cut."
+      close={() => {
+        if (!busy) close();
+      }}
+    >
+      <div className="export-content">
+        <div className="package-visual">
+          <div className="file-icon">
+            <ImagePlus size={28} />
+            <span>PNG</span>
+          </div>
+          <Plus size={20} />
+          <div className="file-icon svg">
+            <Scissors size={28} />
+            <span>DXF</span>
+          </div>
+          <div>
+            <strong>Import both files into Studio.</strong>
+            <p>
+              {project.settings.dpi} DPI artwork · vector cut paths
+              <br />
+              Exact dimensions · setup guide
+            </p>
+          </div>
+        </div>
+        <label className="field-label" htmlFor="silhouette-scope">
+          Sheets to export
+        </label>
+        <select
+          id="silhouette-scope"
+          value={scope}
+          disabled={!!busy}
+          onChange={(event) => setScope(event.target.value as typeof scope)}
+        >
+          <option value="all">All sheets ({sheets.length})</option>
+          <option value="current">Current sheet ({current + 1})</option>
+        </select>
+        <div className="dimension-list">
+          {selected.slice(0, 6).map((sheet) => (
+            <div key={sheet.index}>
+              <span>
+                Sheet {sheet.index + 1} · {sheet.placements.length} cards
+              </span>
+              <strong>{formatDimensions(sheet.width, sheet.height, project.settings.units)}</strong>
+            </div>
+          ))}
+          {selected.length > 6 && (
+            <span className="muted">+ {selected.length - 6} more sheets</span>
+          )}
+        </div>
+        <div className="soft-info">
+          <ShieldCheck size={20} />
+          <span>
+            Turn on registration marks and print through Silhouette Studio. The package does not
+            include marks.
+          </span>
+        </div>
+        {project.settings.profile === 'eight' && (
+          <div className="warning-box">
+            Eight cards occupy 177 × 255 mm. Set all four Studio registration insets to{' '}
+            {SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in (about 10 mm), then confirm the cards and
+            complete marks fit on one US Letter page at actual size.
+          </div>
+        )}
+        {error && (
+          <div className="error-box" role="alert">
+            {error}
+          </div>
+        )}
+      </div>
+      <div className="modal-footer">
+        <span className="muted">
+          {selected.length} sheet{selected.length === 1 ? '' : 's'} · ZIP package
+        </span>
+        <button className="primary" disabled={!!busy} onClick={() => void run()}>
+          {busy ? <LoaderCircle className="spin" size={17} /> : <Download size={17} />}{' '}
+          {busy || 'Download package'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
 function CardArtwork({
   entry,
   label,
@@ -1718,6 +1839,7 @@ function useCapturedRegistration(settings: Settings, refresh: number) {
         const stored = await library.load(
           templateId(settings),
           fullTemplate(settings).placements.length,
+          settings.machine === 'silhouette' ? 'silhouette' : 'cricut',
         );
         if (!stored || (cached?.name === stored.name && cached.capturedAt === stored.capturedAt))
           return;
@@ -1897,7 +2019,7 @@ function SheetPreview({
             ))}
           </svg>
         )}
-        {registered && !captured && (
+        {registered && !captured && settings.machine !== 'silhouette' && (
           <svg
             className="mock-registration-overlay"
             viewBox={`0 0 ${paper.w} ${paper.h}`}
@@ -2668,10 +2790,18 @@ export default function App() {
           >
             <Download size={16} />
             <span className="print-action-long">
-              {project.settings.profile === 'nine' ? 'Create manual cut' : 'Create print PDF'}
+              {project.settings.machine === 'silhouette'
+                ? 'Create print PDF'
+                : project.settings.profile === 'nine'
+                  ? 'Create manual cut'
+                  : 'Create print PDF'}
             </span>
             <span className="print-action-short">
-              {project.settings.profile === 'nine' ? '9-cut' : 'PDF'}
+              {project.settings.machine === 'silhouette'
+                ? 'PDF'
+                : project.settings.profile === 'nine'
+                  ? '9-cut'
+                  : 'PDF'}
             </span>
           </button>
           <button
@@ -3072,7 +3202,18 @@ export default function App() {
                                 manualCutCorrectionX: 0,
                                 manualCutCorrectionY: 0,
                               }
-                            : {}),
+                            : machine === 'silhouette'
+                              ? {
+                                  profile:
+                                    project.settings.profile === 'eight'
+                                      ? ('eight' as const)
+                                      : ('expanded' as const),
+                                  paper: 'letter' as const,
+                                  gap: 1,
+                                  bleed: 0,
+                                  backsEnabled: false,
+                                }
+                              : {}),
                           ...((project.settings.profile === 'seven' ||
                             project.settings.profile === 'eight') &&
                           machine === 'joy-xtra'
@@ -3091,6 +3232,7 @@ export default function App() {
                       <option value="maker">Cricut Maker series</option>
                       <option value="explore">Cricut Explore series</option>
                       <option value="joy-xtra">Cricut Joy Xtra</option>
+                      <option value="silhouette">Silhouette Studio</option>
                       <option value="manual">Manual cutting</option>
                     </select>
                   </div>
@@ -3163,7 +3305,12 @@ export default function App() {
                               height: 88,
                               gap: profile === 'eight' ? 1 : 0.1,
                               radius: STANDARD_CARD_RADIUS_MM,
-                              bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
+                              bleed:
+                                project.settings.machine === 'silhouette' && profile === 'eight'
+                                  ? 0
+                                  : project.settings.bleed > 0
+                                    ? fixedBleedMm({ profile })
+                                    : 0,
                             }
                           : profile === 'nine'
                             ? {
@@ -3192,13 +3339,16 @@ export default function App() {
                     }}
                   >
                     <option value="expanded" disabled={project.settings.machine === 'manual'}>
-                      6 cards · Print and Cut
+                      {project.settings.machine === 'silhouette'
+                        ? '4 cards · Silhouette Print & Cut'
+                        : '6 cards · Print and Cut'}
                     </option>
                     <option
                       value="seven"
                       disabled={
                         project.settings.machine === 'joy-xtra' ||
-                        project.settings.machine === 'manual'
+                        project.settings.machine === 'manual' ||
+                        project.settings.machine === 'silhouette'
                       }
                     >
                       7 cards · Print and Cut · Experimental
@@ -3210,9 +3360,11 @@ export default function App() {
                         project.settings.machine === 'manual'
                       }
                     >
-                      8 cards - Print and Cut - Experimental
+                      {project.settings.machine === 'silhouette'
+                        ? '8 cards · US Letter Studio capture · Experimental'
+                        : '8 cards · Print and Cut · Experimental'}
                     </option>
-                    <option value="nine">
+                    <option value="nine" disabled={project.settings.machine === 'silhouette'}>
                       9 cards ·{' '}
                       {project.settings.machine === 'manual'
                         ? 'Manual cutting'
@@ -3223,12 +3375,16 @@ export default function App() {
                     {project.settings.profile === 'seven'
                       ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
                       : project.settings.profile === 'eight'
-                        ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
-                        : project.settings.profile === 'nine'
-                          ? project.settings.machine === 'manual'
-                            ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
-                            : `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
-                          : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
+                        ? project.settings.machine === 'silhouette'
+                          ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. US Letter experiment: set Left, Top, Right, and Bottom registration insets to ${SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in each (about 10 mm), then check the full-size print and cut borders.`
+                          : `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
+                        : project.settings.machine === 'silhouette'
+                          ? 'Four cards in a 2×2 group. Import the PNG and DXF into Silhouette Studio at their stated size, then keep the group clear of registration-mark zones.'
+                          : project.settings.profile === 'nine'
+                            ? project.settings.machine === 'manual'
+                              ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
+                              : `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
+                            : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
                   </p>
                 </div>
                 {project.settings.machine === 'manual' && (
@@ -3268,20 +3424,32 @@ export default function App() {
                     DPI take longer and create much larger print files.
                   </p>
                 </div>
-                <FrontBleedControl settings={project.settings} change={settings} />
-                <label className="switch-row">
-                  <span>
-                    Print card backs
-                    <small>Optional · manual refeed by default</small>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={project.settings.backsEnabled}
-                    onChange={(e) => settings({ backsEnabled: e.target.checked })}
-                  />
-                  <span className="switch" />
-                </label>
-                {doubleSidedCount > 0 && (
+                {project.settings.machine === 'silhouette' ? (
+                  <p className="field-note">
+                    Use Studio's Print Bleed option for extra artwork beyond the cut edge.
+                  </p>
+                ) : (
+                  <FrontBleedControl settings={project.settings} change={settings} />
+                )}
+                {project.settings.machine === 'silhouette' ? (
+                  <p className="field-note">
+                    This Silhouette export currently prepares front sheets only.
+                  </p>
+                ) : (
+                  <label className="switch-row">
+                    <span>
+                      Print card backs
+                      <small>Optional · manual refeed by default</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={project.settings.backsEnabled}
+                      onChange={(e) => settings({ backsEnabled: e.target.checked })}
+                    />
+                    <span className="switch" />
+                  </label>
+                )}
+                {project.settings.machine !== 'silhouette' && doubleSidedCount > 0 && (
                   <div className="warning-box double-sided-warning" role="status">
                     {doubleSidedCount} double-sided card{doubleSidedCount === 1 ? '' : 's'}{' '}
                     selected.{' '}
@@ -3290,7 +3458,7 @@ export default function App() {
                       : 'Enable Print card backs to include the matching reverse faces.'}
                   </div>
                 )}
-                {project.settings.backsEnabled && (
+                {project.settings.machine !== 'silhouette' && project.settings.backsEnabled && (
                   <button
                     className="text-button back-configure"
                     onClick={() => setModal('registered')}
@@ -3447,7 +3615,20 @@ export default function App() {
           reveal={() => void revealProjectsDirectory()}
         />
       )}
-      {modal === 'registered' && (
+      {modal === 'registered' && project.settings.machine === 'silhouette' && (
+        <SilhouetteRegisteredPrint
+          project={project}
+          close={() => {
+            setModal(null);
+            setRegistrationRefresh((value) => value + 1);
+          }}
+          onCapture={() => setRegistrationRefresh((value) => value + 1)}
+          openOneOff={() => setModal('export')}
+          notify={setToast}
+          updateSettings={settings}
+        />
+      )}
+      {modal === 'registered' && project.settings.machine !== 'silhouette' && (
         <RegisteredPrint
           project={project}
           close={() => {
@@ -3470,6 +3651,15 @@ export default function App() {
         <CardSearchModal close={() => setModal(null)} add={addCard} remaining={500 - count} />
       )}
       {modal === 'guide' && <Guide close={() => setModal(null)} />}
+      {project.settings.machine === 'silhouette' && modal === 'export' && count > 0 && (
+        <SilhouetteExportModal
+          project={project}
+          sheets={sheets}
+          current={currentPage}
+          close={() => setModal(null)}
+          notify={setToast}
+        />
+      )}
       {ENABLE_DESIGN_SPACE_EXPORT && modal === 'export' && count > 0 && (
         <ExportModal
           project={project}

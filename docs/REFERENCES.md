@@ -13,6 +13,16 @@ Workflow references checked September 9, 2026:
 
 Cricut recommends completing printing and cutting in the same Design Space session. Its available Print Then Cut area varies with the machine, paper size, and image shape; CriProx's dashed rectangle is therefore a planning guide, not a firmware model or certified cuttable-area outline.
 
+## Silhouette documentation
+
+Workflow references checked September 29, 2026:
+
+- [Silhouette Studio Basic Edition Print & Cut](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000273382-basic-edition-features)
+- [Studio file types and edition support](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000282776-file-types-and-features)
+- [Studio Print & Cut troubleshooting](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000276219-print-and-cut-troubleshooting)
+
+Studio requires artwork to stay clear of registration marks, exclusion areas, print borders, and cut borders. CriProx's eight-card US Letter route is experimental and requires a complete actual-size capture and a physical test cut.
+
 ## Artwork and card data
 
 - [Scryfall](https://scryfall.com/) supplies card metadata and hosted image references. CriProx follows the [Scryfall API traffic requirements](https://scryfall.com/docs/faqs/i-m-having-trouble-accessing-the-scryfall-api-or-i-m-blocked-17).
@@ -24,6 +34,6 @@ Card data and artwork remain the property of their respective owners. Users are 
 
 ## Independence
 
-CriProx is an independent playtesting utility. It is not affiliated with, endorsed by, or sponsored by Cricut, Wizards of the Coast, Scryfall, MPC Autofill, or their contributors.
+CriProx is an independent playtesting utility. It is not affiliated with, endorsed by, or sponsored by Cricut, Silhouette America, Wizards of the Coast, Scryfall, MPC Autofill, or their contributors.
 
 Third-party names and marks belong to their respective owners and are used only to describe compatibility and data sources.

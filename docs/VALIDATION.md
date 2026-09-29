@@ -46,4 +46,6 @@ Browser checks caught a local-image bug: fetching a data URL was blocked by the 
 
 Follow [the physical acceptance procedure](CRICUT-WORKFLOW.md) before producing a full deck. No software test here certifies perfect machine alignment or reproduces Cricut's registration marks.
 
+The four-card and experimental eight-card Silhouette captures and registered-PDF path have software checks for slot geometry, target-specific template storage, and output page size. The [Silhouette workflow](SILHOUETTE-WORKFLOW.md) still requires a measured print and cut on the target machine; no physical Silhouette result is recorded here.
+
 Local screenshots and test export artifacts are in `output/playwright/` (ignored from source control). The desktop build is in `release/mac-arm64/CriProx.app`.

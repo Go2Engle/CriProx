@@ -1,0 +1,23 @@
+# Silhouette Studio reusable Print & Cut template
+
+Choose **Silhouette Studio** under Cutting method. CriProx offers a fixed four-card layout and an experimental eight-card US Letter layout. The default **Create print PDF** action captures the registration marks from a page printed by Silhouette Studio, then places later card artwork inside that saved page. Studio keeps the cut job; CriProx does not generate registration marks or a native STUDIO/STUDIO3 project.
+
+The eight-card design is **177 × 255 mm**. US Letter is 215.9 × 279.4 mm, leaving little space for Studio's registration marks and exclusion areas. An eight-card setup fit inside the marks with Studio's **Left Inset, Top Inset, Right Inset, and Bottom Inset each set to 0.394 in (about 10 mm)**. Set these values in Studio's Registration Marks settings before placing the setup PNG, and keep them in the saved cut job. This is still a measured experiment: check Studio's print and cut borders at actual size and make a plain-paper test cut. CriProx requires a full one-page Letter capture at actual size and will reject a page without the expected card geometry and surrounding marks. If your setup cannot fit all eight cards inside its print and cut borders, use four cards. CriProx does not shrink the cards or reframe a Tabloid capture for Silhouette. Silhouette's [Print & Cut guide](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000273382-basic-edition-features) requires the design to stay clear of the marks and borders.
+
+## Capture once
+
+1. In **Create print PDF**, download the magenta setup PNG. In Studio, select the actual paper size and cutting mat and turn on **Registration Marks**. For eight-card US Letter sheets, set **Left Inset = 0.394 in, Top Inset = 0.394 in, Right Inset = 0.394 in, and Bottom Inset = 0.394 in**. Place the PNG at the exact dimensions shown in CriProx. Keep all cards together, without rotating or changing their spacing.
+2. Create exactly one rounded cut path per card. Studio can trace the transparent PNG. Alternatively, download the optional DXF paths, set the DXF group to the same dimensions as the PNG, align the card corners, and set the PNG to **No Cut**. Check the Send panel to avoid duplicate cuts. Silhouette Studio Basic Edition can import both PNG and DXF. Save the Studio project under the identifier shown in CriProx.
+3. Turn off Studio **Print Bleed** for the setup print. Print that saved project to a **single-page portrait PDF** at 100% / Actual size, with all registration marks and no printer scaling. Import the PDF into CriProx. CriProx checks the magenta card positions and surrounding marks, then stores the capture for that exact layout.
+
+## Reuse the saved cut job
+
+1. Prepare a size-check PDF in CriProx and inspect the marks and card placement. Print it from a dedicated PDF application at 100% / Actual size, with fit, shrink, headers, and added margins off.
+2. Reopen the **unchanged** saved Studio project and send its existing cut paths to the machine without printing from Studio again. Keep the same paper, mat, orientation, registration settings (including all four insets), and printer setup.
+3. Measure the plain-paper result in both directions and inspect the corners before using card stock. Once it passes, prepare card PDFs from the same capture. Partial final pages keep the full cut job; unused slots remain blank and still cut.
+
+Capture a new template whenever the saved Studio job, cut layout, registration settings, paper, mat, machine, or printer setup changes. This reuse flow is experimental and has not been validated on physical Silhouette hardware. Silhouette's standard instructions say not to change a Studio document after printing; this workflow keeps the saved document unchanged while replacing the printed artwork externally, so a measured test cut is essential.
+
+The dialog also offers a **one-off PNG/DXF export** when you want to build and print each job in Studio instead. That export supports front sheets only. It does not use the reusable registration capture.
+
+Silhouette's official [Print & Cut guide](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000273382-basic-edition-features) covers registration marks, exclusion areas, and keeping the saved job unchanged. Its [file type reference](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000282776-file-types-and-features) documents Basic Edition PNG and DXF support.

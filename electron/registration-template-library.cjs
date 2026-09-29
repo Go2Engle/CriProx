@@ -5,20 +5,28 @@ const path = require('node:path');
 
 const MAX_TEMPLATE_BYTES = 25_000_000;
 const templateIdPattern = /^CP-[A-F0-9]{8}$/;
-const supportedSlotCounts = new Set([6, 7, 8]);
+const supportedSlotCounts = new Set([4, 6, 7, 8]);
 const readOnlyNoFollow = fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW;
 
-function assertTemplateIdentity(templateId, slotCount) {
+function assertTemplateIdentity(templateId, slotCount, requestedTarget) {
   if (typeof templateId !== 'string' || !templateIdPattern.test(templateId))
     throw new Error('Invalid registration template identifier.');
   if (!Number.isInteger(slotCount) || !supportedSlotCounts.has(slotCount))
-    throw new Error('Only six-card, seven-card, and eight-card registration templates are supported.');
-  return { templateId, slotCount };
+    throw new Error(
+      'Only four-card, six-card, seven-card, and eight-card registration templates are supported.',
+    );
+  const target = requestedTarget ?? (slotCount === 4 ? 'silhouette' : 'cricut');
+  if (
+    !['cricut', 'silhouette'].includes(target) ||
+    (target === 'silhouette' ? ![4, 8].includes(slotCount) : ![6, 7, 8].includes(slotCount))
+  )
+    throw new Error('Invalid registration template target or slot count.');
+  return { templateId, slotCount, target };
 }
 
-function registrationTemplateFilename(templateId, slotCount) {
-  const identity = assertTemplateIdentity(templateId, slotCount);
-  return `${identity.templateId}-${identity.slotCount}-cut-cricut-template.pdf`;
+function registrationTemplateFilename(templateId, slotCount, target) {
+  const identity = assertTemplateIdentity(templateId, slotCount, target);
+  return `${identity.templateId}-${identity.slotCount}-cut-${identity.target}-template.pdf`;
 }
 
 function templateBytes(value) {
@@ -37,7 +45,11 @@ function templateBytes(value) {
 async function saveRegistrationTemplate(root, request) {
   if (typeof root !== 'string' || !path.isAbsolute(root))
     throw new Error('Project library folder must be an absolute path.');
-  const filename = registrationTemplateFilename(request?.templateId, request?.slotCount);
+  const filename = registrationTemplateFilename(
+    request?.templateId,
+    request?.slotCount,
+    request?.target,
+  );
   const bytes = templateBytes(request?.pdf);
   await fs.mkdir(root, { recursive: true });
   const target = path.join(root, filename);
@@ -55,7 +67,11 @@ async function saveRegistrationTemplate(root, request) {
 async function loadRegistrationTemplate(root, request) {
   if (typeof root !== 'string' || !path.isAbsolute(root))
     throw new Error('Project library folder must be an absolute path.');
-  const filename = registrationTemplateFilename(request?.templateId, request?.slotCount);
+  const filename = registrationTemplateFilename(
+    request?.templateId,
+    request?.slotCount,
+    request?.target,
+  );
   const target = path.join(root, filename);
   let handle;
   try {

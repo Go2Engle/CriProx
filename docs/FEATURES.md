@@ -36,6 +36,8 @@ The print PDF dialog also offers **Upscale Scryfall card images (high detail)**.
 
 ## Export packages
 
+Selecting **Silhouette Studio** offers a four-card 2 × 2 layout and an experimental eight-card US Letter layout. The default workflow captures a marked setup PDF from Studio and reuses it for later card sheets. The eight-card capture requires a complete, actual-size Letter page with all marks clear of the design. A one-off ZIP with PNG artwork and DXF cut paths remains available as an alternative; that export supports front sheets only. See the [Silhouette workflow](SILHOUETTE-WORKFLOW.md).
+
 A normal export can include:
 
 - Transparent artwork PNGs with one opaque, rounded silhouette per card.
@@ -50,14 +52,14 @@ The SVG is a geometry reference or a separate Basic Cut template. It is not a re
 
 ## Registered printing
 
-CriProx can import a one-page PDF captured from Design Space, recognize the surrounding marks, and place current artwork into that template without changing the saved cut geometry.
+CriProx can import a one-page PDF captured from Design Space or Silhouette Studio, recognize the surrounding marks, and place current artwork into that template without changing the saved cut geometry.
 
 - Front and back bleed are independent toggles.
 - Front bleed and the bleed between card backs are fixed at 0.5 mm for six-card and eight-card sheets and
   0.05 mm for seven-card sheets. Back sheets extend artwork 1.5 mm past exposed outside edges to
   hide small front-to-back alignment shifts.
-- The captured PDF must correspond to the exact saved Design Space cut job.
-- The desktop app stores verified six-cut, seven-cut, and eight-cut captures as PDFs at the root of the selected
+- The captured PDF must correspond to the exact saved cutter-software cut job.
+- The desktop app stores verified four-cut and eight-cut Silhouette and six-cut, seven-cut, and eight-cut Cricut captures as PDFs at the root of the selected
   CriProx project library and loads them automatically whenever their exact cut geometry is selected.
   Existing captures in local app storage are copied into the library on first use.
 - CriProx preserves captured marks; it does not generate or imitate them.
@@ -65,7 +67,7 @@ CriProx can import a one-page PDF captured from Design Space, recognize the surr
   and reduce higher-resolution output. Print the saved file from a dedicated PDF application at
   100% / Actual size with fit-to-page disabled.
 
-See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the complete setup and reuse procedure.
+See the [Cricut workflow](CRICUT-WORKFLOW.md) or [Silhouette workflow](SILHOUETTE-WORKFLOW.md) for setup and reuse procedures.
 
 ## Manual nine-card cutting
 

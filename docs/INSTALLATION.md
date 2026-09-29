@@ -4,11 +4,11 @@
 
 Download the newest stable build from [GitHub Releases](https://github.com/Go2Engle/CriProx/releases/latest).
 
-| Platform | Release package    | Support notes                                                                                   |
-| -------- | ------------------ | ----------------------------------------------------------------------------------------------- |
-| macOS    | Universal DMG      | Runs on Apple Silicon and Intel Macs. The application is currently unsigned and not notarized.  |
-| Windows  | x64 NSIS installer | The installer is currently unsigned and may trigger a SmartScreen warning.                      |
-| Linux    | x64 AppImage       | CriProx can create project and export files, but Cricut Design Space is not available on Linux. |
+| Platform | Release package    | Support notes                                                                                                                                          |
+| -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS    | Universal DMG      | Runs on Apple Silicon and Intel Macs. The application is currently unsigned and not notarized.                                                         |
+| Windows  | x64 NSIS installer | The installer is currently unsigned and may trigger a SmartScreen warning.                                                                             |
+| Linux    | x64 AppImage       | CriProx can create project and export files. Check Silhouette Studio availability on your distribution; Cricut Design Space is not available on Linux. |
 
 Windows and Linux installers are built on their respective GitHub-hosted runners. Runtime behavior can still vary by distribution, graphics stack, printer driver, and security settings, so issue reports should include the CriProx version and operating-system details.
 
