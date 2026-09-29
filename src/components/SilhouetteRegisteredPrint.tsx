@@ -6,13 +6,13 @@ import { formatDimensions } from '../lib/units';
 import {
   fullTemplate,
   registrationKey,
+  SILHOUETTE_EIGHT_REGISTRATION_INSET_IN,
   templateId,
   type RegistrationProfile,
 } from '../lib/registration';
 import { captureProfile, downloadSetup } from '../lib/registered-pdf';
 import { preparePdfJob } from '../lib/pdf-worker';
 import { download } from '../lib/export';
-import { SILHOUETTE_EIGHT_REGISTRATION_INSET_IN, silhouetteDxf } from '../lib/silhouette';
 import FrontBleedControl from './FrontBleedControl';
 import PdfPagePreview from './PdfPagePreview';
 
@@ -20,14 +20,12 @@ export default function SilhouetteRegisteredPrint({
   project,
   close,
   onCapture,
-  openOneOff,
   notify,
   updateSettings,
 }: {
   project: Project;
   close: () => void;
   onCapture: () => void;
-  openOneOff: () => void;
   notify: (text: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
 }) {
@@ -106,12 +104,6 @@ export default function SilhouetteRegisteredPrint({
     } finally {
       setBusy('');
     }
-  }
-  function cutPaths() {
-    download(
-      new Blob([silhouetteDxf(full, project.settings)], { type: 'application/dxf' }),
-      `${id}-setup-cut-paths.dxf`,
-    );
   }
   async function capture(file?: File) {
     if (!file) return;
@@ -264,20 +256,16 @@ export default function SilhouetteRegisteredPrint({
                   <strong>{SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in</strong>
                 </>
               )}
-              , and place the PNG at{' '}
+              . Turn on PNG Autotrace under Edit → Preferences → Import, then open the magenta PNG
+              in Studio. Resize the selected PNG to{' '}
               <strong>{formatDimensions(full.width, full.height, project.settings.units)}</strong>{' '}
-              without rotating or splitting its {slotCount} cards. Studio can create cut outlines
-              when it imports the transparent PNG (Edit → Preferences → Import → PNG Autotrace). If
-              no outlines appear, open the Trace panel, select the whole PNG as the trace area, and
-              choose Trace Outer Edge. Or import the matching DXF paths and set the PNG to No Cut.
-              In Send, confirm exactly {slotCount} rounded outlines will cut. Save this Studio
-              project as <strong>{id}</strong>.
+              without rotating or splitting its {slotCount} cards. With the whole PNG selected,
+              click <strong>Center to Page</strong> in Studio’s Align controls. In Send, confirm
+              exactly {slotCount} rounded card outlines will cut. If no outlines appear, enable PNG
+              Autotrace and reopen the PNG. Save this Studio project as <strong>{id}</strong>.
             </p>
             <button className="secondary" disabled={!!busy} onClick={() => void setup()}>
               <Download size={15} /> Download setup PNG
-            </button>{' '}
-            <button className="secondary" disabled={!!busy} onClick={cutPaths}>
-              <Download size={15} /> Optional DXF cut paths
             </button>
           </div>
         </div>
@@ -344,13 +332,6 @@ export default function SilhouetteRegisteredPrint({
           the Studio job, registration settings, paper, mat, machine, or printer setup. Unused slots
           on a partial final page remain in the saved cut job.
         </p>
-        <button
-          className="text-button"
-          disabled={!!busy || !project.entries.length}
-          onClick={openOneOff}
-        >
-          Use the one-off PNG/DXF export instead
-        </button>
         {error && (
           <div className="error-box" role="alert">
             {error}

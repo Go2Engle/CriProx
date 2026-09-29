@@ -88,6 +88,7 @@ const placeholder: Entry = {
 export function fullTemplate(settings: Settings): Sheet {
   return layout([{ ...placeholder, quantity: grid(settings).capacity }], settings)[0];
 }
+export const SILHOUETTE_EIGHT_REGISTRATION_INSET_IN = '0.394';
 export function registrationKey(s: Settings): string {
   // Deliberately omit artwork, DPI, labels, display units, bleed, manual-cut
   // calibration, and all card-back options; none changes the cut geometry.

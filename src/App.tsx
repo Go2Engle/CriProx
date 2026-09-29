@@ -78,7 +78,6 @@ import { parseDeck } from './lib/deck';
 import { importDeckSource } from './lib/deck-source';
 import { resolveDeck, searchCards, variants } from './lib/scryfall';
 import { exportBundle } from './lib/export';
-import { SILHOUETTE_EIGHT_REGISTRATION_INSET_IN, exportSilhouetteBundle } from './lib/silhouette';
 import { saveProjectAs } from './lib/save-project';
 import {
   openManagedProject as loadManagedProject,
@@ -95,6 +94,7 @@ import {
   fixedSheets,
   fullTemplate,
   registrationKey,
+  SILHOUETTE_EIGHT_REGISTRATION_INSET_IN,
   templateId,
   type RegistrationProfile,
 } from './lib/registration';
@@ -1363,121 +1363,6 @@ function ExportModal({
           {selected.length} sheet{selected.length === 1 ? '' : 's'} · ZIP package
         </span>
         <button className="primary" disabled={!!busy} onClick={() => run()}>
-          {busy ? <LoaderCircle className="spin" size={17} /> : <Download size={17} />}{' '}
-          {busy || 'Download package'}
-        </button>
-      </div>
-    </Modal>
-  );
-}
-function SilhouetteExportModal({
-  project,
-  sheets,
-  current,
-  close,
-  notify,
-}: {
-  project: Project;
-  sheets: Sheet[];
-  current: number;
-  close: () => void;
-  notify: (text: string) => void;
-}) {
-  const [scope, setScope] = useState<'all' | 'current'>('all');
-  const [busy, setBusy] = useState('');
-  const [error, setError] = useState('');
-  const selected = scope === 'all' ? sheets : [sheets[current]];
-  async function run() {
-    setBusy('Preparing Silhouette export…');
-    setError('');
-    try {
-      await exportSilhouetteBundle(project, selected, setBusy);
-      notify('Silhouette package downloaded. Start with START-HERE.txt.');
-      close();
-    } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      setBusy('');
-    }
-  }
-  return (
-    <Modal
-      title="Ready for Silhouette Studio"
-      subtitle="Artwork and matched cut paths for Print & Cut."
-      close={() => {
-        if (!busy) close();
-      }}
-    >
-      <div className="export-content">
-        <div className="package-visual">
-          <div className="file-icon">
-            <ImagePlus size={28} />
-            <span>PNG</span>
-          </div>
-          <Plus size={20} />
-          <div className="file-icon svg">
-            <Scissors size={28} />
-            <span>DXF</span>
-          </div>
-          <div>
-            <strong>Import both files into Studio.</strong>
-            <p>
-              {project.settings.dpi} DPI artwork · vector cut paths
-              <br />
-              Exact dimensions · setup guide
-            </p>
-          </div>
-        </div>
-        <label className="field-label" htmlFor="silhouette-scope">
-          Sheets to export
-        </label>
-        <select
-          id="silhouette-scope"
-          value={scope}
-          disabled={!!busy}
-          onChange={(event) => setScope(event.target.value as typeof scope)}
-        >
-          <option value="all">All sheets ({sheets.length})</option>
-          <option value="current">Current sheet ({current + 1})</option>
-        </select>
-        <div className="dimension-list">
-          {selected.slice(0, 6).map((sheet) => (
-            <div key={sheet.index}>
-              <span>
-                Sheet {sheet.index + 1} · {sheet.placements.length} cards
-              </span>
-              <strong>{formatDimensions(sheet.width, sheet.height, project.settings.units)}</strong>
-            </div>
-          ))}
-          {selected.length > 6 && (
-            <span className="muted">+ {selected.length - 6} more sheets</span>
-          )}
-        </div>
-        <div className="soft-info">
-          <ShieldCheck size={20} />
-          <span>
-            Turn on registration marks and print through Silhouette Studio. The package does not
-            include marks.
-          </span>
-        </div>
-        {project.settings.profile === 'eight' && (
-          <div className="warning-box">
-            Eight cards occupy 177 × 255 mm. Set all four Studio registration insets to{' '}
-            {SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in (about 10 mm), then confirm the cards and
-            complete marks fit on one US Letter page at actual size.
-          </div>
-        )}
-        {error && (
-          <div className="error-box" role="alert">
-            {error}
-          </div>
-        )}
-      </div>
-      <div className="modal-footer">
-        <span className="muted">
-          {selected.length} sheet{selected.length === 1 ? '' : 's'} · ZIP package
-        </span>
-        <button className="primary" disabled={!!busy} onClick={() => void run()}>
           {busy ? <LoaderCircle className="spin" size={17} /> : <Download size={17} />}{' '}
           {busy || 'Download package'}
         </button>
@@ -3379,7 +3264,7 @@ export default function App() {
                           ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. US Letter experiment: set Left, Top, Right, and Bottom registration insets to ${SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in each (about 10 mm), then check the full-size print and cut borders.`
                           : `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
                         : project.settings.machine === 'silhouette'
-                          ? 'Four cards in a 2×2 group. Import the PNG and DXF into Silhouette Studio at their stated size, then keep the group clear of registration-mark zones.'
+                          ? 'Four cards in a 2×2 group. Import the magenta setup PNG into Silhouette Studio at its stated size, center it on the page, and keep it clear of registration-mark zones.'
                           : project.settings.profile === 'nine'
                             ? project.settings.machine === 'manual'
                               ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
@@ -3623,7 +3508,6 @@ export default function App() {
             setRegistrationRefresh((value) => value + 1);
           }}
           onCapture={() => setRegistrationRefresh((value) => value + 1)}
-          openOneOff={() => setModal('export')}
           notify={setToast}
           updateSettings={settings}
         />
@@ -3651,15 +3535,6 @@ export default function App() {
         <CardSearchModal close={() => setModal(null)} add={addCard} remaining={500 - count} />
       )}
       {modal === 'guide' && <Guide close={() => setModal(null)} />}
-      {project.settings.machine === 'silhouette' && modal === 'export' && count > 0 && (
-        <SilhouetteExportModal
-          project={project}
-          sheets={sheets}
-          current={currentPage}
-          close={() => setModal(null)}
-          notify={setToast}
-        />
-      )}
       {ENABLE_DESIGN_SPACE_EXPORT && modal === 'export' && count > 0 && (
         <ExportModal
           project={project}

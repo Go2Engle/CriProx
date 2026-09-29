@@ -36,7 +36,7 @@ The print PDF dialog also offers **Upscale Scryfall card images (high detail)**.
 
 ## Export packages
 
-Selecting **Silhouette Studio** offers a four-card 2 × 2 layout and an experimental eight-card US Letter layout. The default workflow captures a marked setup PDF from Studio and reuses it for later card sheets. The eight-card capture requires a complete, actual-size Letter page with all marks clear of the design. A one-off ZIP with PNG artwork and DXF cut paths remains available as an alternative; that export supports front sheets only. See the [Silhouette workflow](SILHOUETTE-WORKFLOW.md).
+Selecting **Silhouette Studio** offers a four-card 2 × 2 layout and an experimental eight-card US Letter layout. Import the magenta setup PNG into Studio, size it, use Center to Page, and save its cut job. CriProx captures the marked setup PDF from Studio and reuses it for later card sheets. The eight-card capture requires a complete, actual-size Letter page with all marks clear of the design. Silhouette registered output supports front sheets only. See the [Silhouette workflow](SILHOUETTE-WORKFLOW.md).
 
 A normal export can include:
 

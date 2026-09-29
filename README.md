@@ -57,7 +57,7 @@ Silhouette Studio likewise supplies its own Print & Cut registration marks and c
 
 CriProx also supports a registered-print workflow: save a one-page PDF from Design Space, import it into CriProx, and reuse those captured marks for later artwork pages while keeping the cut geometry unchanged.
 
-For Silhouette cutters, choose **Silhouette Studio** as the cutting method. Create a saved cut job in Studio, capture its marked print PDF in CriProx, and reuse it for later artwork sheets. An experimental eight-card US Letter layout fits inside Studio's marks with the Left, Top, Right, and Bottom registration insets each set to **0.394 in (about 10 mm)**; check the full-size borders and make a test cut. A one-off PNG/DXF export is also available. See the [Silhouette workflow](docs/SILHOUETTE-WORKFLOW.md).
+For Silhouette cutters, choose **Silhouette Studio** as the cutting method. Import the magenta setup PNG into Studio, resize it, click **Center to Page**, and save the Studio cut job. Capture its marked print PDF in CriProx and reuse it for later artwork sheets. An experimental eight-card US Letter layout fits inside Studio's marks with the Left, Top, Right, and Bottom registration insets each set to **0.394 in (about 10 mm)**; check the full-size borders and make a test cut. See the [Silhouette workflow](docs/SILHOUETTE-WORKFLOW.md).
 
 For higher sheet density, the experimental manual profile prints nine cards on Letter or A4 and
 downloads a matched 191 × 266 mm Basic Cut PNG. It is a physical alignment workflow, not Print Then
