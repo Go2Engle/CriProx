@@ -20,13 +20,19 @@ setUpscaylRunner(
     }),
 );
 
-self.onmessage = async ({
-  data,
-}: MessageEvent<
-  | PdfWorkerRequest
-  | { id: string; type: 'upscayl-result'; nativeId: string; output?: Uint8Array; error?: string }
->) => {
+self.onmessage = async (
+  event: MessageEvent<
+    | PdfWorkerRequest
+    | { id: string; type: 'upscayl-result'; nativeId: string; output?: Uint8Array; error?: string }
+  >,
+) => {
+  // Dedicated worker messages come through the parent's implicit port, which
+  // has an empty origin. Reject synthetic or unexpected cross-context events.
+  if (event.origin !== '') return;
+  const { data } = event;
+  if (!data || typeof data.id !== 'string') return;
   if (!('kind' in data)) {
+    if (data.type !== 'upscayl-result' || data.id !== activeJobId) return;
     const pending = pendingUpscayl.get(data.nativeId);
     if (!pending) return;
     pendingUpscayl.delete(data.nativeId);

@@ -64,7 +64,20 @@ async function runUpscayl(input, installation, { signal, spawnProcess = spawn } 
     await new Promise((resolve, reject) => {
       const child = spawnProcess(
         installation.binary,
-        ['-i', source, '-o', output, '-m', installation.models, '-n', MODEL, '-s', '4', '-f', 'png'],
+        [
+          '-i',
+          source,
+          '-o',
+          output,
+          '-m',
+          installation.models,
+          '-n',
+          MODEL,
+          '-s',
+          '4',
+          '-f',
+          'png',
+        ],
         { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] },
       );
       let errorText = '';
@@ -87,10 +100,17 @@ async function runUpscayl(input, installation, { signal, spawnProcess = spawn } 
           );
       });
     });
-    const stat = await fs.stat(output);
-    if (!stat.size || stat.size > MAX_OUTPUT_BYTES)
-      throw new Error('Upscayl produced an invalid or oversized image.');
-    return await fs.readFile(output);
+    const resultFile = await fs.open(output, 'r');
+    try {
+      const stat = await resultFile.stat();
+      if (!stat.isFile() || !stat.size || stat.size > MAX_OUTPUT_BYTES)
+        throw new Error('Upscayl produced an invalid or oversized image.');
+      const result = await resultFile.readFile();
+      if (result.length > MAX_OUTPUT_BYTES) throw new Error('Upscayl produced an oversized image.');
+      return result;
+    } finally {
+      await resultFile.close();
+    }
   } finally {
     await fs.rm(directory, { recursive: true, force: true });
   }
