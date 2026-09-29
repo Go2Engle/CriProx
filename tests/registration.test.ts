@@ -283,6 +283,7 @@ function fixture(
   top = 30,
   paperWidth = 215.9,
   paperHeight = 279.4,
+  softEdges = false,
 ) {
   const w = Math.round(paperWidth * 4),
     h = Math.round(paperHeight * 4),
@@ -294,20 +295,23 @@ function fixture(
     for (let x = 0; x < w; x++) {
       const mx = ((x + 0.5) / sx - left) / scale,
         my = ((y + 0.5) / sy - top) / scale;
-      let inside = filled && mx >= 0 && my >= 0 && mx <= sheet.width && my <= sheet.height;
+      let inside = filled && mx >= 0 && my >= 0 && mx <= sheet.width && my <= sheet.height,
+        distance = Infinity;
       for (const [index, p] of sheet.placements.entries()) {
         if (missingSlot && index === 3) continue;
         const r = settings.radius,
           qx = Math.abs(mx - p.x - p.width / 2) - (p.width / 2 - r),
           qy = Math.abs(my - p.y - p.height / 2) - (p.height / 2 - r);
-        if (Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r < 0)
-          inside = true;
+        const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+        distance = Math.min(distance, d);
+        if (d < 0) inside = true;
       }
       if (inside) {
-        const i = (y * w + x) * 4;
-        data[i] = 230;
-        data[i + 1] = 0;
-        data[i + 2] = 200;
+        const i = (y * w + x) * 4,
+          opacity = softEdges && distance > -0.3 ? 0.32 : 1;
+        data[i] = Math.round(255 - 25 * opacity);
+        data[i + 1] = Math.round(255 - 255 * opacity);
+        data[i + 2] = Math.round(255 - 55 * opacity);
       }
       if (
         marks &&
@@ -325,6 +329,17 @@ test('capture detects translated template within raster precision', () => {
   const p = detectTemplate(f.data, f.w, f.h, 215.9, 279.4, DEFAULT_SETTINGS);
   assert.ok(Math.abs(p.leftMm - 24) < 0.15);
   assert.ok(Math.abs(p.topMm - 30) < 0.15);
+});
+test('capture accepts softened edges without accepting a resized template', () => {
+  const f = fixture(1, false, true, false, DEFAULT_SETTINGS, 24, 30, 215.9, 279.4, true);
+  const p = detectTemplate(f.data, f.w, f.h, 215.9, 279.4, DEFAULT_SETTINGS);
+  assert.ok(Math.abs(p.leftMm - 24) < 0.15);
+  assert.ok(Math.abs(p.topMm - 30) < 0.15);
+  const scaled = fixture(0.995, false, true, false, DEFAULT_SETTINGS, 24, 30, 215.9, 279.4, true);
+  assert.throws(
+    () => detectTemplate(scaled.data, scaled.w, scaled.h, 215.9, 279.4, DEFAULT_SETTINGS),
+    /captured template measures/,
+  );
 });
 test('capture recognizes the seven-card 2-3-2 pattern on Letter', () => {
   const settings = {
