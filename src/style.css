@@ -1161,11 +1161,26 @@ h1 > span {
 .guide-save-defaults {
   padding-bottom: 13px;
 }
-.guide-save-defaults button {
+.guide-save-defaults button,
+.sheet-save-defaults button {
   width: 100%;
 }
-.guide-save-defaults .field-note {
+.guide-save-defaults .field-note,
+.sheet-save-defaults .field-note {
   margin-top: 8px;
+}
+.sheet-save-defaults {
+  border-top: 1px solid #efedf3;
+  padding-top: 18px;
+  margin-bottom: 16px;
+}
+.sheet-default-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sheet-default-actions button {
+  flex: 1 1 175px;
 }
 .manual-guide-controls--defaults {
   margin: 17px 0 0 46px;
@@ -2906,6 +2921,9 @@ html[data-theme='dark'] .app-shell .guide-choice button.selected {
   }
   .settings-content .switch-row {
     align-self: center;
+  }
+  .sheet-save-defaults {
+    grid-column: 1 / -1;
   }
   .selection-details {
     margin: 0;

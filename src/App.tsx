@@ -67,8 +67,10 @@ import {
   manualGuideDefaultsFrom,
   projectDefaultsFrom,
   projectFromDefaults,
+  sheetSettingsMatch,
   validateProjectDefaults,
   withManualGuideDefaults,
+  withSheetSettingsDefaults,
   type ManualGuideDefaults,
   type ProjectDefaults,
 } from './lib/project-defaults';
@@ -2024,6 +2026,7 @@ export default function App() {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(getInitialColorTheme);
   const [project, setProject] = useState<Project>(createSample),
     [projectDefaults, setProjectDefaults] = useState<ProjectDefaults>(FACTORY_PROJECT_DEFAULTS),
+    [savingSheetDefaults, setSavingSheetDefaults] = useState(false),
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
   const [modal, setModal] = useState<
@@ -2291,6 +2294,24 @@ export default function App() {
     } catch {
       setToast('Could not save manual cut guide defaults on this device.');
     }
+  }
+  async function saveSheetSettingsAsDefaults() {
+    const next = withSheetSettingsDefaults(projectDefaults, project.settings);
+    setSavingSheetDefaults(true);
+    try {
+      await set(PROJECT_DEFAULTS_KEY, next);
+      setProjectDefaults(next);
+      setToast('Sheet setup defaults saved for new projects.');
+    } catch {
+      setToast('Could not save sheet setup defaults on this device.');
+    } finally {
+      setSavingSheetDefaults(false);
+    }
+  }
+  function loadSheetSettingsDefaults() {
+    settings(projectDefaults.settings);
+    setPage(0);
+    setToast('Saved sheet setup applied to the current project.');
   }
   async function restoreFactoryProjectDefaults() {
     const next = projectDefaultsFrom(projectFromDefaults(FACTORY_PROJECT_DEFAULTS));
@@ -3049,7 +3070,7 @@ export default function App() {
                   className="icon-button"
                   aria-label="Reset sheet settings to project defaults"
                   title="Reset sheet settings to project defaults"
-                  onClick={() => settings(projectDefaults.settings)}
+                  onClick={loadSheetSettingsDefaults}
                 >
                   <RotateCcw size={15} />
                 </button>
@@ -3237,12 +3258,7 @@ export default function App() {
                   </p>
                 </div>
                 {project.settings.machine === 'manual' && (
-                  <ManualGuideControls
-                    settings={project.settings}
-                    change={settings}
-                    savedDefaults={projectDefaults.settings}
-                    saveDefaults={saveManualGuideSettingsAsDefaults}
-                  />
+                  <ManualGuideControls settings={project.settings} change={settings} />
                 )}
                 <div className="settings-divider" />
                 <div className="section-label">
@@ -3357,6 +3373,38 @@ export default function App() {
                     </button>
                   </div>
                 )}
+                <div className="sheet-save-defaults">
+                  <div className="sheet-default-actions">
+                    <button
+                      className="secondary compact"
+                      type="button"
+                      disabled={
+                        savingSheetDefaults ||
+                        sheetSettingsMatch(project.settings, projectDefaults.settings)
+                      }
+                      onClick={() => void saveSheetSettingsAsDefaults()}
+                    >
+                      <Save size={14} />
+                      {savingSheetDefaults ? 'Saving…' : 'Save sheet setup defaults'}
+                    </button>
+                    <button
+                      className="secondary compact"
+                      type="button"
+                      disabled={
+                        savingSheetDefaults ||
+                        sheetSettingsMatch(project.settings, projectDefaults.settings)
+                      }
+                      onClick={loadSheetSettingsDefaults}
+                    >
+                      <RotateCcw size={14} /> Load sheet setup defaults
+                    </button>
+                  </div>
+                  <p className="field-note">
+                    {sheetSettingsMatch(project.settings, projectDefaults.settings)
+                      ? 'Sheet setup already matches the saved defaults.'
+                      : 'Save all sheet setup options for new projects, or load your saved setup here.'}
+                  </p>
+                </div>
               </div>
             </aside>
           </div>

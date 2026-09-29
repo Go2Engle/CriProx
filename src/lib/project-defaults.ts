@@ -12,6 +12,19 @@ export const FACTORY_PROJECT_DEFAULTS: ProjectDefaults = {
   settings: { ...DEFAULT_SETTINGS },
 };
 
+export function sheetSettingsMatch(a: Settings, b: Settings): boolean {
+  return (Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).every(
+    (field) => a[field] === b[field],
+  );
+}
+
+export function withSheetSettingsDefaults(
+  defaults: ProjectDefaults,
+  source: Settings,
+): ProjectDefaults {
+  return { ...defaults, settings: { ...source } };
+}
+
 export type ManualGuideDefaults = Pick<
   Settings,
   | 'manualGuidesEnabled'
