@@ -7,6 +7,7 @@ import {
   buildBackAlignmentPdfs,
   buildRegisteredBackPdf,
   buildRegisteredPdf,
+  capturePaperSizeMm,
   mirroredBackSheet,
 } from '../src/lib/registered-pdf';
 import {
@@ -18,6 +19,7 @@ import {
   fullTemplate,
   mirrorBackPlacements,
   registrationKey,
+  templateId,
   type RegistrationProfile,
 } from '../src/lib/registration';
 import { MOCK_REGISTRATION_MARKS, sheetPreviewFrame } from '../src/lib/sheet-preview';
@@ -309,11 +311,14 @@ function fixture(
         data[i + 1] = 0;
         data[i + 2] = 200;
       }
-      if (
-        marks &&
-        ((x > 40 && x < 80 && y > 40 && y < 48) ||
-          (x > w - 80 && x < w - 40 && y > h - 48 && y < h - 40))
-      ) {
+      const silhouetteEight = settings.machine === 'silhouette' && settings.profile === 'eight';
+      const darkMark = silhouetteEight
+        ? (x > 20 && x < 36 && y > 20 && y < 30) ||
+          (x > w - 36 && x < w - 20 && y > 20 && y < 30) ||
+          (x > 20 && x < 36 && y > h - 30 && y < h - 20)
+        : (x > 40 && x < 80 && y > 40 && y < 48) ||
+          (x > w - 80 && x < w - 40 && y > h - 48 && y < h - 40);
+      if (marks && darkMark) {
         const i = (y * w + x) * 4;
         data[i] = data[i + 1] = data[i + 2] = 0;
       }
@@ -325,6 +330,108 @@ test('capture detects translated template within raster precision', () => {
   const p = detectTemplate(f.data, f.w, f.h, 215.9, 279.4, DEFAULT_SETTINGS);
   assert.ok(Math.abs(p.leftMm - 24) < 0.15);
   assert.ok(Math.abs(p.topMm - 30) < 0.15);
+});
+test('Silhouette capture recognizes four fixed slots and surrounding Studio marks', () => {
+  const settings = { ...DEFAULT_SETTINGS, machine: 'silhouette' as const };
+  const good = fixture(1, false, true, false, settings, 30, 32);
+  const found = detectTemplate(good.data, good.w, good.h, 215.9, 279.4, settings);
+  assert.ok(Math.abs(found.leftMm - 30) < 0.15);
+  assert.ok(Math.abs(found.topMm - 32) < 0.15);
+  const missing = fixture(1, true, true, false, settings, 30, 32);
+  assert.throws(() => detectTemplate(missing.data, missing.w, missing.h, 215.9, 279.4, settings));
+  const unmarked = fixture(1, false, false, false, settings, 30, 32);
+  assert.throws(() =>
+    detectTemplate(unmarked.data, unmarked.w, unmarked.h, 215.9, 279.4, settings),
+  );
+});
+test('Silhouette eight-card capture keeps a distinct Letter registration identity', () => {
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    machine: 'silhouette' as const,
+    profile: 'eight' as const,
+  };
+  const cricut = { ...settings, machine: 'maker' as const };
+  const full = fullTemplate(settings);
+  const partial = fixedSheets([{ ...entry, quantity: 1 }], settings)[0];
+  assert.deepEqual([full.width, full.height, full.placements.length], [177, 255, 8]);
+  assert.deepEqual([partial.width, partial.height], [177, 255]);
+  assert.notEqual(templateId(settings), templateId(cricut));
+  const profile: RegistrationProfile = {
+    version: 1,
+    key: registrationKey(settings),
+    name: 'Eight Silhouette marks',
+    capturedAt: new Date().toISOString(),
+    pdf: new Uint8Array(),
+    pageWidthPt: 612,
+    pageHeightPt: 792,
+    leftMm: 19.45,
+    topMm: 12.2,
+    preview: 'data:image/png;base64,',
+  };
+  const frame = sheetPreviewFrame(settings, profile);
+  assert.ok(Math.abs(frame.paper.w - 215.9) < 0.001);
+  assert.ok(Math.abs(frame.paper.h - 279.4) < 0.001);
+  assert.equal(frame.left, 19.45);
+  assert.equal(frame.top, 12.2);
+});
+test('Silhouette eight-card Letter capture accepts complete separated marks', () => {
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    machine: 'silhouette' as const,
+    profile: 'eight' as const,
+  };
+  const marked = fixture(1, false, true, false, settings, 19.45, 12.2);
+  const found = detectTemplate(marked.data, marked.w, marked.h, 215.9, 279.4, settings);
+  assert.ok(Math.abs(found.leftMm - 19.45) < 0.15);
+  assert.ok(Math.abs(found.topMm - 12.2) < 0.15);
+  const unmarked = fixture(1, false, false, false, settings, 19.45, 12.2);
+  assert.throws(() =>
+    detectTemplate(unmarked.data, unmarked.w, unmarked.h, 215.9, 279.4, settings),
+  );
+});
+test('Silhouette eight-card capture expects Letter rather than Cricut Tabloid', () => {
+  const silhouette = {
+    ...DEFAULT_SETTINGS,
+    machine: 'silhouette' as const,
+    profile: 'eight' as const,
+  };
+  assert.deepEqual(capturePaperSizeMm(silhouette), [215.9, 279.4]);
+  assert.deepEqual(capturePaperSizeMm({ ...silhouette, machine: 'maker' }), [279.4, 431.8]);
+});
+test('Silhouette registered size-check uses captured Letter pages for four and eight slots', async () => {
+  const source = await PDFDocument.create();
+  source
+    .addPage([612, 792])
+    .drawRectangle({ x: 25, y: 750, width: 12, height: 12, color: rgb(0, 0, 0) });
+  const pdf = await source.save();
+  for (const settings of [
+    { ...DEFAULT_SETTINGS, machine: 'silhouette' as const },
+    { ...DEFAULT_SETTINGS, machine: 'silhouette' as const, profile: 'eight' as const },
+  ]) {
+    const profile: RegistrationProfile = {
+      version: 1,
+      key: registrationKey(settings),
+      name: 'Silhouette capture',
+      capturedAt: new Date().toISOString(),
+      pdf,
+      pageWidthPt: 612,
+      pageHeightPt: 792,
+      leftMm: settings.profile === 'eight' ? 19.45 : 30,
+      topMm: settings.profile === 'eight' ? 12.2 : 32,
+      preview: 'data:image/png;base64,',
+    };
+    const output = await buildRegisteredPdf(
+      { version: 1, name: 'Silhouette test', entries: [{ ...entry, quantity: 1 }], settings },
+      profile,
+      () => {},
+      true,
+    );
+    const checked = await PDFDocument.load(output);
+    assert.equal(checked.getPageCount(), 1);
+    assert.equal(checked.getPage(0).getWidth(), 612);
+    assert.equal(checked.getPage(0).getHeight(), 792);
+    assert.match(checked.getSubject() || '', /Silhouette Studio marks/);
+  }
 });
 test('capture recognizes the seven-card 2-3-2 pattern on Letter', () => {
   const settings = {

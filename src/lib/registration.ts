@@ -88,6 +88,7 @@ const placeholder: Entry = {
 export function fullTemplate(settings: Settings): Sheet {
   return layout([{ ...placeholder, quantity: grid(settings).capacity }], settings)[0];
 }
+export const SILHOUETTE_EIGHT_REGISTRATION_INSET_IN = '0.394';
 export function registrationKey(s: Settings): string {
   // Deliberately omit artwork, DPI, labels, display units, bleed, manual-cut
   // calibration, and all card-back options; none changes the cut geometry.
@@ -164,6 +165,8 @@ export function detectTemplate(
   settings: Settings,
 ): { leftMm: number; topMm: number; contentBoundsMm: ContentBoundsMm } {
   const sheet = fullTemplate(settings);
+  const studio = settings.machine === 'silhouette';
+  const source = studio ? 'Silhouette Studio' : 'Design Space';
   const sx = width / pageWidthMm,
     sy = height / pageHeightMm;
   const isMarker = (i: number) =>
@@ -187,13 +190,13 @@ export function detectTemplate(
     }
   if (maxX < 0)
     throw new Error(
-      'No magenta template found. Capture the setup PNG from step 1 in Design Space, in color, with bleed off.',
+      `No magenta template found. Print the setup PNG from ${source} in color with bleed off.`,
     );
   const measuredW = (maxX - minX + 1) / sx,
     measuredH = (maxY - minY + 1) / sy;
   if (Math.abs(measuredW - sheet.width) > 0.3 || Math.abs(measuredH - sheet.height) > 0.3) {
     throw new Error(
-      `The captured template measures ${measuredW.toFixed(2)} × ${measuredH.toFixed(2)} mm; expected ${sheet.width} × ${sheet.height} mm. Correct the Canvas dimensions, disable bleed and printer scaling, and capture again.`,
+      `The captured template measures ${measuredW.toFixed(2)} × ${measuredH.toFixed(2)} mm; expected ${sheet.width} × ${sheet.height} mm. Correct its dimensions in ${source}, disable bleed and printer scaling, and capture again.`,
     );
   }
   const leftMm = (minX + maxX + 1) / (2 * sx) - sheet.width / 2;
@@ -221,11 +224,11 @@ export function detectTemplate(
     }
   if (bad / samples > 0.001)
     throw new Error(
-      'The slot pattern does not match this layout. Keep the template as one flat image; do not rearrange, rotate, or resize its cards in Design Space.',
+      `The slot pattern does not match this layout. Keep the template as one flat image; do not rearrange, rotate, or resize its cards in ${source}.`,
     );
   // A blank setup PDF is not enough. Require dark printed content outside the art
   // rectangle on all four sides, while leaving a clear guard around the replacement.
-  // This is a plausibility check, not authentication of Cricut sensor marks.
+  // This is a plausibility check, not authentication of machine sensor marks.
   const sides = [0, 0, 0, 0];
   let contentMinX = minX,
     contentMinY = minY,
@@ -260,7 +263,7 @@ export function detectTemplate(
     }
   if (sides.some((n) => n < 20))
     throw new Error(
-      'The page does not appear to contain marks surrounding the template. Import the complete one-page Design Space print PDF, not the original PNG or a cropped page.',
+      `The page does not appear to contain marks surrounding the template. Import the complete one-page ${source} print PDF, not the original PNG or a cropped page.`,
     );
   return {
     leftMm,

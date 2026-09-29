@@ -1,7 +1,7 @@
 <div align="center">
   <img src="build/icon.png" alt="CriProx icon" width="112" height="112">
   <h1>CriProx</h1>
-  <p><strong>A local-first card sheet studio for Cricut Print Then Cut.</strong></p>
+  <p><strong>A local-first card sheet studio for Cricut and Silhouette cutters.</strong></p>
   <p>Turn playtest card lists and custom artwork into precise, reusable print sheets—without an account, cloud workspace, or subscription.</p>
 
   <p>
@@ -16,7 +16,8 @@
 
   <p>
     <a href="https://github.com/Go2Engle/CriProx/releases/latest"><strong>Download</strong></a>
-    · <a href="docs/CRICUT-WORKFLOW.md">Print guide</a>
+    · <a href="docs/CRICUT-WORKFLOW.md">Cricut guide</a>
+    · <a href="docs/SILHOUETTE-WORKFLOW.md">Silhouette guide</a>
     · <a href="docs/FEATURES.md">Features</a>
     · <a href="CONTRIBUTING.md">Contribute</a>
   </p>
@@ -28,21 +29,24 @@
 
 ## Why CriProx?
 
-CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, preview the physical layout, and export the matched files needed to finish the job in Design Space.
+CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, preview the physical layout, and export matched files for Cricut Design Space or Silhouette Studio.
 
-|                              |                                                                                                                                  |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                                     |
-| 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
-| 🃏 **Flexible artwork**      | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.                            |
-| ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
-| ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.                         |
-| 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
-| 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
-| 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.                   |
+|                               |                                                                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 🔒 **Local-first**            | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                                     |
+| 📐 **Physical dimensions**    | Millimeter-based geometry, standard 63 × 88 mm cards, matched artwork and cut paths, and 300–1200 DPI export.                    |
+| 🃏 **Flexible artwork**       | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.                            |
+| ✨ **Optional upscale**       | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
+| ✂️ **Reusable cuts**          | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.                         |
+| 📐 **Manual nine-card cuts**  | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
+| ✂️ **Silhouette Print & Cut** | Capture a Studio print once, then reuse its marks with four cards or an experimental eight-card Letter layout.                   |
+| 🔁 **Fronts and backs**       | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
+| 💾 **Local project library**  | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.                   |
 
 > [!IMPORTANT]
 > CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. The manual nine-card profile deliberately bypasses sensor registration and requires repeatable physical mat placement. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
+
+Silhouette Studio likewise supplies its own Print & Cut registration marks and controls the cut job. CriProx captures those marks from a Studio print PDF; it does not create a native Studio project.
 
 ## From card list to cut
 
@@ -53,6 +57,8 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 
 CriProx also supports a registered-print workflow: save a one-page PDF from Design Space, import it into CriProx, and reuse those captured marks for later artwork pages while keeping the cut geometry unchanged.
 
+For Silhouette cutters, choose **Silhouette Studio** as the cutting method. Import the magenta setup PNG into Studio, resize it, click **Center to Page**, and save the Studio cut job. Capture its marked print PDF in CriProx and reuse it for later artwork sheets. An experimental eight-card US Letter layout fits inside Studio's marks with the Left, Top, Right, and Bottom registration insets each set to **0.394 in (about 10 mm)**; check the full-size borders and make a test cut. See the [Silhouette workflow](docs/SILHOUETTE-WORKFLOW.md).
+
 For higher sheet density, the experimental manual profile prints nine cards on Letter or A4 and
 downloads a matched 191 × 266 mm Basic Cut PNG. It is a physical alignment workflow, not Print Then
 Cut, so validate the page and mat position on plain paper first.
@@ -61,7 +67,7 @@ Selecting **Manual cutting** as the machine also uses the nine-card layout. The 
 configurable card and page cut guides as you change their color, width, placement, line style, corners,
 length, and page style. The front PDF uses those guides; backs remain artwork-only. Cricut registered
 layouts show their saved Design Space registration marks and exported card positions in the sheet
-preview. Until a matching capture is saved, the preview uses approximate marks. Print at actual size
+preview. Silhouette layouts show their saved Studio page after capture. Until a matching Cricut capture is saved, the preview uses approximate marks. Print at actual size
 and check the dimensions before cutting.
 
 ## Download
@@ -125,17 +131,18 @@ npm run package   # Build an installer for the current operating system
 
 ## Documentation
 
-| Guide                                        | What it covers                                                                          |
-| -------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [Installation](docs/INSTALLATION.md)         | Desktop packages, unsigned-app notes, development, and build commands                   |
-| [Feature reference](docs/FEATURES.md)        | Imports, layouts, output formats, project storage, limits, and experimental modes       |
-| [Cricut workflow](docs/CRICUT-WORKFLOW.md)   | The Design Space boundary, reusable registration workflow, and physical acceptance test |
-| [Software validation](docs/VALIDATION.md)    | Automated and hands-on checks already completed, plus remaining hardware validation     |
-| [Architecture](docs/ARCHITECTURE.md)         | Data flow, important modules, Electron security model, and testing strategy             |
-| [References and credits](docs/REFERENCES.md) | External workflow documentation, APIs, artwork sources, and project acknowledgements    |
-| [Contributing](CONTRIBUTING.md)              | Development expectations, Conventional Commits, pull requests, and releases             |
-| [Security](SECURITY.md)                      | Supported versions and private vulnerability reporting                                  |
-| [Changelog](CHANGELOG.md)                    | User-visible changes organized by release                                               |
+| Guide                                              | What it covers                                                                          |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [Installation](docs/INSTALLATION.md)               | Desktop packages, unsigned-app notes, development, and build commands                   |
+| [Feature reference](docs/FEATURES.md)              | Imports, layouts, output formats, project storage, limits, and experimental modes       |
+| [Cricut workflow](docs/CRICUT-WORKFLOW.md)         | The Design Space boundary, reusable registration workflow, and physical acceptance test |
+| [Silhouette workflow](docs/SILHOUETTE-WORKFLOW.md) | Studio Basic Edition import, registration, and a measured test cut                      |
+| [Software validation](docs/VALIDATION.md)          | Automated and hands-on checks already completed, plus remaining hardware validation     |
+| [Architecture](docs/ARCHITECTURE.md)               | Data flow, important modules, Electron security model, and testing strategy             |
+| [References and credits](docs/REFERENCES.md)       | External workflow documentation, APIs, artwork sources, and project acknowledgements    |
+| [Contributing](CONTRIBUTING.md)                    | Development expectations, Conventional Commits, pull requests, and releases             |
+| [Security](SECURITY.md)                            | Supported versions and private vulnerability reporting                                  |
+| [Changelog](CHANGELOG.md)                          | User-visible changes organized by release                                               |
 
 ## Project status
 
@@ -157,4 +164,4 @@ Bug reports, focused feature ideas, documentation fixes, and tested pull request
 
 CriProx is free and open-source software licensed under the [GNU General Public License v3.0 only](LICENSE). Distributed copies and derivative works must remain under the GPL, with corresponding source made available under its terms. See [NOTICE](NOTICE) for the copyright notice.
 
-Card data and artwork are provided by Scryfall, MPC Autofill contributors, and their respective owners. CriProx is unofficial fan-made software and is not approved, endorsed, sponsored by, or affiliated with Wizards of the Coast, Cricut, Scryfall, or MPC Autofill.
+Card data and artwork are provided by Scryfall, MPC Autofill contributors, and their respective owners. CriProx is unofficial fan-made software and is not approved, endorsed, sponsored by, or affiliated with Wizards of the Coast, Cricut, Silhouette America, Scryfall, or MPC Autofill.

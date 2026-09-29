@@ -56,11 +56,13 @@ declare global {
         load: (
           templateId: string,
           slotCount: number,
+          target?: 'cricut' | 'silhouette',
         ) => Promise<{ name: string; capturedAt: string; pdf: ArrayBuffer } | null>;
         save: (
           templateId: string,
           slotCount: number,
           pdf: ArrayBuffer,
+          target?: 'cricut' | 'silhouette',
         ) => Promise<{ name: string; capturedAt: string }>;
       };
       releases?: {

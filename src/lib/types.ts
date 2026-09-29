@@ -24,7 +24,7 @@ export type Entry = { id: string; card: Card; quantity: number; face: number };
 export type Settings = {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
-  machine: 'maker' | 'explore' | 'joy-xtra' | 'manual';
+  machine: 'maker' | 'explore' | 'joy-xtra' | 'silhouette' | 'manual';
   profile: 'expanded' | 'seven' | 'eight' | 'nine';
   width: number;
   height: number;

@@ -1,4 +1,5 @@
 import RegisteredPrint from './components/RegisteredPrint';
+import SilhouetteRegisteredPrint from './components/SilhouetteRegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
@@ -93,6 +94,7 @@ import {
   fixedSheets,
   fullTemplate,
   registrationKey,
+  SILHOUETTE_EIGHT_REGISTRATION_INSET_IN,
   templateId,
   type RegistrationProfile,
 } from './lib/registration';
@@ -505,12 +507,16 @@ function SettingsModal({
       ? 'Cricut Maker series'
       : settings.machine === 'explore'
         ? 'Cricut Explore series'
-        : settings.machine === 'manual'
-          ? 'Manual cutting'
-          : 'Cricut Joy Xtra';
+        : settings.machine === 'silhouette'
+          ? 'Silhouette Studio'
+          : settings.machine === 'manual'
+            ? 'Manual cutting'
+            : 'Cricut Joy Xtra';
   const profile =
     settings.profile === 'expanded'
-      ? 'Print and Cut'
+      ? settings.machine === 'silhouette'
+        ? 'Four-card Print & Cut'
+        : 'Print and Cut'
       : settings.profile === 'seven' || settings.profile === 'eight'
         ? 'Experimental Print and Cut'
         : 'Manual Alignment';
@@ -1718,6 +1724,7 @@ function useCapturedRegistration(settings: Settings, refresh: number) {
         const stored = await library.load(
           templateId(settings),
           fullTemplate(settings).placements.length,
+          settings.machine === 'silhouette' ? 'silhouette' : 'cricut',
         );
         if (!stored || (cached?.name === stored.name && cached.capturedAt === stored.capturedAt))
           return;
@@ -1897,7 +1904,7 @@ function SheetPreview({
             ))}
           </svg>
         )}
-        {registered && !captured && (
+        {registered && !captured && settings.machine !== 'silhouette' && (
           <svg
             className="mock-registration-overlay"
             viewBox={`0 0 ${paper.w} ${paper.h}`}
@@ -2668,10 +2675,18 @@ export default function App() {
           >
             <Download size={16} />
             <span className="print-action-long">
-              {project.settings.profile === 'nine' ? 'Create manual cut' : 'Create print PDF'}
+              {project.settings.machine === 'silhouette'
+                ? 'Create print PDF'
+                : project.settings.profile === 'nine'
+                  ? 'Create manual cut'
+                  : 'Create print PDF'}
             </span>
             <span className="print-action-short">
-              {project.settings.profile === 'nine' ? '9-cut' : 'PDF'}
+              {project.settings.machine === 'silhouette'
+                ? 'PDF'
+                : project.settings.profile === 'nine'
+                  ? '9-cut'
+                  : 'PDF'}
             </span>
           </button>
           <button
@@ -3072,7 +3087,21 @@ export default function App() {
                                 manualCutCorrectionX: 0,
                                 manualCutCorrectionY: 0,
                               }
-                            : {}),
+                            : machine === 'silhouette'
+                              ? {
+                                  profile:
+                                    project.settings.profile === 'eight'
+                                      ? ('eight' as const)
+                                      : ('expanded' as const),
+                                  paper: 'letter' as const,
+                                  gap: 1,
+                                  bleed:
+                                    project.settings.bleed > 0
+                                      ? fixedBleedMm({ profile: 'expanded' })
+                                      : 0,
+                                  backsEnabled: false,
+                                }
+                              : {}),
                           ...((project.settings.profile === 'seven' ||
                             project.settings.profile === 'eight') &&
                           machine === 'joy-xtra'
@@ -3091,6 +3120,7 @@ export default function App() {
                       <option value="maker">Cricut Maker series</option>
                       <option value="explore">Cricut Explore series</option>
                       <option value="joy-xtra">Cricut Joy Xtra</option>
+                      <option value="silhouette">Silhouette Studio</option>
                       <option value="manual">Manual cutting</option>
                     </select>
                   </div>
@@ -3192,13 +3222,16 @@ export default function App() {
                     }}
                   >
                     <option value="expanded" disabled={project.settings.machine === 'manual'}>
-                      6 cards · Print and Cut
+                      {project.settings.machine === 'silhouette'
+                        ? '4 cards · Silhouette Print & Cut'
+                        : '6 cards · Print and Cut'}
                     </option>
                     <option
                       value="seven"
                       disabled={
                         project.settings.machine === 'joy-xtra' ||
-                        project.settings.machine === 'manual'
+                        project.settings.machine === 'manual' ||
+                        project.settings.machine === 'silhouette'
                       }
                     >
                       7 cards · Print and Cut · Experimental
@@ -3210,9 +3243,11 @@ export default function App() {
                         project.settings.machine === 'manual'
                       }
                     >
-                      8 cards - Print and Cut - Experimental
+                      {project.settings.machine === 'silhouette'
+                        ? '8 cards · US Letter Studio capture · Experimental'
+                        : '8 cards · Print and Cut · Experimental'}
                     </option>
-                    <option value="nine">
+                    <option value="nine" disabled={project.settings.machine === 'silhouette'}>
                       9 cards ·{' '}
                       {project.settings.machine === 'manual'
                         ? 'Manual cutting'
@@ -3223,12 +3258,16 @@ export default function App() {
                     {project.settings.profile === 'seven'
                       ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
                       : project.settings.profile === 'eight'
-                        ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
-                        : project.settings.profile === 'nine'
-                          ? project.settings.machine === 'manual'
-                            ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
-                            : `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
-                          : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
+                        ? project.settings.machine === 'silhouette'
+                          ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. US Letter experiment: set Left, Top, Right, and Bottom registration insets to ${SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in each (about 10 mm), then check the full-size print and cut borders.`
+                          : `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
+                        : project.settings.machine === 'silhouette'
+                          ? 'Four cards in a 2×2 group. Import the magenta setup PNG into Silhouette Studio at its stated size, center it on the page, and keep it clear of registration-mark zones.'
+                          : project.settings.profile === 'nine'
+                            ? project.settings.machine === 'manual'
+                              ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
+                              : `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
+                            : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
                   </p>
                 </div>
                 {project.settings.machine === 'manual' && (
@@ -3269,19 +3308,31 @@ export default function App() {
                   </p>
                 </div>
                 <FrontBleedControl settings={project.settings} change={settings} />
-                <label className="switch-row">
-                  <span>
-                    Print card backs
-                    <small>Optional · manual refeed by default</small>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={project.settings.backsEnabled}
-                    onChange={(e) => settings({ backsEnabled: e.target.checked })}
-                  />
-                  <span className="switch" />
-                </label>
-                {doubleSidedCount > 0 && (
+                {project.settings.machine === 'silhouette' && (
+                  <p className="field-note">
+                    CriProx adds front bleed to the card PDF. Leave Studio Print Bleed off for the
+                    magenta setup capture; the saved cut paths stay unchanged.
+                  </p>
+                )}
+                {project.settings.machine === 'silhouette' ? (
+                  <p className="field-note">
+                    This Silhouette export currently prepares front sheets only.
+                  </p>
+                ) : (
+                  <label className="switch-row">
+                    <span>
+                      Print card backs
+                      <small>Optional · manual refeed by default</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={project.settings.backsEnabled}
+                      onChange={(e) => settings({ backsEnabled: e.target.checked })}
+                    />
+                    <span className="switch" />
+                  </label>
+                )}
+                {project.settings.machine !== 'silhouette' && doubleSidedCount > 0 && (
                   <div className="warning-box double-sided-warning" role="status">
                     {doubleSidedCount} double-sided card{doubleSidedCount === 1 ? '' : 's'}{' '}
                     selected.{' '}
@@ -3290,7 +3341,7 @@ export default function App() {
                       : 'Enable Print card backs to include the matching reverse faces.'}
                   </div>
                 )}
-                {project.settings.backsEnabled && (
+                {project.settings.machine !== 'silhouette' && project.settings.backsEnabled && (
                   <button
                     className="text-button back-configure"
                     onClick={() => setModal('registered')}
@@ -3447,7 +3498,19 @@ export default function App() {
           reveal={() => void revealProjectsDirectory()}
         />
       )}
-      {modal === 'registered' && (
+      {modal === 'registered' && project.settings.machine === 'silhouette' && (
+        <SilhouetteRegisteredPrint
+          project={project}
+          close={() => {
+            setModal(null);
+            setRegistrationRefresh((value) => value + 1);
+          }}
+          onCapture={() => setRegistrationRefresh((value) => value + 1)}
+          notify={setToast}
+          updateSettings={settings}
+        />
+      )}
+      {modal === 'registered' && project.settings.machine !== 'silhouette' && (
         <RegisteredPrint
           project={project}
           close={() => {

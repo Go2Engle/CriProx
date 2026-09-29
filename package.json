@@ -2,7 +2,7 @@
   "name": "criprox",
   "version": "0.10.0",
   "private": true,
-  "description": "A local card-sheet studio for Cricut Print Then Cut",
+  "description": "A local card-sheet studio for Cricut and Silhouette cutters",
   "license": "GPL-3.0-only",
   "author": "Go2Engle",
   "repository": {

@@ -53,6 +53,12 @@ export async function downloadSetup(settings: Settings) {
     png = await setupPng(settings);
   download(new Blob([png.slice().buffer], { type: 'image/png' }), `${id}-setup.png`);
 }
+export function capturePaperSizeMm(
+  settings: Pick<Settings, 'paper' | 'profile' | 'machine'>,
+): [number, number] {
+  if (settings.profile === 'eight' && settings.machine !== 'silhouette') return [279.4, 431.8];
+  return settings.paper === 'letter' ? [215.9, 279.4] : [210, 297];
+}
 export async function captureProfile(
   pdf: Uint8Array,
   settings: Settings,
@@ -65,12 +71,8 @@ export async function captureProfile(
     size = page.getSize(),
     crop = page.getCropBox(),
     media = page.getMediaBox();
-  const tabloidCapture = settings.profile === 'eight',
-    expected = tabloidCapture
-      ? [279.4, 431.8]
-      : settings.paper === 'letter'
-        ? [215.9, 279.4]
-        : [210, 297];
+  const tabloidCapture = settings.profile === 'eight' && settings.machine !== 'silhouette',
+    expected = capturePaperSizeMm(settings);
   if (
     page.getRotation().angle !== 0 ||
     crop.x !== 0 ||
@@ -140,7 +142,7 @@ export function registeredOutputFrame(
   profile: RegistrationProfile,
   settings: Settings,
 ): OutputFrame {
-  if (settings.profile === 'eight') {
+  if (settings.profile === 'eight' && settings.machine !== 'silhouette') {
     const frame = profile.outputFrame;
     if (
       !frame ||
@@ -238,7 +240,7 @@ export async function buildRegisteredPdf(
     `${project.name} - ${templateId(project.settings)}${calibration ? ' - Size check' : ''}`,
   );
   output.setSubject(
-    'Experimental registered print: captured Design Space marks, fixed cut geometry. Validate on your machine.',
+    `Experimental registered print: captured ${project.settings.machine === 'silhouette' ? 'Silhouette Studio' : 'Design Space'} marks, fixed cut geometry. Validate on your machine.`,
   );
   return output.save();
 }

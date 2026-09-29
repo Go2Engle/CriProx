@@ -25,10 +25,10 @@ contextBridge.exposeInMainWorld(
       reveal: () => ipcRenderer.invoke('reveal-project-library'),
     }),
     registrationTemplates: Object.freeze({
-      load: (templateId, slotCount) =>
-        ipcRenderer.invoke('load-registration-template', { templateId, slotCount }),
-      save: (templateId, slotCount, pdf) =>
-        ipcRenderer.invoke('save-registration-template', { templateId, slotCount, pdf }),
+      load: (templateId, slotCount, target) =>
+        ipcRenderer.invoke('load-registration-template', { templateId, slotCount, target }),
+      save: (templateId, slotCount, pdf, target) =>
+        ipcRenderer.invoke('save-registration-template', { templateId, slotCount, pdf, target }),
     }),
     releases: Object.freeze({
       check: () => ipcRenderer.invoke('release-check'),

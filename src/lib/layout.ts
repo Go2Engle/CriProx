@@ -23,6 +23,8 @@ const nineCardGeometry = (settings: Settings) => ({
   height: settings.height * 3 + settings.gap * 2,
 });
 export function envelope(settings: Settings) {
+  if (settings.machine === 'silhouette' && settings.profile === 'expanded')
+    return { width: settings.width * 2 + settings.gap, height: settings.height * 2 + settings.gap };
   if (settings.profile === 'seven') return sevenCardGeometry(settings);
   if (settings.profile === 'eight') return eightCardGeometry(settings);
   if (settings.profile === 'nine') return nineCardGeometry(settings);
