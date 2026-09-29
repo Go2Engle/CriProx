@@ -43,6 +43,7 @@ export type Settings = {
   manualCutCorrectionY: number;
   manualGuidesEnabled: boolean;
   manualGuideColor: string;
+  manualGuidePageColor: string;
   /** CSS pixels at 96 DPI, so physical line width stays fixed across export DPI choices. */
   manualGuideWidthPx: number;
   manualGuidePlacement: 'outside' | 'center' | 'inside';
@@ -91,6 +92,7 @@ export const DEFAULT_SETTINGS: Settings = {
   manualCutCorrectionY: 0,
   manualGuidesEnabled: true,
   manualGuideColor: '#222222',
+  manualGuidePageColor: '#555555',
   manualGuideWidthPx: 1,
   manualGuidePlacement: 'outside',
   manualGuideCardStyle: 'none',

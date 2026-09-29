@@ -88,7 +88,7 @@ import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard, mpcArtworkType } from './lib/mpc';
 import { paperWorkflow } from './lib/paper-workflow';
 import { manualCutLineBounds } from './lib/manual-cut';
-import { manualGuideDashMm, manualGuidePaths, manualGuideWidthMm } from './lib/cut-guides';
+import { manualGuideDashMm, manualGuidePathsByKind, manualGuideWidthMm } from './lib/cut-guides';
 import {
   fixedSheets,
   fullTemplate,
@@ -1768,12 +1768,12 @@ function SheetPreview({
     },
     guidePaths =
       manualHandCut && sheet
-        ? manualGuidePaths(
+        ? manualGuidePathsByKind(
             manualCutLineBounds(sheet, settings),
             { width: paper.w, height: paper.h },
             settings,
           )
-        : [],
+        : { page: [], card: [] },
     markLeft = frame.left - MOCK_REGISTRATION_MARKS.offset,
     markRight = frame.left + area.width + MOCK_REGISTRATION_MARKS.offset,
     markTop = frame.top - MOCK_REGISTRATION_MARKS.offset,
@@ -1874,27 +1874,32 @@ function SheetPreview({
             <span>Drop images here or use Add artwork.</span>
           </div>
         )}
-        {manualHandCut && guidePaths.length > 0 && (
+        {manualHandCut && (guidePaths.page.length > 0 || guidePaths.card.length > 0) && (
           <svg
             className="sheet-guide-overlay"
             viewBox={`0 0 ${paper.w} ${paper.h}`}
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            {guidePaths.map((path, index) => (
-              <polyline
-                key={index}
-                points={path.map(({ x, y }) => `${x},${y}`).join(' ')}
-                fill="none"
-                stroke={settings.manualGuideColor}
-                strokeWidth={manualGuideWidthMm(settings)}
-                strokeDasharray={
-                  settings.manualGuideLineStyle === 'dashed'
-                    ? manualGuideDashMm(settings).join(' ')
-                    : undefined
-                }
-              />
-            ))}
+            {[
+              { paths: guidePaths.page, color: settings.manualGuidePageColor },
+              { paths: guidePaths.card, color: settings.manualGuideColor },
+            ].map(({ paths, color }, group) =>
+              paths.map((path, index) => (
+                <polyline
+                  key={`${group}-${index}`}
+                  points={path.map(({ x, y }) => `${x},${y}`).join(' ')}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={manualGuideWidthMm(settings)}
+                  strokeDasharray={
+                    settings.manualGuideLineStyle === 'dashed'
+                      ? manualGuideDashMm(settings).join(' ')
+                      : undefined
+                  }
+                />
+              )),
+            )}
           </svg>
         )}
         {registered && !captured && (

@@ -84,6 +84,7 @@ test('saving manual guide defaults changes only guide settings', () => {
     profile: 'nine' as const,
     manualGuidesEnabled: false,
     manualGuideColor: '#39ff14',
+    manualGuidePageColor: '#444444',
     manualGuideWidthPx: 2,
     manualGuidePlacement: 'inside' as const,
     manualGuideCardStyle: 'corners' as const,
@@ -99,6 +100,7 @@ test('saving manual guide defaults changes only guide settings', () => {
     [
       updated.settings.manualGuidesEnabled,
       updated.settings.manualGuideColor,
+      updated.settings.manualGuidePageColor,
       updated.settings.manualGuideWidthPx,
       updated.settings.manualGuidePlacement,
       updated.settings.manualGuideCardStyle,
@@ -107,16 +109,20 @@ test('saving manual guide defaults changes only guide settings', () => {
       updated.settings.manualGuideLengthMm,
       updated.settings.manualGuidePageStyle,
     ],
-    [false, '#39ff14', 2, 'inside', 'corners', 'dashed', 'round', 12, 'full'],
+    [false, '#39ff14', '#444444', 2, 'inside', 'corners', 'dashed', 'round', 12, 'full'],
   );
   assert.equal(updated.settings.machine, 'maker');
   assert.equal(updated.settings.profile, 'expanded');
   assert.equal(updated.settings.dpi, 600);
   assert.deepEqual(updated.backArtwork, backArtwork);
   assert.equal(defaults.settings.manualGuideColor, DEFAULT_SETTINGS.manualGuideColor);
+  assert.equal(defaults.settings.manualGuidePageColor, DEFAULT_SETTINGS.manualGuidePageColor);
   assert.deepEqual(projectFromDefaults(updated).settings, updated.settings);
   assert.equal(
-    manualGuideDefaultsMatch({ ...edited, manualGuideColor: '#39FF14' }, updated.settings),
+    manualGuideDefaultsMatch(
+      { ...edited, manualGuideColor: '#39FF14', manualGuidePageColor: '#444444' },
+      updated.settings,
+    ),
     true,
   );
 });

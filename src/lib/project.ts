@@ -45,6 +45,7 @@ export function validateProject(value: unknown): Project {
   s.manualCutCorrectionY ??= 0;
   s.manualGuidesEnabled ??= true;
   s.manualGuideColor ??= '#222222';
+  s.manualGuidePageColor ??= '#555555';
   s.manualGuideWidthPx ??= 1;
   s.manualGuidePlacement ??= 'outside';
   s.manualGuideCardStyle ??= 'none';
@@ -66,6 +67,7 @@ export function validateProject(value: unknown): Project {
     typeof s.proxyLabel !== 'boolean' ||
     typeof s.manualGuidesEnabled !== 'boolean' ||
     !/^#[0-9a-f]{6}$/i.test(s.manualGuideColor) ||
+    !/^#[0-9a-f]{6}$/i.test(s.manualGuidePageColor) ||
     !['outside', 'center', 'inside'].includes(s.manualGuidePlacement) ||
     !['none', 'corners', 'full'].includes(s.manualGuideCardStyle) ||
     !['solid', 'dashed'].includes(s.manualGuideLineStyle) ||
