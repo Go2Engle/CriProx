@@ -5,8 +5,10 @@ import {
   manualGuideDefaultsMatch,
   projectDefaultsFrom,
   projectFromDefaults,
+  sheetSettingsMatch,
   validateProjectDefaults,
   withManualGuideDefaults,
+  withSheetSettingsDefaults,
 } from '../src/lib/project-defaults';
 import { DEFAULT_SETTINGS, type CardFace, type Project } from '../src/lib/types';
 
@@ -124,5 +126,41 @@ test('saving manual guide defaults changes only guide settings', () => {
       updated.settings,
     ),
     true,
+  );
+});
+
+test('saving sheet setup defaults includes layout, print, and guide settings', () => {
+  const defaults = projectDefaultsFrom({
+    settings: { ...DEFAULT_SETTINGS },
+    backArtwork,
+  });
+  const current = {
+    ...DEFAULT_SETTINGS,
+    machine: 'manual' as const,
+    profile: 'nine' as const,
+    paper: 'a4' as const,
+    units: 'mm' as const,
+    dpi: 1200 as const,
+    backsEnabled: true,
+    manualGuideCardStyle: 'full' as const,
+  };
+
+  const saved = withSheetSettingsDefaults(defaults, current);
+
+  assert.equal(sheetSettingsMatch(defaults.settings, current), false);
+  assert.equal(sheetSettingsMatch(saved.settings, current), true);
+  assert.deepEqual(saved.settings, current);
+  assert.equal(saved.settings.backsEnabled, true);
+  assert.deepEqual(saved.backArtwork, backArtwork);
+  assert.deepEqual(validateProjectDefaults(saved), saved);
+  current.backsEnabled = false;
+  assert.equal(saved.settings.backsEnabled, true);
+});
+
+test('sheet setup comparison detects print and guide changes', () => {
+  assert.equal(sheetSettingsMatch(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, dpi: 600 }), false);
+  assert.equal(
+    sheetSettingsMatch(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, manualGuidePageStyle: 'full' }),
+    false,
   );
 });
