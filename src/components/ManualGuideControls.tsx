@@ -3,6 +3,55 @@ import { Ruler, Save } from 'lucide-react';
 import { manualGuideDefaultsMatch } from '../lib/project-defaults';
 import type { Settings } from '../lib/types';
 
+function GuideColorControl({
+  label,
+  field,
+  value,
+  change,
+}: {
+  label: string;
+  field: 'manualGuideColor' | 'manualGuidePageColor';
+  value: string;
+  change: (patch: Partial<Settings>) => void;
+}) {
+  const id = useId(),
+    [colorText, setColorText] = useState(value);
+  useEffect(() => setColorText(value), [value]);
+  const setColor = (color: string) => change({ [field]: color } as Partial<Settings>);
+  return (
+    <div className="setting-group">
+      <label htmlFor={id}>{label}</label>
+      <div className="guide-color-row">
+        <input
+          aria-label={`Pick ${label.toLowerCase()}`}
+          type="color"
+          value={value}
+          onChange={(event) => setColor(event.target.value)}
+        />
+        <input
+          id={id}
+          aria-label={`${label} hex`}
+          type="text"
+          maxLength={7}
+          value={colorText}
+          onChange={(event) => {
+            const next = event.target.value;
+            setColorText(next);
+            if (/^#[0-9a-f]{6}$/i.test(next)) setColor(next);
+          }}
+          onBlur={() => {
+            if (/^#[0-9a-f]{6}$/i.test(colorText)) setColor(colorText);
+            else setColorText(value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') event.currentTarget.blur();
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function ManualGuideControls({
   settings,
   change,
@@ -17,15 +66,9 @@ export default function ManualGuideControls({
   mode?: 'project' | 'defaults';
 }) {
   const id = useId(),
-    [colorText, setColorText] = useState(settings.manualGuideColor),
     [savingDefaults, setSavingDefaults] = useState(false),
     defaultsChanged =
       savedDefaults !== undefined && !manualGuideDefaultsMatch(settings, savedDefaults);
-  useEffect(() => setColorText(settings.manualGuideColor), [settings.manualGuideColor]);
-  const commitColor = () => {
-    if (/^#[0-9a-f]{6}$/i.test(colorText)) change({ manualGuideColor: colorText });
-    else setColorText(settings.manualGuideColor);
-  };
   const choice = <K extends keyof Settings>(
     field: K,
     options: { value: Settings[K]; label: string }[],
@@ -72,33 +115,12 @@ export default function ManualGuideControls({
         <span className="switch" />
       </label>
       <div className="manual-guide-fields">
-        <div className="setting-group">
-          <label htmlFor={`${id}-color`}>Guide color</label>
-          <div className="guide-color-row">
-            <input
-              aria-label="Pick guide color"
-              type="color"
-              value={settings.manualGuideColor}
-              onChange={(event) => change({ manualGuideColor: event.target.value })}
-            />
-            <input
-              id={`${id}-color`}
-              aria-label="Guide color hex"
-              type="text"
-              maxLength={7}
-              value={colorText}
-              onChange={(event) => {
-                const next = event.target.value;
-                setColorText(next);
-                if (/^#[0-9a-f]{6}$/i.test(next)) change({ manualGuideColor: next });
-              }}
-              onBlur={commitColor}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur();
-              }}
-            />
-          </div>
-        </div>
+        <GuideColorControl
+          label="Card guide color"
+          field="manualGuideColor"
+          value={settings.manualGuideColor}
+          change={change}
+        />
         <div className="setting-group">
           <label htmlFor={`${id}-width`}>Guide width (px)</label>
           <input
@@ -192,6 +214,12 @@ export default function ManualGuideControls({
             <option value="full">Full lines across page</option>
           </select>
         </div>
+        <GuideColorControl
+          label="Page guide color"
+          field="manualGuidePageColor"
+          value={settings.manualGuidePageColor}
+          change={change}
+        />
         {saveDefaults && (
           <div className="guide-save-defaults">
             <button

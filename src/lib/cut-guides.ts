@@ -168,16 +168,26 @@ function pagePaths(
 }
 
 /** Physical guide geometry shared by the live sheet and PDF export. */
+export function manualGuidePathsByKind(
+  cards: GuideCard[],
+  paper: { width: number; height: number },
+  settings: Settings,
+): { page: GuidePath[]; card: GuidePath[] } {
+  if (!settings.manualGuidesEnabled || !cards.length) return { page: [], card: [] };
+  return {
+    page: pagePaths(cards, paper, settings.manualGuidePageStyle),
+    card:
+      settings.manualGuideCardStyle === 'none'
+        ? []
+        : cards.flatMap((card) => cardPaths(card, settings)),
+  };
+}
+
 export function manualGuidePaths(
   cards: GuideCard[],
   paper: { width: number; height: number },
   settings: Settings,
 ): GuidePath[] {
-  if (!settings.manualGuidesEnabled || !cards.length) return [];
-  return [
-    ...pagePaths(cards, paper, settings.manualGuidePageStyle),
-    ...(settings.manualGuideCardStyle === 'none'
-      ? []
-      : cards.flatMap((card) => cardPaths(card, settings))),
-  ];
+  const { page, card } = manualGuidePathsByKind(cards, paper, settings);
+  return [...page, ...card];
 }

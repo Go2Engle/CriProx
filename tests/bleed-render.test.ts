@@ -158,6 +158,7 @@ test('manual front PDF prints paper-edge vector guides while backs stay unmarked
       machine: 'manual' as const,
       profile: 'nine' as const,
       manualGuideColor: '#ff0000',
+      manualGuidePageColor: '#333333',
     },
     backArtwork: entry.card.faces[0],
   };
@@ -173,7 +174,8 @@ test('manual front PDF prints paper-edge vector guides while backs stay unmarked
   const front = await operators(await buildManualCutPdf(project, () => {})),
     back = await operators(await buildManualCutPdf(project, () => {}, true));
   assert.equal(front.match(/\nS\n/g)?.length, 8);
-  assert.match(front, /1 0 0 RG/);
+  assert.match(front, /0\.2 0\.2 0\.2 RG/);
+  assert.doesNotMatch(front, /1 0 0 RG/);
   assert.doesNotMatch(back, /1 0 0 RG/);
   const customized = await operators(
     await buildManualCutPdf(
@@ -190,7 +192,20 @@ test('manual front PDF prints paper-edge vector guides while backs stay unmarked
     ),
   );
   assert.equal(customized.match(/\nS\n/g)?.length, 4);
+  assert.match(customized, /1 0 0 RG/);
+  assert.doesNotMatch(customized, /0\.2 0\.2 0\.2 RG/);
   assert.match(customized, /\[[\d.]+ [\d.]+\] 0 d/);
+  const combined = await operators(
+    await buildManualCutPdf(
+      {
+        ...project,
+        settings: { ...project.settings, manualGuideCardStyle: 'corners' },
+      },
+      () => {},
+    ),
+  );
+  assert.match(combined, /0\.2 0\.2 0\.2 RG/);
+  assert.match(combined, /1 0 0 RG/);
 });
 
 async function decode(bytes: Uint8Array) {

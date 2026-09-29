@@ -6,7 +6,12 @@ import { fixedSheets, fullTemplate, PT_PER_MM } from './registration';
 import { mirroredBackSheet } from './registered-pdf';
 import { needsSharedCardBack } from './entries';
 import { withDpi } from './png';
-import { manualGuideDashMm, manualGuidePaths, manualGuideWidthMm } from './cut-guides';
+import {
+  manualGuideDashMm,
+  manualGuidePaths,
+  manualGuidePathsByKind,
+  manualGuideWidthMm,
+} from './cut-guides';
 
 type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
 type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -385,30 +390,34 @@ export async function buildManualCutPdf(
     });
     if (!back && project.settings.machine === 'manual') {
       const settings = project.settings,
-        hex = settings.manualGuideColor,
-        color = rgb(
-          parseInt(hex.slice(1, 3), 16) / 255,
-          parseInt(hex.slice(3, 5), 16) / 255,
-          parseInt(hex.slice(5, 7), 16) / 255,
-        ),
-        paths = manualGuidePaths(
+        guides = manualGuidePathsByKind(
           manualCutLineBounds(sourceSheet, settings),
           placement.paper,
           settings,
         );
-      for (const path of paths) {
-        for (let point = 1; point < path.length; point++) {
-          const start = path[point - 1],
-            end = path[point];
-          page.drawLine({
-            start: { x: start.x * PT_PER_MM, y: (placement.paper.height - start.y) * PT_PER_MM },
-            end: { x: end.x * PT_PER_MM, y: (placement.paper.height - end.y) * PT_PER_MM },
-            thickness: manualGuideWidthMm(settings) * PT_PER_MM,
-            color,
-            ...(settings.manualGuideLineStyle === 'dashed'
-              ? { dashArray: manualGuideDashMm(settings).map((mm) => mm * PT_PER_MM) }
-              : {}),
-          });
+      for (const { paths, hex } of [
+        { paths: guides.page, hex: settings.manualGuidePageColor },
+        { paths: guides.card, hex: settings.manualGuideColor },
+      ]) {
+        const color = rgb(
+          parseInt(hex.slice(1, 3), 16) / 255,
+          parseInt(hex.slice(3, 5), 16) / 255,
+          parseInt(hex.slice(5, 7), 16) / 255,
+        );
+        for (const path of paths) {
+          for (let point = 1; point < path.length; point++) {
+            const start = path[point - 1],
+              end = path[point];
+            page.drawLine({
+              start: { x: start.x * PT_PER_MM, y: (placement.paper.height - start.y) * PT_PER_MM },
+              end: { x: end.x * PT_PER_MM, y: (placement.paper.height - end.y) * PT_PER_MM },
+              thickness: manualGuideWidthMm(settings) * PT_PER_MM,
+              color,
+              ...(settings.manualGuideLineStyle === 'dashed'
+                ? { dashArray: manualGuideDashMm(settings).map((mm) => mm * PT_PER_MM) }
+                : {}),
+            });
+          }
         }
       }
     }

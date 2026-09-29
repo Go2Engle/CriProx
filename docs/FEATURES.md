@@ -71,7 +71,7 @@ See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the comple
 
 Choosing **Manual cutting** in the machine menu automatically selects the nine-card layout. The
 portrait Letter or A4 PDF centers the nine-card block. The sheet editor previews configurable
-vector guides before PDF generation: color, stroke width, placement, card corner or full outlines,
+vector guides before PDF generation: separate card and page colors, stroke width, placement, card corner or full outlines,
 solid or dashed lines, square or round corners, corner-guide length, and page-edge or full-page
 cut lines. Guides can also be disabled. Front PDFs use the same geometry as the preview; back
 pages remain artwork-only. Print at 100% / Actual size and check one card with a ruler before

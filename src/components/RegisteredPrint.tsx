@@ -804,9 +804,10 @@ export default function RegisteredPrint({
               <div>
                 <strong>Manual guides matched to your editor preview.</strong>
                 <span>
-                  Set the guide color, width, card corners, and page marks in the sheet editor
-                  before preparing the PDF. The preview and front PDF use the same guide positions.
-                  The final sheet marks only occupied card slots. Back sheets have no cut guides.
+                  Set the card and page guide colors, width, card corners, and page marks in the
+                  sheet editor before preparing the PDF. The preview and front PDF use the same
+                  guide positions. The final sheet marks only occupied card slots. Back sheets have
+                  no cut guides.
                 </span>
               </div>
             </div>

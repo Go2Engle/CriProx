@@ -58,7 +58,7 @@ downloads a matched 191 × 266 mm Basic Cut PNG. It is a physical alignment work
 Cut, so validate the page and mat position on plain paper first.
 
 Selecting **Manual cutting** as the machine also uses the nine-card layout. The sheet editor previews
-configurable card and page cut guides as you change their color, width, placement, line style, corners,
+configurable card and page cut guides as you change their separate colors, width, placement, line style, corners,
 length, and page style. The front PDF uses those guides; backs remain artwork-only. Cricut registered
 layouts show their saved Design Space registration marks and exported card positions in the sheet
 preview. Until a matching capture is saved, the preview uses approximate marks. Print at actual size

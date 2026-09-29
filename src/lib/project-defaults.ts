@@ -16,6 +16,7 @@ export type ManualGuideDefaults = Pick<
   Settings,
   | 'manualGuidesEnabled'
   | 'manualGuideColor'
+  | 'manualGuidePageColor'
   | 'manualGuideWidthPx'
   | 'manualGuidePlacement'
   | 'manualGuideCardStyle'
@@ -29,6 +30,7 @@ export function manualGuideDefaultsFrom(settings: Settings): ManualGuideDefaults
   return {
     manualGuidesEnabled: settings.manualGuidesEnabled,
     manualGuideColor: settings.manualGuideColor,
+    manualGuidePageColor: settings.manualGuidePageColor,
     manualGuideWidthPx: settings.manualGuideWidthPx,
     manualGuidePlacement: settings.manualGuidePlacement,
     manualGuideCardStyle: settings.manualGuideCardStyle,
@@ -44,8 +46,8 @@ export function manualGuideDefaultsMatch(a: Settings, b: Settings): boolean {
     second = manualGuideDefaultsFrom(b);
   return Object.keys(first).every((key) => {
     const field = key as keyof ManualGuideDefaults;
-    return field === 'manualGuideColor'
-      ? first.manualGuideColor.toLowerCase() === second.manualGuideColor.toLowerCase()
+    return field === 'manualGuideColor' || field === 'manualGuidePageColor'
+      ? first[field].toLowerCase() === second[field].toLowerCase()
       : first[field] === second[field];
   });
 }

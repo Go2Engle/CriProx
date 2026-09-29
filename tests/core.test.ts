@@ -648,6 +648,7 @@ test('project import validates geometry, IDs, totals, image schemes and selected
     manualCutCorrectionY: _oldManualCutY,
     manualGuidesEnabled: _oldManualGuidesEnabled,
     manualGuideColor: _oldManualGuideColor,
+    manualGuidePageColor: _oldManualGuidePageColor,
     manualGuideWidthPx: _oldManualGuideWidth,
     manualGuidePlacement: _oldManualGuidePlacement,
     manualGuideCardStyle: _oldManualGuideCardStyle,
@@ -668,6 +669,13 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   assert.equal(migrated.settings.manualCutCorrectionY, 0);
   assert.equal(migrated.settings.manualGuidePageStyle, 'edge');
   assert.equal(migrated.settings.manualGuideColor, '#222222');
+  assert.equal(migrated.settings.manualGuidePageColor, '#555555');
+  const previousBrightGuide = validateProject({
+    ...good,
+    settings: { ...oldSettings, manualGuideColor: '#39ff14' },
+  });
+  assert.equal(previousBrightGuide.settings.manualGuideColor, '#39ff14');
+  assert.equal(previousBrightGuide.settings.manualGuidePageColor, '#555555');
   assert.equal(
     validateProject({ ...good, settings: { ...DEFAULT_SETTINGS, radius: 3 } }).settings.radius,
     2.5,
@@ -729,6 +737,9 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   );
   assert.throws(() =>
     validateProject({ ...good, settings: { ...nine, manualGuideColor: 'lime' } }),
+  );
+  assert.throws(() =>
+    validateProject({ ...good, settings: { ...nine, manualGuidePageColor: 'lime' } }),
   );
   assert.throws(() => validateProject({ ...good, settings: { ...nine, gap: 0.1 } }));
   assert.throws(() => validateProject({ ...good, settings: { ...nine, width: 63.5 } }));
