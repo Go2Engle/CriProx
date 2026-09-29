@@ -16,9 +16,11 @@ CriProx checks the repository for a newer stable release when the desktop app st
 
 ## Test installers from a branch
 
-To share a feature build, push the branch to GitHub, open **Actions → Test installers → Run workflow**, select that branch, and start the run. The workflow builds the selected commit on macOS, Windows, and Linux. After the run completes, open it and download the `test-installer-macos`, `test-installer-windows`, or `test-installer-linux` artifact from **Artifacts**. Extract the artifact ZIP to get the DMG, EXE, or AppImage, then share the run link with testers. Testers need to sign in to GitHub and have read access to the repository to download Actions artifacts. The workflow requests 30 days of artifact retention, subject to the repository's retention limit.
+To share a feature build, push the branch to GitHub, then open **Actions → Test installers → Run workflow**. Leave GitHub's **Branch** dropdown on `main` so it runs the workflow stored there. Enter the feature branch name in the `build_branch` field (for example, `feature/my-change`) and start the run. The branch does not need its own copy of the workflow. The resolve job records the branch's exact commit, which all three platform jobs build.
 
-These builds use the branch's current application version and are for testing; they are not published as stable releases. Give testers the branch name and commit shown in the run title so they can identify the build when reporting an issue. The same unsigned-installer notes above apply.
+After the run completes, open it and download the `test-installer-macos`, `test-installer-windows`, or `test-installer-linux` artifact from **Artifacts**. Extract the artifact ZIP to get the DMG, EXE, or AppImage, then share the run link with testers. Testers need to sign in to GitHub and have read access to the repository to download Actions artifacts. The workflow requests 30 days of artifact retention, subject to the repository's retention limit.
+
+These builds use the branch's current application version and are for testing; they are not published as stable releases. Give testers the branch name from the run title and the commit from the **Resolve branch commit** job summary so they can identify the build when reporting an issue. The same unsigned-installer notes above apply.
 
 ## Opening the unsigned macOS app
 

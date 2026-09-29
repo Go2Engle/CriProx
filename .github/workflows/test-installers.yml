@@ -1,15 +1,42 @@
 name: Test installers
-run-name: Test installers from ${{ github.ref_name }} (${{ github.sha }})
+run-name: Test installers from ${{ inputs.build_branch }}
 
 on:
   workflow_dispatch:
+    inputs:
+      build_branch:
+        description: Pushed branch to build (for example, feature/my-change)
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
+  resolve-branch:
+    name: Resolve branch commit
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.revision.outputs.sha }}
+    steps:
+      - name: Check out the requested branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/heads/${{ inputs.build_branch }}
+          persist-credentials: false
+      - name: Record the commit to build
+        id: revision
+        env:
+          BUILD_BRANCH: ${{ inputs.build_branch }}
+        shell: bash
+        run: |
+          sha="$(git rev-parse HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          printf 'Building branch `%s` at commit `%s`.\n' "$BUILD_BRANCH" "$sha" >> "$GITHUB_STEP_SUMMARY"
+
   build-installers:
     name: Build ${{ matrix.name }} installer
+    needs: resolve-branch
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -31,10 +58,11 @@ jobs:
             artifact: release/*.AppImage
             bundle: test-installer-linux
     steps:
-      - name: Check out the selected branch revision
+      - name: Check out the resolved branch commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ needs.resolve-branch.outputs.sha }}
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:

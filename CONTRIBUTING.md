@@ -38,4 +38,4 @@ Release Please maintains the release pull request, application version, package 
 
 Repository maintainers must enable **Allow GitHub Actions to create and approve pull requests** under **Settings → Actions → General** so Release Please can maintain its release pull request.
 
-For a feature build, run **Actions → Test installers → Run workflow** and choose the pushed branch. The completed run holds macOS, Windows, and Linux installer artifacts for up to 30 days; share its link with testers. See the [installation guide](docs/INSTALLATION.md#test-installers-from-a-branch) for download steps and access requirements.
+For a feature build, run **Actions → Test installers → Run workflow** on `main` and enter the pushed feature branch in `build_branch`. The completed run holds macOS, Windows, and Linux installer artifacts for up to 30 days; share its link with testers. See the [installation guide](docs/INSTALLATION.md#test-installers-from-a-branch) for download steps and access requirements.
