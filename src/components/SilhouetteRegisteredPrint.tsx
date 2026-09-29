@@ -219,8 +219,8 @@ export default function SilhouetteRegisteredPrint({
           <div className="warning-box" role="status">
             Eight cards occupy 177 × 255 mm. In Studio, set Left, Top, Right, and Bottom Inset to{' '}
             <strong>{SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in each</strong> (about 10 mm). Check
-            that all eight cards, complete marks, and print and cut borders fit at actual size.
-            This layout still needs a measured test cut.
+            that all eight cards, complete marks, and print and cut borders fit at actual size. This
+            layout still needs a measured test cut.
           </div>
         )}
         <div className="registration-preferences">
@@ -266,10 +266,12 @@ export default function SilhouetteRegisteredPrint({
               )}
               , and place the PNG at{' '}
               <strong>{formatDimensions(full.width, full.height, project.settings.units)}</strong>{' '}
-              without rotating or splitting its {slotCount} cards. Use Studio’s PNG trace for{' '}
-              {slotCount} cut paths, or import the matching DXF cut paths and set the PNG to No Cut.
-              Check that only {slotCount} rounded paths will cut. Save this Studio project as{' '}
-              <strong>{id}</strong>.
+              without rotating or splitting its {slotCount} cards. Studio can create cut outlines
+              when it imports the transparent PNG (Edit → Preferences → Import → PNG Autotrace). If
+              no outlines appear, open the Trace panel, select the whole PNG as the trace area, and
+              choose Trace Outer Edge. Or import the matching DXF paths and set the PNG to No Cut.
+              In Send, confirm exactly {slotCount} rounded outlines will cut. Save this Studio
+              project as <strong>{id}</strong>.
             </p>
             <button className="secondary" disabled={!!busy} onClick={() => void setup()}>
               <Download size={15} /> Download setup PNG
@@ -316,8 +318,7 @@ export default function SilhouetteRegisteredPrint({
               at <strong>100% / Actual size</strong>. Reopen the unchanged saved Studio project and
               send its existing cut paths to the machine without printing it again. Keep the same
               paper size, mat, registration settings (including all four insets), and orientation.
-              Test one sheet on plain paper
-              first.
+              Test one sheet on plain paper first.
             </p>
             <div className="registration-actions">
               <button
