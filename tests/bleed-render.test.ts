@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { decodePDFRawStream, PDFArray, PDFDocument, PDFRawStream } from 'pdf-lib';
+import { decodePDFRawStream, PDFArray, PDFDocument, PDFRawStream, rgb } from 'pdf-lib';
 import { renderSheet } from '../src/lib/export';
 import { buildManualCutCalibrationPdf, buildManualCutPdf } from '../src/lib/manual-cut';
+import { buildRegisteredPdf } from '../src/lib/registered-pdf';
+import { PT_PER_MM, registrationKey, type RegistrationProfile } from '../src/lib/registration';
 import { DEFAULT_SETTINGS, type Entry } from '../src/lib/types';
 import { mmToPx, type Sheet } from '../src/lib/layout';
 import { repairTransparentCorners, replicateBorder } from '../src/lib/bleed';
@@ -271,6 +273,65 @@ test('MPC fronts and card backs reuse native artwork outside the trim for output
   assert.deepEqual(colorAtMm(image, 64, 89, 0.1, 44.5), [255, 0, 51, 255]);
   assert.deepEqual(colorAtMm(image, 64, 89, 32, 44.5), [36, 87, 230, 255]);
   assert.deepEqual(colorAtMm(image, 64, 89, 63.9, 44.5), [255, 0, 51, 255]);
+});
+
+test('Silhouette four- and eight-card PDFs extend artwork without moving saved cuts', async () => {
+  const source = await PDFDocument.create();
+  source
+    .addPage([612, 792])
+    .drawRectangle({ x: 25, y: 750, width: 12, height: 12, color: rgb(0, 0, 0) });
+  const capturedPdf = await source.save();
+  const entry = artwork('#2457e6');
+  for (const layoutProfile of ['expanded', 'eight'] as const) {
+    const baseSettings = {
+      ...DEFAULT_SETTINGS,
+      machine: 'silhouette' as const,
+      profile: layoutProfile,
+    };
+    const profile: RegistrationProfile = {
+      version: 1,
+      key: registrationKey(baseSettings),
+      name: 'Studio marks',
+      capturedAt: '2026-09-29T00:00:00.000Z',
+      pdf: capturedPdf,
+      pageWidthPt: 612,
+      pageHeightPt: 792,
+      leftMm: layoutProfile === 'eight' ? 19.45 : 30,
+      topMm: layoutProfile === 'eight' ? 12.2 : 32,
+      preview: '',
+    };
+    const bounds = async (bleed: number) => {
+      const settings = { ...baseSettings, bleed };
+      assert.equal(registrationKey(settings), profile.key);
+      const output = await buildRegisteredPdf(
+        { version: 1, name: 'Bleed check', entries: [entry], settings },
+        profile,
+        () => {},
+      );
+      const page = (await PDFDocument.load(output)).getPage(0);
+      const contents = page.node.Contents();
+      assert.ok(contents instanceof PDFArray);
+      const operators = Array.from({ length: contents.size() }, (_, index) =>
+        new TextDecoder().decode(decodePDFRawStream(contents.lookup(index, PDFRawStream)).decode()),
+      ).join('\n');
+      const image = operators.match(
+        /q\s+1 0 0 1 ([\d.]+) ([\d.]+) cm\s+1 0 0 1 0 0 cm\s+([\d.]+) 0 0 ([\d.]+) 0 0 cm\s+1 0 0 1 0 0 cm\s+\/Image-[\d]+ Do/,
+      );
+      assert.ok(image, 'Expected a positioned artwork PNG in the registered PDF');
+      return {
+        width: Number(image[3]),
+        height: Number(image[4]),
+        x: Number(image[1]),
+        y: Number(image[2]),
+      };
+    };
+    const off = await bounds(0);
+    const on = await bounds(0.5);
+    assert.ok(Math.abs(on.width - off.width - PT_PER_MM) < 0.01);
+    assert.ok(Math.abs(on.height - off.height - PT_PER_MM) < 0.01);
+    assert.ok(Math.abs(off.x - on.x - 0.5 * PT_PER_MM) < 0.01);
+    assert.ok(Math.abs(off.y - on.y - 0.5 * PT_PER_MM) < 0.01);
+  }
 });
 
 function pngPixelsPerMeter(bytes: Uint8Array) {

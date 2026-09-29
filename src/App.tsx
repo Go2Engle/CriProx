@@ -3095,7 +3095,10 @@ export default function App() {
                                       : ('expanded' as const),
                                   paper: 'letter' as const,
                                   gap: 1,
-                                  bleed: 0,
+                                  bleed:
+                                    project.settings.bleed > 0
+                                      ? fixedBleedMm({ profile: 'expanded' })
+                                      : 0,
                                   backsEnabled: false,
                                 }
                               : {}),
@@ -3190,12 +3193,7 @@ export default function App() {
                               height: 88,
                               gap: profile === 'eight' ? 1 : 0.1,
                               radius: STANDARD_CARD_RADIUS_MM,
-                              bleed:
-                                project.settings.machine === 'silhouette' && profile === 'eight'
-                                  ? 0
-                                  : project.settings.bleed > 0
-                                    ? fixedBleedMm({ profile })
-                                    : 0,
+                              bleed: project.settings.bleed > 0 ? fixedBleedMm({ profile }) : 0,
                             }
                           : profile === 'nine'
                             ? {
@@ -3309,12 +3307,12 @@ export default function App() {
                     DPI take longer and create much larger print files.
                   </p>
                 </div>
-                {project.settings.machine === 'silhouette' ? (
+                <FrontBleedControl settings={project.settings} change={settings} />
+                {project.settings.machine === 'silhouette' && (
                   <p className="field-note">
-                    Use Studio's Print Bleed option for extra artwork beyond the cut edge.
+                    CriProx adds front bleed to the card PDF. Leave Studio Print Bleed off for the
+                    magenta setup capture; the saved cut paths stay unchanged.
                   </p>
-                ) : (
-                  <FrontBleedControl settings={project.settings} change={settings} />
                 )}
                 {project.settings.machine === 'silhouette' ? (
                   <p className="field-note">

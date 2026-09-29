@@ -10,6 +10,8 @@ The eight-card design is **177 × 255 mm**. US Letter is 215.9 × 279.4 mm, leav
 2. Open the magenta setup PNG in Studio and resize it to the exact dimensions shown in CriProx. Keep all cards together, without rotating or changing their spacing. With the whole PNG selected, click **Center to Page** in the Align controls (also available in the Transform panel's Align tab). In **Send**, confirm exactly four or eight rounded card outlines are active. If no outlines appear, enable PNG Autotrace and reopen the PNG. Save the Studio project under the identifier shown in CriProx.
 3. Turn off Studio **Print Bleed** for the setup print. Print that saved project to a **single-page portrait PDF** at 100% / Actual size, with all registration marks and no printer scaling. Import the PDF into CriProx. CriProx checks the magenta card positions and surrounding marks, then stores the capture for that exact layout.
 
+**Front artwork bleed:** CriProx uses the same optional 0.5 mm edge extension as its Cricut and manual sheets. Turn it on in Sheet setup or the registered-print dialog to fill color slightly beyond the saved cut lines. The magenta setup PNG, its card spacing, and Studio's saved cut paths do not change. Keep Studio **Print Bleed** off for the capture. For the eight-card layout, inspect the final PDF to confirm the extended artwork still clears Studio's marks and print border before a test cut.
+
 ## Reuse the saved cut job
 
 1. Prepare a size-check PDF in CriProx and inspect the marks and card placement. Print it from a dedicated PDF application at 100% / Actual size, with fit, shrink, headers, and added margins off.

@@ -213,6 +213,9 @@ export default function SilhouetteRegisteredPrint({
             <strong>{SILHOUETTE_EIGHT_REGISTRATION_INSET_IN} in each</strong> (about 10 mm). Check
             that all eight cards, complete marks, and print and cut borders fit at actual size. This
             layout still needs a measured test cut.
+            {project.settings.bleed > 0 && (
+              <> Inspect the final PDF to confirm the 0.5 mm artwork bleed clears the marks.</>
+            )}
           </div>
         )}
         <div className="registration-preferences">
@@ -223,6 +226,10 @@ export default function SilhouetteRegisteredPrint({
               updateSettings(patch);
             }}
           />
+          <p className="field-note">
+            CriProx extends card artwork by 0.5 mm when front bleed is on. The magenta setup PNG and
+            Studio cut paths keep their original size. Leave Studio Print Bleed off during capture.
+          </p>
         </div>
         <label className="switch-row upscale-toggle">
           <span>
