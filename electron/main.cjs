@@ -184,7 +184,7 @@ ipcMain.handle('save-project', async (event, request) => {
   if (typeof data !== 'string' || Buffer.byteLength(data) > 100_000_000)
     throw new Error('Project data is invalid or exceeds 100 MB.');
   const requestedName = typeof request?.defaultName === 'string' ? request.defaultName : 'project';
-  const safeName = path.basename(requestedName).replace(/[^a-z0-9._-]+/gi, '-') || 'project';
+  const safeName = path.basename(requestedName).replace(/[^\p{L}\p{N}._-]+/gu, '-') || 'project';
   const defaultPath = safeName.endsWith('.criprox.json') ? safeName : `${safeName}.criprox.json`;
   const result = await dialog.showSaveDialog(senderWindow(event), {
     title: 'Save CriProx project',

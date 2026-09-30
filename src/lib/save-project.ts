@@ -1,5 +1,6 @@
 import type { Project } from './types';
 import { download } from './export';
+import { filenameStem } from './filenames';
 
 type WritableFile = {
   write: (data: string) => Promise<void>;
@@ -12,7 +13,7 @@ type SaveFilePicker = (options: {
 }) => Promise<SaveFileHandle>;
 
 export function projectFilename(name: string) {
-  return `${name.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '') || 'project'}.criprox.json`;
+  return `${filenameStem(name, 'project')}.criprox.json`;
 }
 
 export async function saveProjectAs(project: Project): Promise<boolean> {

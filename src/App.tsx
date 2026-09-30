@@ -1,3 +1,4 @@
+import { templateFilenameStem } from './lib/filenames';
 import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
@@ -1720,6 +1721,7 @@ function useCapturedRegistration(settings: Settings, refresh: number) {
         const stored = await library.load(
           templateId(settings),
           fullTemplate(settings).placements.length,
+          templateFilenameStem(settings),
         );
         if (!stored || (cached?.name === stored.name && cached.capturedAt === stored.capturedAt))
           return;

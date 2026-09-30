@@ -3,6 +3,7 @@ import { get, set } from 'idb-keyval';
 import type { CardFace, Settings, Project } from './types';
 import { mmToPx, templateSvg, type Sheet } from './layout';
 import { withDpi } from './png';
+import { exportFilename } from './filenames';
 import { drawBleedTile, repairTransparentCorners, replicateBorder } from './bleed';
 import { formatDimensions, formatMeasurement } from './units';
 import { paperWorkflow } from './paper-workflow';
@@ -456,8 +457,14 @@ export async function exportBundle(
   for (const [i, sheet] of sheets.entries()) {
     progress(`Rendering sheet ${i + 1} of ${sheets.length}…`);
     const name = `sheet-${String(sheet.index + 1).padStart(2, '0')}`;
-    zip.file(`${name}-artwork.png`, await renderSheet(sheet, project.settings, calibration));
-    zip.file(`${name}-cut-template.svg`, templateSvg(sheet, project.settings));
+    zip.file(
+      exportFilename(project, `${calibration ? 'size-check-' : ''}${name}-artwork`, 'png'),
+      await renderSheet(sheet, project.settings, calibration),
+    );
+    zip.file(
+      exportFilename(project, `${calibration ? 'size-check-' : ''}${name}-cut-template`, 'svg'),
+      templateSvg(sheet, project.settings),
+    );
   }
   zip.file('START-HERE.txt', instructions(project, sheets, calibration));
   zip.file(
@@ -492,8 +499,5 @@ export async function exportBundle(
   );
   progress('Packing your export…');
   const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
-  download(
-    blob,
-    `${calibration ? 'criprox-size-check' : project.name.replace(/[^a-z0-9_-]+/gi, '-').slice(0, 60) || 'criprox'}.zip`,
-  );
+  download(blob, exportFilename(project, calibration ? 'size-check' : 'export', 'zip'));
 }

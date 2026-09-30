@@ -30,6 +30,7 @@ import {
 import { captureProfile, downloadSetup } from '../lib/registered-pdf';
 import { preparePdfJob } from '../lib/pdf-worker';
 import { download } from '../lib/export';
+import { exportFilename, templateFilename, templateFilenameStem } from '../lib/filenames';
 import MpcArtworkSearch from './MpcArtworkSearch';
 import FrontBleedControl from './FrontBleedControl';
 import ArtworkTrimControl from './ArtworkTrimControl';
@@ -41,7 +42,6 @@ import {
   MANUAL_CUT_CALIBRATION_SQUARE_MM,
   MANUAL_CUT_INSET_MM,
   manualCutCorrection,
-  manualCutCorrectionFileTag,
 } from '../lib/manual-cut';
 export default function RegisteredPrint({
   project,
@@ -95,6 +95,7 @@ export default function RegisteredPrint({
     key = registrationKey(project.settings),
     full = fullTemplate(project.settings),
     id = templateId(project.settings),
+    templateName = templateFilenameStem(project.settings),
     printPaper = paperWorkflow(project.settings),
     doubleSidedCount = doubleSidedCardCount(project.entries),
     sharedBackRequired = needsSharedCardBack(project.entries),
@@ -124,7 +125,7 @@ export default function RegisteredPrint({
       let libraryError: unknown;
       if (registrationTemplates) {
         try {
-          const stored = await registrationTemplates.load(id, slotCount);
+          const stored = await registrationTemplates.load(id, slotCount, templateName);
           if (stored) {
             const restored = await captureProfile(
               new Uint8Array(stored.pdf),
@@ -149,6 +150,7 @@ export default function RegisteredPrint({
                 id,
                 slotCount,
                 saved.pdf.slice().buffer,
+                templateName,
               );
               saved.name = stored.name;
               libraryError = undefined;
@@ -205,7 +207,12 @@ export default function RegisteredPrint({
         file.name,
       );
       if (registrationTemplates) {
-        const stored = await registrationTemplates.save(id, slotCount, next.pdf.slice().buffer);
+        const stored = await registrationTemplates.save(
+          id,
+          slotCount,
+          next.pdf.slice().buffer,
+          templateName,
+        );
         next.name = stored.name;
         next.capturedAt = stored.capturedAt;
         await set(`registration:${key}`, next).catch(() => {});
@@ -404,16 +411,17 @@ export default function RegisteredPrint({
   }
   function savePdf(bytes: Uint8Array | undefined, suffix: string) {
     if (!bytes) return;
-    const calibrationTag =
-      manualNine && !handCut ? `-${manualCutCorrectionFileTag(project.settings)}` : '';
     download(
       new Blob([bytes.slice().buffer], { type: 'application/pdf' }),
-      `${id}-${suffix}${calibrationTag}.pdf`,
+      exportFilename(project, suffix, 'pdf'),
     );
   }
   function saveCutPng() {
     if (!cutPng) return;
-    download(new Blob([cutPng.slice().buffer], { type: 'image/png' }), `${id}-basic-cut.png`);
+    download(
+      new Blob([cutPng.slice().buffer], { type: 'image/png' }),
+      templateFilename(project.settings, 'basic-cut', 'png'),
+    );
   }
   return (
     <dialog
@@ -473,7 +481,7 @@ export default function RegisteredPrint({
       <div className="registered-content">
         <div className="registration-summary">
           <div>
-            <strong>{id}</strong>
+            <strong>{manualNine ? '9-card cutting sheet' : 'Reusable cut template'}</strong>
             <span>
               {full.placements.length} fixed slots ·{' '}
               {project.settings.paper === 'letter' ? 'US Letter' : 'A4'} ·{' '}
@@ -1079,7 +1087,7 @@ export default function RegisteredPrint({
                   <strong>
                     {formatDimensions(full.width, full.height, project.settings.units)}
                   </strong>
-                  . Save the project as <strong>{id}</strong>.
+                  . Save the project as <strong>{templateName}</strong>.
                   {printPaper.usesLetterHack && (
                     <>
                       {' '}
@@ -1134,7 +1142,7 @@ export default function RegisteredPrint({
                   <div className="capture-success">
                     <CheckCircle2 size={16} />
                     <span>
-                      {profile.name}
+                      {templateFilename(project.settings, 'cricut-template', 'pdf')}
                       <small>
                         Geometry checked · captured{' '}
                         {new Date(profile.capturedAt).toLocaleDateString()} ·{' '}

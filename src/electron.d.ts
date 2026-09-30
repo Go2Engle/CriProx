@@ -61,11 +61,13 @@ declare global {
         load: (
           templateId: string,
           slotCount: number,
+          templateName?: string,
         ) => Promise<{ name: string; capturedAt: string; pdf: ArrayBuffer } | null>;
         save: (
           templateId: string,
           slotCount: number,
           pdf: ArrayBuffer,
+          templateName?: string,
         ) => Promise<{ name: string; capturedAt: string }>;
       };
       releases?: {
