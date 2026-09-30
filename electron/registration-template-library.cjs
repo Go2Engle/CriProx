@@ -12,12 +12,23 @@ function assertTemplateIdentity(templateId, slotCount) {
   if (typeof templateId !== 'string' || !templateIdPattern.test(templateId))
     throw new Error('Invalid registration template identifier.');
   if (!Number.isInteger(slotCount) || !supportedSlotCounts.has(slotCount))
-    throw new Error('Only six-card, seven-card, and eight-card registration templates are supported.');
+    throw new Error(
+      'Only six-card, seven-card, and eight-card registration templates are supported.',
+    );
   return { templateId, slotCount };
 }
 
-function registrationTemplateFilename(templateId, slotCount) {
+function registrationTemplateFilename(templateId, slotCount, templateName) {
   const identity = assertTemplateIdentity(templateId, slotCount);
+  if (templateName !== undefined) {
+    if (
+      typeof templateName !== 'string' ||
+      templateName.length > 180 ||
+      !/^CriProx-[a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*$/.test(templateName)
+    )
+      throw new Error('Invalid registration template filename.');
+    return `${templateName}-cricut-template.pdf`;
+  }
   return `${identity.templateId}-${identity.slotCount}-cut-cricut-template.pdf`;
 }
 
@@ -37,7 +48,11 @@ function templateBytes(value) {
 async function saveRegistrationTemplate(root, request) {
   if (typeof root !== 'string' || !path.isAbsolute(root))
     throw new Error('Project library folder must be an absolute path.');
-  const filename = registrationTemplateFilename(request?.templateId, request?.slotCount);
+  const filename = registrationTemplateFilename(
+    request?.templateId,
+    request?.slotCount,
+    request?.templateName,
+  );
   const bytes = templateBytes(request?.pdf);
   await fs.mkdir(root, { recursive: true });
   const target = path.join(root, filename);
@@ -55,8 +70,21 @@ async function saveRegistrationTemplate(root, request) {
 async function loadRegistrationTemplate(root, request) {
   if (typeof root !== 'string' || !path.isAbsolute(root))
     throw new Error('Project library folder must be an absolute path.');
-  const filename = registrationTemplateFilename(request?.templateId, request?.slotCount);
-  const target = path.join(root, filename);
+  const filename = registrationTemplateFilename(
+    request?.templateId,
+    request?.slotCount,
+    request?.templateName,
+  );
+  const legacyFilename = registrationTemplateFilename(request?.templateId, request?.slotCount);
+  // Older captures remain available without requiring users to recapture or rename them.
+  for (const candidate of new Set([filename, legacyFilename])) {
+    const loaded = await readRegistrationTemplate(path.join(root, candidate), candidate);
+    if (loaded) return loaded;
+  }
+  return null;
+}
+
+async function readRegistrationTemplate(target, filename) {
   let handle;
   try {
     handle = await fs.open(target, readOnlyNoFollow);

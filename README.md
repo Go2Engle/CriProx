@@ -53,6 +53,12 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 
 CriProx also supports a registered-print workflow: save a one-page PDF from Design Space, import it into CriProx, and reuse those captured marks for later artwork pages while keeping the cut geometry unchanged.
 
+Export filenames use the deck name, output paper, layout, and purpose, such as
+`My-Deck-US-Letter-6-card-fronts.pdf` or `My-Deck-US-Letter-6-card-sheet-01-artwork.png`.
+Reusable setup images and captured templates describe the machine and cut geometry, so they can be
+shared across decks. Manual Cricut PDFs also include readable cut offsets. Existing captured
+templates with older filenames still load automatically.
+
 For higher sheet density, the experimental manual profile prints nine cards on Letter or A4 and
 downloads a matched 191 × 266 mm Basic Cut PNG. It is a physical alignment workflow, not Print Then
 Cut, so validate the page and mat position on plain paper first.

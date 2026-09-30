@@ -5,6 +5,7 @@ import { renderSheet, download } from './export';
 import { mmToPx, type Sheet } from './layout';
 import { needsSharedCardBack, reverseFaceIndex } from './entries';
 import { withDpi } from './png';
+import { layoutFilenameStem, templateFilename } from './filenames';
 import {
   CAPTURE_COLOR,
   BACK_ALIGNMENT_SQUARE_MM,
@@ -16,7 +17,6 @@ import {
   fullTemplate,
   mirrorBackPlacements,
   registrationKey,
-  templateId,
   type OutputFrame,
   type RegistrationProfile,
 } from './registration';
@@ -49,9 +49,11 @@ export async function setupPng(settings: Settings): Promise<Uint8Array> {
   return withDpi(new Uint8Array(await blob.arrayBuffer()), dpi);
 }
 export async function downloadSetup(settings: Settings) {
-  const id = templateId(settings),
-    png = await setupPng(settings);
-  download(new Blob([png.slice().buffer], { type: 'image/png' }), `${id}-setup.png`);
+  const png = await setupPng(settings);
+  download(
+    new Blob([png.slice().buffer], { type: 'image/png' }),
+    templateFilename(settings, 'setup', 'png'),
+  );
 }
 export async function captureProfile(
   pdf: Uint8Array,
@@ -239,7 +241,7 @@ export async function buildRegisteredPdf(
   }
   output.catalog.getOrCreateViewerPreferences().setPrintScaling(PrintScaling.None);
   output.setTitle(
-    `${project.name} - ${templateId(project.settings)}${calibration ? ' - Size check' : ''}`,
+    `${project.name} - ${layoutFilenameStem(project.settings)}${calibration ? ' - Size check' : ''}`,
   );
   output.setSubject(
     'Experimental registered print: captured Design Space marks, fixed cut geometry. Validate on your machine.',
@@ -355,7 +357,7 @@ export async function buildRegisteredBackPdf(
     });
   }
   output.catalog.getOrCreateViewerPreferences().setPrintScaling(PrintScaling.None);
-  output.setTitle(`${project.name} - ${templateId(project.settings)} - Backs`);
+  output.setTitle(`${project.name} - ${layoutFilenameStem(project.settings)} - Backs`);
   output.setSubject(
     calibration
       ? 'Back-only alignment guide. Print after the registered front size-check page; no Cricut marks or cut paths are included.'
@@ -489,7 +491,7 @@ export async function combineDuplexPdfs(
     output.addPage(back);
   }
   output.catalog.getOrCreateViewerPreferences().setPrintScaling(PrintScaling.None);
-  output.setTitle(`${project.name} - ${templateId(project.settings)} - Duplex`);
+  output.setTitle(`${project.name} - ${layoutFilenameStem(project.settings)} - Duplex`);
   output.setSubject(
     `Alternating registered fronts and card backs. Print duplex using ${project.settings.backFlip === 'long-edge' ? 'long-edge' : 'short-edge'} binding at actual size.`,
   );
