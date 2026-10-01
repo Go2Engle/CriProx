@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/Go2Engle/CriProx/compare/v0.11.0...v0.11.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ci:** make Upscayl tests portable for Windows installers ([#80](https://github.com/Go2Engle/CriProx/issues/80)) ([118bb4d](https://github.com/Go2Engle/CriProx/commit/118bb4dd76c5a70fe620aa0537fb4050bb951fa7))
+
 ## [0.11.0](https://github.com/Go2Engle/CriProx/compare/v0.10.0...v0.11.0) (2026-10-01)
 
 
