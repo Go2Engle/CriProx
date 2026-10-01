@@ -172,23 +172,56 @@ export function detectTemplate(
     data[i + 2] > 125 &&
     data[i] > data[i + 1] * 1.7 &&
     data[i + 2] > data[i + 1] * 1.5;
+  // iOS PDFs can soften the PNG's edge with transparency. Recognize those
+  // pale magenta pixels while retaining the solid-color check as an anchor.
+  const isSoftMarker = (i: number) =>
+    data[i] > 200 &&
+    data[i + 1] < 205 &&
+    data[i + 2] > 180 &&
+    data[i] - data[i + 1] > 45 &&
+    data[i + 2] - data[i + 1] > 35;
+  const columns = new Uint32Array(width),
+    rows = new Uint32Array(height);
   let minX = width,
     minY = height,
     maxX = -1,
     maxY = -1;
   for (let y = 0; y < height; y++)
     for (let x = 0; x < width; x++) {
-      if (isMarker((y * width + x) * 4)) {
+      const i = (y * width + x) * 4,
+        strong = isMarker(i);
+      if (strong) {
         minX = Math.min(minX, x);
         minY = Math.min(minY, y);
         maxX = Math.max(maxX, x);
         maxY = Math.max(maxY, y);
+      }
+      if (strong || isSoftMarker(i)) {
+        columns[x]++;
+        rows[y]++;
       }
     }
   if (maxX < 0)
     throw new Error(
       'No magenta template found. Capture the setup PNG from step 1 in Design Space, in color, with bleed off.',
     );
+  // Expand only close to the solid template, and require a continuous-looking
+  // edge rather than letting isolated colored pixels determine the bounds.
+  const edgePixels = Math.ceil(2 * Math.min(sx, sy)),
+    marginX = Math.ceil(0.5 * sx),
+    marginY = Math.ceil(0.5 * sy),
+    solidMinX = minX,
+    solidMaxX = maxX,
+    solidMinY = minY,
+    solidMaxY = maxY;
+  for (let x = Math.max(0, solidMinX - marginX); x < solidMinX; x++)
+    if (columns[x] >= edgePixels) minX = Math.min(minX, x);
+  for (let x = solidMaxX + 1; x <= Math.min(width - 1, solidMaxX + marginX); x++)
+    if (columns[x] >= edgePixels) maxX = Math.max(maxX, x);
+  for (let y = Math.max(0, solidMinY - marginY); y < solidMinY; y++)
+    if (rows[y] >= edgePixels) minY = Math.min(minY, y);
+  for (let y = solidMaxY + 1; y <= Math.min(height - 1, solidMaxY + marginY); y++)
+    if (rows[y] >= edgePixels) maxY = Math.max(maxY, y);
   const measuredW = (maxX - minX + 1) / sx,
     measuredH = (maxY - minY + 1) / sy;
   if (Math.abs(measuredW - sheet.width) > 0.3 || Math.abs(measuredH - sheet.height) > 0.3) {
@@ -215,7 +248,8 @@ export function detectTemplate(
       if (Math.abs(distance) < 0.22) continue; // Exclude antialiased raster boundary.
       const px = Math.round((leftMm + x) * sx),
         py = Math.round((topMm + y) * sy);
-      const observed = isMarker((py * width + px) * 4);
+      const i = (py * width + px) * 4,
+        observed = isMarker(i) || isSoftMarker(i);
       if (observed !== distance < 0) bad++;
       samples++;
     }
