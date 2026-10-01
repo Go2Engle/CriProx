@@ -15,8 +15,12 @@ concurrency:
 
 jobs:
   test:
-    name: Test and build
-    runs-on: ubuntu-latest
+    name: Test and build (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, windows-latest]
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
