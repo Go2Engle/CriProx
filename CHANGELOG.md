@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.0](https://github.com/Go2Engle/CriProx/compare/v0.10.0...v0.11.0) (2026-10-01)
+
+
+### Features
+
+* **ci:** add manual branch installer builds ([#70](https://github.com/Go2Engle/CriProx/issues/70)) ([35682a2](https://github.com/Go2Engle/CriProx/commit/35682a2c592b52be5985f1f96c03f1f57f2fc4a8))
+* **export:** use readable filenames across downloads ([#78](https://github.com/Go2Engle/CriProx/issues/78)) ([ccf2f15](https://github.com/Go2Engle/CriProx/commit/ccf2f158c2af84a606add51f17ad8d2c9586413a))
+* **guides:** add separate page guide color ([#74](https://github.com/Go2Engle/CriProx/issues/74)) ([442f914](https://github.com/Go2Engle/CriProx/commit/442f914a08c07db337e74e112177dd841a789582))
+* **settings:** save and load complete sheet setup defaults ([#76](https://github.com/Go2Engle/CriProx/issues/76)) ([4fbca5e](https://github.com/Go2Engle/CriProx/commit/4fbca5ed666771afcde298d7d10822cd52f18068))
+* **upscaling:** use installed Upscayl Ultramix engine ([#77](https://github.com/Go2Engle/CriProx/issues/77)) ([2ae1fd4](https://github.com/Go2Engle/CriProx/commit/2ae1fd4ae691982c3da4f23b7be4934ea2b6434a))
+
+
+### Bug Fixes
+
+* **ci:** build requested branch from manual workflow ([#72](https://github.com/Go2Engle/CriProx/issues/72)) ([6c8e437](https://github.com/Go2Engle/CriProx/commit/6c8e43759d517d8a7e528e27f121fcfd0a1b151b))
+* **registration:** accept softened iPad PDF template edges ([#75](https://github.com/Go2Engle/CriProx/issues/75)) ([8ba12cc](https://github.com/Go2Engle/CriProx/commit/8ba12ccd8669b4eab89ab92b2481b942dcabb942))
+
 ## [0.10.0](https://github.com/Go2Engle/CriProx/compare/v0.9.0...v0.10.0) (2026-09-28)
 
 
