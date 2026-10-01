@@ -28,7 +28,7 @@
     "@tensorflow/tfjs": "^4.11.0",
     "idb-keyval": "^6.2.2",
     "jszip": "^3.10.2",
-    "lucide-react": "^1.47.0",
+    "lucide-react": "^1.48.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
     "react": "^19.3.0",
