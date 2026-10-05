@@ -5,6 +5,7 @@ import {
   STANDARD_CARD_RADIUS_MM,
   type Project,
 } from './types';
+import { availableSheetProfiles } from './paper-workflow';
 const supportedImage = (url: unknown) =>
   typeof url === 'string' &&
   /^(https:\/\/(cards\.scryfall\.io\/|cdn\.mpcautofill\.com\/images\/google_drive\/(full|large)\/)|data:image\/(png|jpeg|webp);base64,)/.test(
@@ -97,16 +98,14 @@ export function validateProject(value: unknown): Project {
     throw new Error('Manual cutting requires the nine-card layout.');
   if (
     (s.profile === 'seven' || s.profile === 'eight') &&
-    (s.paper !== 'letter' ||
-      s.machine === 'joy-xtra' ||
-      s.machine === 'manual' ||
+    (!availableSheetProfiles(s).includes(s.profile) ||
       s.width !== 63 ||
       s.height !== 88 ||
       s.gap !== (s.profile === 'seven' ? 0.1 : 1) ||
       s.radius !== STANDARD_CARD_RADIUS_MM)
   )
     throw new Error(
-      'The experimental seven-card and eight-card layouts require a Maker or Explore, US Letter output, 63 × 88 mm cards, 2.5 mm corners, and respectively 0.1 mm or 1 mm spacing.',
+      'The experimental seven-card and eight-card layouts require a Maker or Explore, 63 × 88 mm cards, 2.5 mm corners, and respectively 0.1 mm or 1 mm spacing. Seven-card output requires US Letter; eight-card output supports US Letter or A4.',
     );
   if (
     s.profile === 'nine' &&

@@ -89,7 +89,7 @@ import { validateProject } from './lib/project';
 import sampleCards from './sample.json';
 import { formatDimensions } from './lib/units';
 import { mpcArtworkAsCard, mpcArtworkType } from './lib/mpc';
-import { paperWorkflow } from './lib/paper-workflow';
+import { availableSheetProfiles, paperWorkflow } from './lib/paper-workflow';
 import { manualCutLineBounds } from './lib/manual-cut';
 import { manualGuideDashMm, manualGuidePathsByKind, manualGuideWidthMm } from './lib/cut-guides';
 import {
@@ -1335,9 +1335,10 @@ function ExportModal({
         </div>
         {project.settings.profile === 'expanded' && (
           <div className="warning-box">
-            {project.settings.paper === 'letter'
-              ? 'Six-card Letter layout uses the experimental Tabloid-to-Letter workaround. Confirm one page and all four sensor marks before printing.'
-              : 'Six-card layout is experimental. Confirm it fits your machine and paper in Design Space without resizing.'}
+            Six-card {paperWorkflow(project.settings).outputPaper} output uses the experimental
+            Tabloid setup in Design Space. Select {paperWorkflow(project.settings).outputPaper} at
+            100% / Actual size in the system print dialog and confirm one page with all four sensor
+            marks before printing.
           </div>
         )}
         {(project.settings.profile === 'seven' || project.settings.profile === 'eight') && (
@@ -3140,8 +3141,7 @@ export default function App() {
                       onClick={() =>
                         settings({
                           paper: 'a4',
-                          ...(project.settings.profile === 'seven' ||
-                          project.settings.profile === 'eight'
+                          ...(project.settings.profile === 'seven'
                             ? {
                                 profile: 'expanded' as const,
                                 gap: 1,
@@ -3186,7 +3186,6 @@ export default function App() {
                         profile === 'seven' || profile === 'eight'
                           ? {
                               profile,
-                              paper: 'letter',
                               width: 63,
                               height: 88,
                               gap: profile === 'eight' ? 1 : 0.1,
@@ -3219,44 +3218,28 @@ export default function App() {
                       setPage(0);
                     }}
                   >
-                    <option value="expanded" disabled={project.settings.machine === 'manual'}>
-                      6 cards · Print and Cut
-                    </option>
-                    <option
-                      value="seven"
-                      disabled={
-                        project.settings.machine === 'joy-xtra' ||
-                        project.settings.machine === 'manual'
-                      }
-                    >
-                      7 cards · Print and Cut · Experimental
-                    </option>
-                    <option
-                      value="eight"
-                      disabled={
-                        project.settings.machine === 'joy-xtra' ||
-                        project.settings.machine === 'manual'
-                      }
-                    >
-                      8 cards - Print and Cut - Experimental
-                    </option>
-                    <option value="nine">
-                      9 cards ·{' '}
-                      {project.settings.machine === 'manual'
-                        ? 'Manual cutting'
-                        : 'Manual Alignment · Experimental'}
-                    </option>
+                    {availableSheetProfiles(project.settings).map((profile) => (
+                      <option key={profile} value={profile}>
+                        {profile === 'expanded'
+                          ? '6 cards · Print and Cut'
+                          : profile === 'seven'
+                            ? '7 cards · Print and Cut · Experimental'
+                            : profile === 'eight'
+                              ? '8 cards · Print and Cut · Experimental'
+                              : `9 cards · ${project.settings.machine === 'manual' ? 'Manual cutting' : 'Manual Alignment · Experimental'}`}
+                      </option>
+                    ))}
                   </select>
                   <p className="field-note">
                     {project.settings.profile === 'seven'
                       ? `${formatDimensions(189.2, 214.2, project.settings.units)} 2–3–2 layout. Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.`
                       : project.settings.profile === 'eight'
-                        ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto US Letter at 100%.`
+                        ? `${formatDimensions(177, 255, project.settings.units)} 2×4 landscape-card layout with 1 mm gaps. Capture a portrait Tabloid PDF; CriProx reframes its marks onto ${paperWorkflow(project.settings).outputPaper} at 100% / Actual size.`
                         : project.settings.profile === 'nine'
                           ? project.settings.machine === 'manual'
                             ? `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Set cut guides below, then print the PDF at 100%.`
                             : `${formatDimensions(191, 266, project.settings.units)} 3×3 layout. Print the PDF at 100%, then use the matched Basic Cut PNG with manual mat placement.`
-                          : `${formatDimensions(180, 220, project.settings.units)} candidate area.${paperWorkflow(project.settings).usesLetterHack ? ' Choose Tabloid in Design Space, then US Letter at 100% in the system print dialog.' : ' Verify in Design Space before printing.'}`}
+                          : `${formatDimensions(180, 220, project.settings.units)} candidate area. Choose Tabloid (11 × 17 in) in Design Space, then ${paperWorkflow(project.settings).systemPaper} at 100% / Actual size in the system print dialog.`}
                   </p>
                 </div>
                 {project.settings.machine === 'manual' && (
