@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/Go2Engle/CriProx/compare/v0.11.1...v0.11.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* **print:** correct A4 workflows and filter sheet layouts ([#83](https://github.com/Go2Engle/CriProx/issues/83)) ([acc0e4f](https://github.com/Go2Engle/CriProx/commit/acc0e4f38853445d3dd0928e8720108f9c36d540))
+
 ## [0.11.1](https://github.com/Go2Engle/CriProx/compare/v0.11.0...v0.11.1) (2026-10-01)
 
 
