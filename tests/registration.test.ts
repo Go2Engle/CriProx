@@ -8,12 +8,13 @@ import {
   buildRegisteredBackPdf,
   buildRegisteredPdf,
   mirroredBackSheet,
+  registeredOutputFrame,
 } from '../src/lib/registered-pdf';
 import {
   alignmentArtworkDirection,
   backAlignmentCorrection,
   detectTemplate,
-  fitTabloidCaptureToLetter,
+  fitTabloidCaptureToPaper,
   fixedSheets,
   fullTemplate,
   mirrorBackPlacements,
@@ -76,36 +77,39 @@ test('sheet preview places partial 6, 7, and 8-card pages at the exported captur
     assert.ok(Math.abs(frame.master!.height - 279.4) < 0.001);
   }
 });
-test('eight-card preview uses the same Tabloid-to-Letter translation as export', () => {
-  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
-    outputFrame = fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
-      left: 12.7,
-      top: 12.7,
-      right: 206.4173,
-      bottom: 282.6173,
-    }),
-    profile = {
-      version: 1 as const,
-      key: registrationKey(settings),
-      name: 'Tabloid capture',
-      capturedAt: '2026-09-27T00:00:00.000Z',
-      pdf: new Uint8Array(),
-      pageWidthPt: 792,
-      pageHeightPt: 1224,
-      leftMm: 21.25,
-      topMm: 21.25,
-      outputFrame,
-      preview: 'data:image/png;base64,',
-    } satisfies RegistrationProfile,
-    frame = sheetPreviewFrame(settings, profile);
-  assert.ok(Math.abs(frame.paper.w - 215.9) < 0.001);
-  assert.ok(Math.abs(frame.paper.h - 279.4) < 0.001);
-  assert.equal(frame.left, outputFrame.leftMm);
-  assert.equal(frame.top, outputFrame.topMm);
-  assert.ok(Math.abs(frame.master!.left - outputFrame.masterXPt / (72 / 25.4)) < 1e-9);
-  assert.ok(
-    Math.abs(frame.master!.top - (279.4 - 431.8 - outputFrame.masterYPt / (72 / 25.4))) < 1e-9,
-  );
+test('eight-card preview uses the same Tabloid-to-output-paper translation as export', () => {
+  for (const paper of ['letter', 'a4'] as const) {
+    const settings = { ...DEFAULT_SETTINGS, paper, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+      outputFrame = fitTabloidCaptureToPaper(paper, 792, 1224, 21.25, 21.25, {
+        left: 12.7,
+        top: 12.7,
+        right: 206.4173,
+        bottom: 282.6173,
+      }),
+      profile = {
+        version: 1 as const,
+        key: registrationKey(settings),
+        name: 'Tabloid capture',
+        capturedAt: '2026-09-27T00:00:00.000Z',
+        pdf: new Uint8Array(),
+        pageWidthPt: 792,
+        pageHeightPt: 1224,
+        leftMm: 21.25,
+        topMm: 21.25,
+        outputFrame,
+        preview: 'data:image/png;base64,',
+      } satisfies RegistrationProfile,
+      frame = sheetPreviewFrame(settings, profile);
+    assert.ok(Math.abs(frame.paper.w - (paper === 'letter' ? 215.9 : 210)) < 0.001);
+    assert.ok(Math.abs(frame.paper.h - (paper === 'letter' ? 279.4 : 297)) < 0.001);
+    assert.equal(frame.left, outputFrame.leftMm);
+    assert.equal(frame.top, outputFrame.topMm);
+    assert.ok(Math.abs(frame.master!.left - outputFrame.masterXPt / (72 / 25.4)) < 1e-9);
+    assert.ok(
+      Math.abs(frame.master!.top - (frame.paper.h - 431.8 - outputFrame.masterYPt / (72 / 25.4))) <
+        1e-9,
+    );
+  }
 });
 test('uncaptured registered layouts keep the artwork and mock marks on the output page', () => {
   for (const settings of [
@@ -361,7 +365,7 @@ test('capture recognizes the eight-card pattern on portrait Tabloid', () => {
   assert.ok(Math.abs(p.topMm - 21.25) < 0.15);
 });
 test('Tabloid capture is centered on Letter without scaling cards or marks', () => {
-  const frame = fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
+  const frame = fitTabloidCaptureToPaper('letter', 792, 1224, 21.25, 21.25, {
     left: 12.7,
     top: 12.7,
     right: 206.4173,
@@ -375,7 +379,7 @@ test('Tabloid capture is centered on Letter without scaling cards or marks', () 
   assert.ok(Math.abs(frame.leftMm - 19.64135) < 0.01);
   assert.ok(Math.abs(frame.topMm - 13.29135) < 0.01);
   assert.throws(() =>
-    fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
+    fitTabloidCaptureToPaper('letter', 792, 1224, 21.25, 21.25, {
       left: 0,
       top: 0,
       right: 215,
@@ -383,7 +387,50 @@ test('Tabloid capture is centered on Letter without scaling cards or marks', () 
     }),
   );
 });
-test('eight-card registered fronts and backs are both Letter pages', async () => {
+test('Tabloid capture fits A4 at actual size and rejects footprints too wide for A4', () => {
+  const bounds = { left: 12.7, top: 12.7, right: 206.4173, bottom: 282.6173 };
+  const frame = fitTabloidCaptureToPaper('a4', 792, 1224, 21.25, 21.25, bounds);
+  const ptPerMm = 72 / 25.4;
+  assert.ok(Math.abs(frame.pageWidthPt / ptPerMm - 210) < 1e-9);
+  assert.ok(Math.abs(frame.pageHeightPt / ptPerMm - 297) < 1e-9);
+  const shiftX = frame.masterXPt / ptPerMm;
+  const shiftY = 297 - 431.8 - frame.masterYPt / ptPerMm;
+  assert.ok(Math.abs(frame.leftMm - (21.25 + shiftX)) < 1e-9);
+  assert.ok(Math.abs(frame.topMm - (21.25 + shiftY)) < 1e-9);
+  assert.ok(Math.abs(bounds.left + shiftX - (210 - bounds.right - shiftX)) < 1e-9);
+  assert.ok(Math.abs(bounds.top + shiftY - (297 - bounds.bottom - shiftY)) < 1e-9);
+  assert.ok(frame.marginMm >= 1);
+  const tooWide = { left: 10, top: 10, right: 220, bottom: 280 };
+  assert.doesNotThrow(() => fitTabloidCaptureToPaper('letter', 792, 1224, 21.25, 21.25, tooWide));
+  assert.throws(
+    () => fitTabloidCaptureToPaper('a4', 792, 1224, 21.25, 21.25, tooWide),
+    /cannot fit A4/,
+  );
+});
+test('eight-card frames require a capture fitted to the selected output paper', () => {
+  const settings = { ...DEFAULT_SETTINGS, paper: 'a4' as const, profile: 'eight' as const };
+  const profile: RegistrationProfile = {
+    version: 1,
+    key: registrationKey(settings),
+    name: 'Tabloid capture',
+    capturedAt: new Date().toISOString(),
+    pdf: new Uint8Array(),
+    pageWidthPt: 792,
+    pageHeightPt: 1224,
+    leftMm: 21.25,
+    topMm: 21.25,
+    preview: '',
+  };
+  const bounds = { left: 12.7, top: 12.7, right: 206.4173, bottom: 282.6173 };
+  assert.throws(() => registeredOutputFrame(profile, settings), /Tabloid-to-A4/);
+  profile.outputFrame = fitTabloidCaptureToPaper('letter', 792, 1224, 21.25, 21.25, bounds);
+  assert.throws(() => registeredOutputFrame(profile, settings), /Tabloid-to-A4/);
+  profile.outputFrame = fitTabloidCaptureToPaper('a4', 792, 1224, 21.25, 21.25, bounds);
+  assert.equal(registeredOutputFrame(profile, settings), profile.outputFrame);
+  profile.outputFrame.pageWidthPt = NaN;
+  assert.throws(() => registeredOutputFrame(profile, settings), /Tabloid-to-A4/);
+});
+test('eight-card registered fronts and backs are both the selected paper size', async () => {
   const source = await PDFDocument.create();
   source.addPage([792, 1224]).drawRectangle({
     x: 36,
@@ -392,39 +439,47 @@ test('eight-card registered fronts and backs are both Letter pages', async () =>
     height: 10,
     color: rgb(0, 0, 0),
   });
-  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
-    profile = {
-      version: 1 as const,
-      key: registrationKey(settings),
-      name: 'Tabloid capture',
-      capturedAt: new Date().toISOString(),
-      pdf: await source.save(),
-      pageWidthPt: 792,
-      pageHeightPt: 1224,
-      leftMm: 21.25,
-      topMm: 21.25,
-      outputFrame: fitTabloidCaptureToLetter(792, 1224, 21.25, 21.25, {
-        left: 12.7,
-        top: 12.7,
-        right: 206.4173,
-        bottom: 282.6173,
-      }),
-      preview: '',
-    },
-    project = {
-      version: 1 as const,
-      name: 'Eight-card output',
-      entries: [{ ...entry, quantity: 8 }],
-      settings,
-    };
-  for (const result of [
-    await buildRegisteredPdf(project, profile, () => {}, true),
-    await buildRegisteredBackPdf(project, profile, () => {}, true),
-  ]) {
-    const output = await PDFDocument.load(result);
-    assert.equal(output.getPageCount(), 1);
-    assert.ok(Math.abs(output.getPage(0).getWidth() - 612) < 0.001);
-    assert.ok(Math.abs(output.getPage(0).getHeight() - 792) < 0.001);
+  for (const paper of ['letter', 'a4'] as const) {
+    const settings = { ...DEFAULT_SETTINGS, paper, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+      profile = {
+        version: 1 as const,
+        key: registrationKey(settings),
+        name: 'Tabloid capture',
+        capturedAt: new Date().toISOString(),
+        pdf: await source.save(),
+        pageWidthPt: 792,
+        pageHeightPt: 1224,
+        leftMm: 21.25,
+        topMm: 21.25,
+        outputFrame: fitTabloidCaptureToPaper(paper, 792, 1224, 21.25, 21.25, {
+          left: 12.7,
+          top: 12.7,
+          right: 206.4173,
+          bottom: 282.6173,
+        }),
+        preview: '',
+      },
+      project = {
+        version: 1 as const,
+        name: 'Eight-card output',
+        entries: [{ ...entry, quantity: 8 }],
+        settings,
+      };
+    for (const result of [
+      await buildRegisteredPdf(project, profile, () => {}, true),
+      await buildRegisteredBackPdf(project, profile, () => {}, true),
+    ]) {
+      const output = await PDFDocument.load(result);
+      assert.equal(output.getPageCount(), 1);
+      assert.ok(
+        Math.abs(output.getPage(0).getWidth() - (paper === 'letter' ? 612 : 210 * (72 / 25.4))) <
+          0.001,
+      );
+      assert.ok(
+        Math.abs(output.getPage(0).getHeight() - (paper === 'letter' ? 792 : 297 * (72 / 25.4))) <
+          0.001,
+      );
+    }
   }
 });
 test('capture rejects scaling, missing/rearranged slots, filled gaps and absent marks', () => {

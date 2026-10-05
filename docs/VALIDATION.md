@@ -17,7 +17,7 @@
 - Unsigned macOS arm64 package builds. Packaged app launches with context isolation, renderer sandboxing, and no renderer Node access. Native size-check and local-artwork exports succeed with no renderer exceptions.
 - npm dependency audit reports zero known vulnerabilities for the installed dependency set.
 - Experimental seven-card geometry: the 189.2 × 214.2 mm 2–3–2 template paginates at seven cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 0.1 mm spacing, US Letter output, and Maker/Explore targets.
-- Experimental eight-card geometry: the 177 × 255 mm 2×4 template paginates at eight horizontal cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 1 mm spacing, US Letter output, and Maker/Explore targets.
+- Experimental eight-card geometry: the 177 × 255 mm 2×4 template paginates at eight horizontal cards, preserves fixed slot positions, and is restricted to 63 × 88 mm cards, 1 mm spacing, US Letter or A4 output, and Maker/Explore targets. The A4 extension was validated on October 5, 2026 with fit-clearance checks, matching front/back PDF dimensions, preview translation, project validation, and browser checks of layout filtering and paper changes.
 - Manual nine-card geometry: the 191 × 266 mm 3×3 template paginates at nine cards, preserves all
   slot coordinates on partial pages, and is restricted to 63 × 88 mm cards, 1 mm spacing, and
   2.5 mm corners. Front and mirrored back placement use the same tested 6.35 mm nominal page inset;
@@ -35,9 +35,9 @@ Browser checks caught a local-image bug: fetching a data URL was blocked by the 
 ## Still requires external validation
 
 - Actual Cricut sensor acquisition, Design Space contour tracing, physical scale, alignment, and repeatability.
-- Acceptance of the experimental six-card layout on each model/paper configuration, including the Tabloid-to-Letter print workaround for Letter output.
+- Acceptance of the experimental six-card layout on each model/paper configuration, including the Tabloid setup for Letter and A4 output.
 - Seven-card sensor acquisition, physical dimensions, edge alignment, 12 × 24 in mat behavior, and repeatability after the Tabloid-to-Letter print workaround.
-- Eight-card printer imageable-area fit, sensor acquisition, physical dimensions, edge alignment, mat behavior, and repeatability after Tabloid capture and Letter export.
+- Eight-card printer imageable-area fit, sensor acquisition, physical dimensions, edge alignment, mat behavior, and repeatability after Tabloid capture and Letter or A4 export.
 - A first nine-card Basic Cut trial completed with matching scale and a small, consistent-looking
   up/left translation. Exact correction and repeatability across multiple page placements and mat
   loads still require measurement.

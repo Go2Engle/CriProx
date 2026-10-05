@@ -1088,7 +1088,7 @@ export default function RegisteredPrint({
                     {formatDimensions(full.width, full.height, project.settings.units)}
                   </strong>
                   . Save the project as <strong>{templateName}</strong>.
-                  {printPaper.usesLetterHack && (
+                  {printPaper.usesTabloidSetup && (
                     <>
                       {' '}
                       Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the
@@ -1113,9 +1113,9 @@ export default function RegisteredPrint({
                       keep the printer paper on <strong>Tabloid (11 × 17 in)</strong>. Save a{' '}
                       <strong>one-page portrait Tabloid PDF at 100% / Actual size</strong> with all
                       four sensor marks. CriProx will check the complete marked area and reframe it
-                      onto US Letter without scaling.
+                      onto {printPaper.outputPaper} without scaling.
                     </>
-                  ) : printPaper.usesLetterHack ? (
+                  ) : printPaper.usesTabloidSetup ? (
                     <>
                       change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save a{' '}
                       <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it
@@ -1148,7 +1148,7 @@ export default function RegisteredPrint({
                         {new Date(profile.capturedAt).toLocaleDateString()} ·{' '}
                         {registrationTemplates ? 'project library root' : 'local app storage'} ·
                         {profile.outputFrame
-                          ? `US Letter output · ${formatMeasurement(profile.outputFrame.marginMm, project.settings.units)} minimum mark margin · `
+                          ? `${printPaper.outputPaper} output · ${formatMeasurement(profile.outputFrame.marginMm, project.settings.units)} minimum mark margin · `
                           : ''}
                         hardware unverified
                       </small>
@@ -1166,8 +1166,8 @@ export default function RegisteredPrint({
                   PDF application.{' '}
                   {printPaper.capturesTabloid && (
                     <>
-                      The exported pages are <strong>US Letter</strong>, with the captured marks and
-                      card positions moved together.{' '}
+                      The exported pages are <strong>{printPaper.outputPaper}</strong>, with the
+                      captured marks and card positions moved together.{' '}
                     </>
                   )}
                   Print at <strong>100% / Actual size</strong>, with no fit, shrink, headers, or

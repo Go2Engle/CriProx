@@ -10,6 +10,7 @@ import {
   backBleedMm,
   backOuterBleedMm,
   DEFAULT_SETTINGS,
+  EMPTY_PROJECT,
   fixedBleedMm,
   frontBleedMm,
   PRINT_DPI_OPTIONS,
@@ -30,8 +31,8 @@ import {
   scryfallSearchPath,
   scryfallVariantsPath,
 } from '../src/lib/scryfall';
-import { artworkSourceAtDpi, fitArtwork } from '../src/lib/export';
-import { paperWorkflow } from '../src/lib/paper-workflow';
+import { artworkSourceAtDpi, fitArtwork, instructions } from '../src/lib/export';
+import { availableSheetProfiles, paperWorkflow } from '../src/lib/paper-workflow';
 import {
   MANUAL_CUT_INSET_MM,
   manualCutCorrection,
@@ -574,37 +575,103 @@ test('bleed amounts are fixed by layout profile', () => {
   assert.equal(backOuterBleedMm({ backBleedEnabled: true }), 1.5);
   assert.equal(backOuterBleedMm({ backBleedEnabled: false }), 0);
 });
-test('paper workflow uses Tabloid for Letter hacks and native A4 for A4 output', () => {
+test('sheet areas include only layouts supported by the paper and cutting method', () => {
+  for (const machine of ['maker', 'explore'] as const) {
+    assert.deepEqual(availableSheetProfiles({ paper: 'letter', machine }), [
+      'expanded',
+      'seven',
+      'eight',
+      'nine',
+    ]);
+    assert.deepEqual(availableSheetProfiles({ paper: 'a4', machine }), [
+      'expanded',
+      'eight',
+      'nine',
+    ]);
+  }
+  for (const paper of ['letter', 'a4'] as const) {
+    assert.deepEqual(availableSheetProfiles({ paper, machine: 'joy-xtra' }), ['expanded', 'nine']);
+    assert.deepEqual(availableSheetProfiles({ paper, machine: 'manual' }), ['nine']);
+  }
+});
+test('paper workflow uses Tabloid setup for registered Letter and A4 output', () => {
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'expanded' }), {
+    outputPaper: 'US Letter',
     designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'US Letter',
-    usesLetterHack: true,
+    usesTabloidSetup: true,
     capturesTabloid: false,
   });
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'seven' }), {
+    outputPaper: 'US Letter',
     designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'US Letter',
-    usesLetterHack: true,
+    usesTabloidSetup: true,
     capturesTabloid: false,
   });
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'eight' }), {
+    outputPaper: 'US Letter',
     designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'Tabloid (11 × 17 in)',
-    usesLetterHack: true,
+    usesTabloidSetup: true,
     capturesTabloid: true,
   });
   assert.deepEqual(paperWorkflow({ paper: 'letter', profile: 'nine' }), {
+    outputPaper: 'US Letter',
     designSpacePaper: 'US Letter',
     systemPaper: 'US Letter',
-    usesLetterHack: false,
+    usesTabloidSetup: false,
     capturesTabloid: false,
   });
   assert.deepEqual(paperWorkflow({ paper: 'a4', profile: 'expanded' }), {
-    designSpacePaper: 'A4',
+    outputPaper: 'A4',
+    designSpacePaper: 'Tabloid (11 × 17 in)',
     systemPaper: 'A4',
-    usesLetterHack: false,
+    usesTabloidSetup: true,
     capturesTabloid: false,
   });
+  assert.deepEqual(paperWorkflow({ paper: 'a4', profile: 'nine' }), {
+    outputPaper: 'A4',
+    designSpacePaper: 'A4',
+    systemPaper: 'A4',
+    usesTabloidSetup: false,
+    capturesTabloid: false,
+  });
+  assert.deepEqual(paperWorkflow({ paper: 'a4', profile: 'eight' }), {
+    outputPaper: 'A4',
+    designSpacePaper: 'Tabloid (11 × 17 in)',
+    systemPaper: 'Tabloid (11 × 17 in)',
+    usesTabloidSetup: true,
+    capturesTabloid: true,
+  });
+});
+test('eight-card export instructions use the selected output paper after Tabloid capture', () => {
+  for (const paper of ['letter', 'a4'] as const) {
+    const project = {
+      ...EMPTY_PROJECT,
+      settings: { ...DEFAULT_SETTINGS, paper, profile: 'eight' as const },
+    };
+    const guide = instructions(project, [], false);
+    const outputPaper = paper === 'letter' ? 'US Letter' : 'A4';
+    assert.match(guide, /Tabloid \(11 × 17 in\) in Design Space and the system print dialog/);
+    assert.ok(guide.includes(`whole capture onto ${outputPaper} without scaling`));
+    assert.ok(guide.includes(`print them on ${outputPaper} at 100% / Actual size`));
+  }
+});
+test('A4 export instructions require Tabloid setup and actual-size A4 printing', () => {
+  const project = {
+    ...EMPTY_PROJECT,
+    settings: { ...DEFAULT_SETTINGS, paper: 'a4' as const },
+  };
+  for (const calibration of [false, true]) {
+    const guide = instructions(project, [], calibration);
+    assert.match(guide, /Tabloid \(11 × 17 in\) paper in Design Space/);
+    assert.match(
+      guide,
+      /change the paper to A4, keep portrait orientation, and print at 100% \/ Actual size/,
+    );
+    assert.match(guide, /Cancel if it becomes two pages or clips a mark/);
+  }
 });
 test('project Save As names are portable across desktop platforms', () => {
   assert.equal(projectFilename('My Commander: Deck / 2026'), 'My-Commander-Deck-2026.criprox.json');
@@ -710,7 +777,10 @@ test('project import validates geometry, IDs, totals, image schemes and selected
   assert.throws(() => validateProject({ ...good, settings: { ...seven, gap: 1 } }));
   const eight = { ...seven, profile: 'eight' as const, gap: 1, bleed: 0.5 };
   assert.equal(validateProject({ ...good, settings: eight }).settings.profile, 'eight');
-  assert.throws(() => validateProject({ ...good, settings: { ...eight, paper: 'a4' as const } }));
+  assert.equal(
+    validateProject({ ...good, settings: { ...eight, paper: 'a4' as const } }).settings.paper,
+    'a4',
+  );
   assert.throws(() => validateProject({ ...good, settings: { ...eight, gap: 2 } }));
   assert.equal(
     validateProject({ ...good, settings: { ...eight, gap: 0.1, bleed: 0.05 } }).settings.gap,

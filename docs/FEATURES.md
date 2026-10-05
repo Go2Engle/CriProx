@@ -79,7 +79,7 @@ cutting a full sheet.
 
 For registered Cricut layouts, the sheet editor shows the saved Design Space page and places cards
 at the same origin used by PDF export. Partial sheets keep the full layout's occupied-slot positions.
-The eight-card preview applies the same Tabloid-to-Letter translation as export. Before a matching
+The eight-card preview applies the same Tabloid-to-Letter or Tabloid-to-A4 translation as export. Before a matching
 capture is available, the editor shows approximate marks.
 
 For Cricut machines, the existing experimental manual alignment profile uses the same nine-card
@@ -143,7 +143,7 @@ Remote URLs in a project backup are references, not embedded copies of the remot
 
 ### Six-card candidate area
 
-The default 180 × 220 mm candidate area produces six rotated cards. With US Letter output, the workflow declares Tabloid inside Design Space and then selects US Letter at 100% / Actual size in the system print dialog. It is not a Cricut-certified profile.
+The default 180 × 220 mm candidate area produces six rotated cards. With US Letter or A4 output, the workflow declares Tabloid inside Design Space and then selects the output paper at 100% / Actual size in the system print dialog. It is not a Cricut-certified profile.
 
 ### Seven-card 2–3–2 layout
 
@@ -151,7 +151,7 @@ The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 m
 
 ### Eight-card portrait layout
 
-The Maker/Explore experimental profile uses eight fixed horizontal cards in a 2 × 4 layout with 1 mm gaps. The magenta setup image is 177 × 255 mm. Design Space produces a complete portrait Tabloid capture; CriProx checks every slot and the complete marked footprint, then moves the capture and artwork together onto US Letter pages at actual size. The earlier 0.1 mm-gap capture passed software measurement; the new geometry needs a fresh capture and fit check. Printer margins, sensor acquisition, and physical cutting remain unverified.
+The Maker/Explore experimental profile uses eight fixed horizontal cards in a 2 × 4 layout with 1 mm gaps. The magenta setup image is 177 × 255 mm. Design Space produces a complete portrait Tabloid capture; CriProx checks every slot and the complete marked footprint, then moves the capture and artwork together onto US Letter or A4 pages at actual size with at least 1 mm clearance. Fronts, backs, and previews use the selected output paper. A capture must fit that paper; changing paper requires a matching capture. The Sheet area selector hides layouts unavailable for the selected paper and cutting method; seven-card is Letter-only. Printer margins, sensor acquisition, and physical cutting remain unverified.
 
 ### Nine-card manual layout
 

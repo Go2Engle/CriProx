@@ -23,20 +23,21 @@ export type RegistrationProfile = {
   pageHeightPt: number;
   leftMm: number;
   topMm: number;
-  /** Present when a Tabloid capture is reframed to Letter without scaling. */
+  /** Present when a Tabloid capture is reframed to the output paper without scaling. */
   outputFrame?: OutputFrame;
   preview: string;
   previewWidth?: number;
 };
-export function fitTabloidCaptureToLetter(
+export function fitTabloidCaptureToPaper(
+  paper: Settings['paper'],
   sourceWidthPt: number,
   sourceHeightPt: number,
   templateLeftMm: number,
   templateTopMm: number,
   bounds: ContentBoundsMm,
 ): OutputFrame {
-  const paperWidthMm = 215.9,
-    paperHeightMm = 279.4,
+  const paperWidthMm = paper === 'letter' ? 215.9 : 210,
+    paperHeightMm = paper === 'letter' ? 279.4 : 297,
     sourceWidthMm = sourceWidthPt / PT_PER_MM,
     sourceHeightMm = sourceHeightPt / PT_PER_MM,
     width = bounds.right - bounds.left,
@@ -58,7 +59,7 @@ export function fitTabloidCaptureToLetter(
     marginMm = Math.min(marginX, marginY);
   if (marginMm < 1)
     throw new Error(
-      `The complete marked area is ${width.toFixed(2)} × ${height.toFixed(2)} mm and cannot fit US Letter at actual size with 1 mm clearance.`,
+      `The complete marked area is ${width.toFixed(2)} × ${height.toFixed(2)} mm and cannot fit ${paper === 'letter' ? 'US Letter' : 'A4'} at actual size with 1 mm clearance.`,
     );
   const shiftXmm = marginX - bounds.left,
     shiftYmm = marginY - bounds.top;

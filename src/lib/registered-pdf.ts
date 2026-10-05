@@ -12,7 +12,7 @@ import {
   alignmentArtworkDirection,
   PT_PER_MM,
   detectTemplate,
-  fitTabloidCaptureToLetter,
+  fitTabloidCaptureToPaper,
   fixedSheets,
   fullTemplate,
   mirrorBackPlacements,
@@ -112,7 +112,14 @@ export async function captureProfile(
       settings,
     );
     const outputFrame = tabloidCapture
-      ? fitTabloidCaptureToLetter(size.width, size.height, leftMm, topMm, contentBoundsMm)
+      ? fitTabloidCaptureToPaper(
+          settings.paper,
+          size.width,
+          size.height,
+          leftMm,
+          topMm,
+          contentBoundsMm,
+        )
       : undefined;
     const thumb = document.createElement('canvas');
     thumb.width = 1000;
@@ -143,18 +150,25 @@ export function registeredOutputFrame(
   settings: Settings,
 ): OutputFrame {
   if (settings.profile === 'eight') {
-    const frame = profile.outputFrame;
+    const frame = profile.outputFrame,
+      paper = settings.paper === 'letter' ? [215.9, 279.4] : [210, 297];
     if (
       !frame ||
-      Math.abs(frame.pageWidthPt - 612) > 0.01 ||
-      Math.abs(frame.pageHeightPt - 792) > 0.01 ||
+      Math.abs(frame.pageWidthPt - paper[0] * PT_PER_MM) > 0.01 ||
+      Math.abs(frame.pageHeightPt - paper[1] * PT_PER_MM) > 0.01 ||
       frame.marginMm < 1 ||
-      ![frame.masterXPt, frame.masterYPt, frame.leftMm, frame.topMm, frame.marginMm].every(
-        Number.isFinite,
-      )
+      ![
+        frame.pageWidthPt,
+        frame.pageHeightPt,
+        frame.masterXPt,
+        frame.masterYPt,
+        frame.leftMm,
+        frame.topMm,
+        frame.marginMm,
+      ].every(Number.isFinite)
     )
       throw new Error(
-        'This eight-card template needs a validated Tabloid-to-Letter capture. Import the original PDF again.',
+        `This eight-card template needs a validated Tabloid-to-${settings.paper === 'letter' ? 'Letter' : 'A4'} capture. Import the original PDF again.`,
       );
     return frame;
   }

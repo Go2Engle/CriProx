@@ -1,31 +1,39 @@
 import type { Settings } from './types';
 
+export function availableSheetProfiles(settings: Pick<Settings, 'paper' | 'machine'>) {
+  const profiles: Settings['profile'][] = [];
+  if (settings.machine !== 'manual') profiles.push('expanded');
+  if (settings.machine === 'maker' || settings.machine === 'explore') {
+    if (settings.paper === 'letter') profiles.push('seven');
+    profiles.push('eight');
+  }
+  profiles.push('nine');
+  return profiles;
+}
+
 export function paperWorkflow(settings: Pick<Settings, 'paper' | 'profile'>) {
-  if (settings.paper === 'a4')
-    return {
-      designSpacePaper: 'A4',
-      systemPaper: 'A4',
-      usesLetterHack: false,
-      capturesTabloid: false,
-    } as const;
+  const outputPaper = settings.paper === 'letter' ? 'US Letter' : 'A4';
   if (settings.profile === 'nine')
     return {
-      designSpacePaper: 'US Letter',
-      systemPaper: 'US Letter',
-      usesLetterHack: false,
+      outputPaper,
+      designSpacePaper: outputPaper,
+      systemPaper: outputPaper,
+      usesTabloidSetup: false,
       capturesTabloid: false,
     } as const;
   if (settings.profile === 'eight')
     return {
+      outputPaper,
       designSpacePaper: 'Tabloid (11 × 17 in)',
       systemPaper: 'Tabloid (11 × 17 in)',
-      usesLetterHack: true,
+      usesTabloidSetup: true,
       capturesTabloid: true,
     } as const;
   return {
+    outputPaper,
     designSpacePaper: 'Tabloid (11 × 17 in)',
-    systemPaper: 'US Letter',
-    usesLetterHack: true,
+    systemPaper: outputPaper,
+    usesTabloidSetup: true,
     capturesTabloid: false,
   } as const;
 }
