@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeBase } from './lib.mjs';
@@ -15,25 +15,47 @@ const types = {
   '.xml': 'application/xml',
   '.txt': 'text/plain',
 };
-createServer(async (request, response) => {
-  try {
-    const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-    if (pathname === '/' && base !== '/') {
-      response.writeHead(302, { Location: base });
-      response.end();
-      return;
+// Serve an immutable snapshot. Request paths never reach the filesystem,
+// symlinks are ignored, and a rebuild cannot race a request's file reads.
+const files = new Map();
+async function load(directory, prefix = '') {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const relative = prefix + entry.name;
+    if (entry.isDirectory()) await load(path.join(directory, entry.name), relative + '/');
+    else if (entry.isFile() && types[path.extname(entry.name)]) {
+      files.set(base + relative, {
+        body: await readFile(path.join(directory, entry.name)),
+        type: types[path.extname(entry.name)],
+      });
     }
-    if (!pathname.startsWith(base)) throw new Error('Not found');
-    let file = path.resolve(root, pathname.slice(base.length));
-    if (file !== root && !file.startsWith(root + path.sep)) throw new Error('Not found');
-    if ((await stat(file)).isDirectory()) file = path.join(file, 'index.html');
-    const body = await readFile(file);
-    response.writeHead(200, {
-      'Content-Type': types[path.extname(file)] || 'application/octet-stream',
-    });
-    response.end(body);
+  }
+}
+await load(root);
+createServer((request, response) => {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
   } catch {
+    response.writeHead(400);
+    response.end('Invalid URL');
+    return;
+  }
+  if (pathname === '/' && base !== '/') {
+    response.writeHead(302, { Location: base });
+    response.end();
+    return;
+  }
+  if (!pathname.endsWith('/') && files.has(pathname + '/index.html')) {
+    response.writeHead(302, { Location: pathname + '/' });
+    response.end();
+    return;
+  }
+  const file = files.get(pathname.endsWith('/') ? pathname + 'index.html' : pathname);
+  if (file) {
+    response.writeHead(200, { 'Content-Type': file.type });
+    response.end(file.body);
+  } else {
     response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-    response.end(await readFile(path.join(root, '404.html')).catch(() => 'Build the site first.'));
+    response.end(files.get(base + '404.html')?.body || 'Page not found.');
   }
 }).listen(port, '127.0.0.1', () => console.log(`CriProx website: http://127.0.0.1:${port}${base}`));

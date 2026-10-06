@@ -83,6 +83,8 @@ npm run preview --prefix site
 
 Open `http://127.0.0.1:4174/CriProx/`. The build uses public GitHub release data; set `GITHUB_TOKEN`
 locally if needed to avoid the unauthenticated API rate limit. Never commit the token.
+The preview serves a snapshot of the generated files. After making changes, rebuild the site and
+restart the preview server to see the new output.
 
 For a preview without network access:
 

@@ -69,18 +69,51 @@ export function escapeHtml(value) {
 }
 
 export function normalizeBase(value = '/CriProx/') {
-  if (!/^\/(?:[\w.-]+\/)*$/.test(value))
+  if (
+    !/^\/(?:[\w.-]+\/)*$/.test(value) ||
+    value.split('/').some((segment) => segment === '.' || segment === '..')
+  )
     throw new Error('SITE_BASE_PATH must be / or a path such as /CriProx/.');
   return value;
 }
 
 export function slugify(text) {
-  return text
+  return sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} })
     .toLowerCase()
-    .replace(/<[^>]*>/g, '')
     .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .trim()
     .replace(/\s/g, '-');
+}
+
+// Validate the API boundary before any remote fields reach static output.
+export function publishedRelease(release) {
+  if (!/^v?\d+\.\d+\.\d+(?:\+[0-9A-Za-z.-]+)?$/.test(release.tag_name)) {
+    throw new Error('Unexpected stable release tag.');
+  }
+  const published = new Date(release.published_at);
+  if (!Number.isFinite(published.getTime())) throw new Error('Invalid release publication date.');
+  if (release.body != null && typeof release.body !== 'string')
+    throw new Error('Invalid release notes.');
+  if (release.name != null && typeof release.name !== 'string')
+    throw new Error('Invalid release title.');
+  const assets = (release.assets || []).map((asset) => {
+    const download = new URL(asset.browser_download_url);
+    if (
+      download.origin !== 'https://github.com' ||
+      !download.pathname.startsWith(`/${repository}/releases/download/`)
+    ) {
+      throw new Error('Installer download must belong to this GitHub repository.');
+    }
+    return { name: String(asset.name), browser_download_url: download.href };
+  });
+  return {
+    tag_name: release.tag_name,
+    name: release.name || release.tag_name,
+    published_at: published.toISOString(),
+    body: release.body || '',
+    html_url: `${github}/releases/tag/${encodeURIComponent(release.tag_name)}`,
+    assets,
+  };
 }
 
 export function rewriteLink(href, source, base) {

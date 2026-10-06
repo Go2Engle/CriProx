@@ -10,6 +10,8 @@ import {
   fetchReleases,
   normalizeBase,
   needsDocumentation,
+  slugify,
+  publishedRelease,
 } from '../lib.mjs';
 
 test('Markdown renders GFM, rebases documentation links, and removes executable content', () => {
@@ -38,6 +40,30 @@ test('relative links resolve from both root and nested guides for Pages or custo
     '#network-access-and-offline-use',
   );
   assert.throws(() => normalizeBase('https://other.site/'));
+  assert.throws(() => normalizeBase('/../'));
+});
+
+test('heading extraction uses HTML sanitization and publication validates release metadata', () => {
+  assert.doesNotMatch(slugify('<scrip<script>nested</script>t>unsafe'), /[<>]/);
+  const release = {
+    tag_name: 'v1.2.3',
+    published_at: '2026-10-01T12:00:00Z',
+    body: '### Features\n* New',
+    assets: [],
+  };
+  assert.equal(publishedRelease(release).published_at, '2026-10-01T12:00:00.000Z');
+  assert.throws(
+    () => publishedRelease({ ...release, published_at: '<script>invalid</script>' }),
+    /Invalid release/,
+  );
+  assert.throws(
+    () =>
+      publishedRelease({
+        ...release,
+        assets: [{ name: 'evil.dmg', browser_download_url: 'https://example.com/evil.dmg' }],
+      }),
+    /Installer download/,
+  );
 });
 
 test('timeline categories use release-specific anchors', () => {

@@ -14,6 +14,7 @@ import {
   stableReleases,
   changelogReleases,
   fetchReleases,
+  publishedRelease,
 } from './lib.mjs';
 import { verifySite } from './verify.mjs';
 
@@ -30,11 +31,12 @@ const readme = await readFile(path.join(root, 'README.md'), 'utf8');
 const offline = process.argv.includes('--offline');
 if (offline && process.env.REQUIRE_RELEASES === 'true')
   throw new Error('Offline release data is forbidden for publication.');
-const releases = process.env.RELEASES_FILE
+const releaseSource = process.env.RELEASES_FILE
   ? stableReleases(JSON.parse(await readFile(process.env.RELEASES_FILE, 'utf8')))
   : offline
     ? changelogReleases(await readFile(path.join(root, 'CHANGELOG.md'), 'utf8'))
     : await fetchReleases({ token: process.env.GITHUB_TOKEN });
+const releases = releaseSource.map(publishedRelease);
 const latest = releases[0];
 const latestUrl = latest?.html_url || `${github}/releases/latest`;
 const date = (value) =>
@@ -97,6 +99,8 @@ const routes = [];
 async function page(route, title, description, active, content) {
   const file = path.join(output, route, 'index.html');
   await mkdir(path.dirname(file), { recursive: true });
+  // Intentional static-site generation: validated release metadata is escaped,
+  // and Markdown is sanitized before writing to a fixed generated HTML route.
   await writeFile(file, shell({ title, description, route, active, content }));
   routes.push(route);
 }
@@ -151,6 +155,8 @@ await writeFile(
 );
 // HTML and XML share these escapes, except apostrophes use XML's built-in entity.
 const xml = (value) => esc(value).replace(/&#39;/g, '&apos;');
+// Intentional Atom output, not a downloaded executable: fixed destination,
+// validated ISO dates, XML-escaped metadata, and sanitized Markdown content.
 await writeFile(
   path.join(output, 'feed.xml'),
   `<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom"><title>CriProx releases</title><id>${xml(origin + url('changelog/'))}</id><link href="${xml(origin + url('feed.xml'))}" rel="self"/><link href="${xml(origin + url('changelog/'))}"/><updated>${latest?.published_at || new Date().toISOString()}</updated><author><name>${repository.split('/')[0]}</name></author>${releases.map((release) => `<entry><title>${xml(release.name || release.tag_name)}</title><id>${xml(release.html_url)}</id><link href="${xml(origin + url(`changelog/#${releaseId(release)}`))}"/><updated>${release.published_at}</updated><content type="html">${xml(render(cleanReleaseNotes(release.body || '')))}</content></entry>`).join('')}</feed>`,
