@@ -203,8 +203,26 @@ figcaption {
   color: var(--muted);
 }
 .section {
+  --section-bg: #fff;
+  position: relative;
+  isolation: isolate;
   padding-block: 75px;
   border-bottom: 1px solid var(--border);
+}
+.section:nth-of-type(odd) {
+  --section-bg: #f1edfc;
+}
+.section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--section-bg);
+  box-shadow: 0 0 0 100vmax var(--section-bg);
+  clip-path: inset(0 -100vmax);
+}
+.workflow .note {
+  background: #fff;
 }
 .section-heading {
   margin-bottom: 40px;
