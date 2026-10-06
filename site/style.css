@@ -85,7 +85,9 @@ main,
 }
 .brand img {
   margin-right: 10px;
-  border-radius: 8px;
+  border-radius: 11px;
+  box-shadow: 0 4px 8px #7761d629;
+  transform: rotate(-5deg);
 }
 .brand span {
   color: var(--purple);

@@ -61,10 +61,10 @@ function shell({ title, description, route, active, content }) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)} · CriProx</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f7f9">
-<link rel="canonical" href="${esc(origin + url(route))}"><link rel="icon" href="${url('assets/favicon.svg')}" type="image/svg+xml">
+<link rel="canonical" href="${esc(origin + url(route))}"><link rel="icon" href="${url('assets/favicon.svg?v=layers')}" type="image/svg+xml">
 <meta property="og:title" content="${esc(title)} · CriProx"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${esc(origin + url(route))}"><meta property="og:image" content="${esc(origin + url('docs/assets/criprox-studio.png'))}">
 <link rel="stylesheet" href="${url('assets/style.css')}"><link rel="alternate" type="application/atom+xml" title="CriProx releases" href="${url('feed.xml')}"></head>
-<body><a class="skip-link" href="#main">Skip to content</a><header class="header"><a class="brand" href="${url('')}"><img src="${url('assets/icon.png')}" alt="" width="32" height="32">Cri<span>Prox</span></a>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="header"><a class="brand" href="${url('')}"><img src="${url('assets/favicon.svg?v=layers')}" alt="" width="33" height="36">Cri<span>Prox</span></a>
 <nav aria-label="Main navigation">${nav.map(([route, title, key]) => `<a href="${url(route)}"${active === key ? ' aria-current="page"' : ''}>${title}</a>`).join('')}<a href="${github}" class="github-link">GitHub <span aria-hidden="true">↗</span></a></nav></header>
 <main id="main">${content}</main><footer class="footer"><div><a class="brand" href="${url('')}">Cri<span>Prox</span></a><p>Made for playtesting. Built to stay local.</p></div><div class="footer-links"><a href="${github}">Source code</a><a href="${github}/issues">Feedback</a><a href="https://ko-fi.com/go2engle">Support the project</a><a href="${github}/blob/main/LICENSE">GPL-3.0</a></div><p class="credits">An independent, open-source project. Unaffiliated with Cricut or Wizards of the Coast.<br>Card artwork belongs to its respective owners. <a href="${url('docs/references/')}">References & credits</a>.</p></footer></body></html>`;
 }
@@ -92,7 +92,6 @@ const home = `<section class="hero"><p class="eyebrow">THE LOCAL CARD SHEET STUD
 await rm(output, { recursive: true, force: true });
 await mkdir(path.join(output, 'assets'), { recursive: true });
 await cp(path.join(here, 'style.css'), path.join(output, 'assets/style.css'));
-await cp(path.join(root, 'build/icon.png'), path.join(output, 'assets/icon.png'));
 await cp(path.join(root, 'public/favicon.svg'), path.join(output, 'assets/favicon.svg'));
 await cp(path.join(root, 'docs/assets'), path.join(output, 'docs/assets'), { recursive: true });
 const routes = [];
