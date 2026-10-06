@@ -15,6 +15,8 @@
   </p>
 
   <p>
+    <a href="https://go2engle.github.io/CriProx/"><strong>Website</strong></a>
+    ·
     <a href="https://github.com/Go2Engle/CriProx/releases/latest"><strong>Download</strong></a>
     · <a href="docs/CRICUT-WORKFLOW.md">Print guide</a>
     · <a href="docs/FEATURES.md">Features</a>
@@ -142,6 +144,7 @@ npm run package   # Build an installer for the current operating system
 | [Contributing](CONTRIBUTING.md)              | Development expectations, Conventional Commits, pull requests, and releases             |
 | [Security](SECURITY.md)                      | Supported versions and private vulnerability reporting                                  |
 | [Changelog](CHANGELOG.md)                    | User-visible changes organized by release                                               |
+| [Website automation](docs/WEBSITE.md)        | GitHub Pages publishing, living documentation, and the automated release timeline       |
 
 ## Project status
 

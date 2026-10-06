@@ -30,4 +30,5 @@ None.
 - [ ] I ran `npm test` and `npm run build`.
 - [ ] I added or updated tests for behavior changes.
 - [ ] I updated documentation for user-facing changes.
+- [ ] I updated the README feature summary if this feature belongs on the website overview.
 - [ ] I did not manually edit release versions or `CHANGELOG.md`.
