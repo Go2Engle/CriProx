@@ -8,6 +8,7 @@ import SettingsModal from './components/SettingsModal';
 import CardSearchResults from './components/CardSearchResults';
 import SetBrowser from './components/SetBrowser';
 import PreconBrowser from './components/PreconBrowser';
+import TokenBrowser from './components/TokenBrowser';
 import type { PreconEntry } from './lib/precons';
 import {
   useCallback,
@@ -685,7 +686,7 @@ function CardSearchModal({
   remaining: number;
   close: () => void;
 }) {
-  const [mode, setMode] = useState<'search' | 'sets' | 'precons'>('search');
+  const [mode, setMode] = useState<'search' | 'sets' | 'precons' | 'tokens'>('search');
   const searchInput = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState(''),
     [cards, setCards] = useState<Card[]>([]),
@@ -763,7 +764,7 @@ function CardSearchModal({
       className="card-search-modal"
       initialFocus={searchInput}
       title="Find a card"
-      subtitle="Search cards and tokens, browse sets, or explore commander precon decks."
+      subtitle="Search cards, browse sets or tokens, or explore commander precon decks."
       close={() => {
         if (!busy) close();
       }}
@@ -794,6 +795,14 @@ function CardSearchModal({
           >
             <Layers3 size={15} /> Commander precons
           </button>
+          <button
+            className={mode === 'tokens' ? 'primary compact' : 'secondary compact'}
+            aria-pressed={mode === 'tokens'}
+            disabled={!!busy}
+            onClick={() => setMode('tokens')}
+          >
+            <Grid2X2 size={15} /> Tokens
+          </button>
         </div>
         {Object.values(added).reduce((sum, count) => sum + count, 0) > 0 && (
           <div className="card-search-summary" aria-live="polite">
@@ -806,6 +815,8 @@ function CardSearchModal({
           <SetBrowser add={addCard} added={added} remaining={remaining} />
         ) : mode === 'precons' ? (
           <PreconBrowser add={addCard} addDeck={addPrecon} added={added} remaining={remaining} />
+        ) : mode === 'tokens' ? (
+          <TokenBrowser add={addCard} added={added} remaining={remaining} />
         ) : (
           <>
             <form className="card-search-form" onSubmit={search}>

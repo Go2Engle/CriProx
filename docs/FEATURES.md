@@ -19,6 +19,12 @@
   quantities, including basic lands. Tokens, display commanders, and other supplemental cards are
   excluded. Whole-deck additions require every printing to have artwork and enough room within
   the 500-card project limit; unavailable printings are listed with a retry option.
+- Choose **Find a card → Tokens** to browse paper token printings, newest first by default.
+  Search by token name, optionally narrow to a token set code such as `TMH2`, or leave both
+  filters empty to browse all tokens. Sort by release date, name, set/collector number, color,
+  or artist in either direction; **Load more tokens** continues in that order.
+- Add the exact token artwork shown, including double-faced tokens with their matching reverse
+  artwork. Repeated additions increase that printing's quantity within the 500-card project limit.
 - Start with four example Scryfall card records in a new workspace.
 - Search loaded cards and filter printings by set and collector number.
 - Select either face of a double-faced card from the inspector.
