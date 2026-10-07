@@ -65,9 +65,26 @@ The dashed rectangle in the preview is a planning guide. It is not a registratio
 3. Use Design Space's **Make → Send to Printer** flow to save the job's print output as a complete one-page portrait PDF at **100% / Actual size**, with bleed off. This captures the template; it does not print the deck. Follow the layout-specific paper settings below: six-card and seven-card captures use the selected output paper, while eight-card requires a complete Tabloid capture.
 4. Import the captured PDF into CriProx. CriProx verifies the template and saves it for reuse with the matching cut geometry.
 
+The two setup sections collapse automatically with green checks after a verified capture is
+imported or loaded. Click either header to see the instructions again, download another setup
+PNG, or replace the captured PDF. The check confirms template setup, not physical cut accuracy.
+
+Choose **Done** in **Print options**, **Card backs**, or **Printing and cutting reminders** when
+you have reviewed that section. It collapses into a short summary with a green check, and its
+header always lets you reopen it. CriProx remembers completion locally for the exact machine,
+paper, and cut geometry, including when reopening the app. Relevant settings or card-back
+artwork changes reopen the affected section for review; an enabled back section cannot be marked
+done while required shared artwork is missing. In the manual Cricut workflow, mark **Physical
+cut calibration** done yourself after checking a real test; preparing a target does not complete it.
+
+![Create print PDF with completed settings and template setup collapsed into summaries](assets/criprox-print-workflow.png)
+
 ### For each deck
 
-1. In **Create print PDF**, prepare and inspect the card sheets, then save the finished PDF from CriProx.
+1. In **Create print PDF**, reopen any completed section you want to change, then prepare and
+   inspect the card sheets and save the finished PDF from CriProx. The prepare controls stay visible
+   when setup and settings are collapsed. Reminders sit above the prepare controls, so preparation
+   leads directly into the preview and save actions.
 2. Open the saved PDF in a dedicated PDF application and print on the selected output paper at **100% / Actual size**. Disable fit, shrink, headers, and added margins. CriProx saves PDFs rather than printing directly, preserving the selected artwork resolution and captured PDF content.
 3. If backs are enabled, print their artwork onto the same sheets using the chosen refeed or duplex order. Back pages have no registration marks or cut lines.
 4. Reopen the exact saved Design Space project and mat. Choose **Already Printed / Skip printing** when available, load the sheet front-side up as instructed, and run the cut.

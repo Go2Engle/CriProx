@@ -47,6 +47,13 @@ newly announced products may not have decklists or artwork yet.
 - 300, 600, 900, and 1200 DPI output.
 - Optional playtest label along the bottom edge.
 - Size-check card with a 5 mm measurement grid.
+- Collapsible sections in **Create print PDF** keep reviewed print options, card backs, and
+  one-time setup compact. Choose **Done** to collapse a reviewed section into a summary with a
+  green check; click its header to reopen it at any time. Completion is remembered locally for
+  the exact machine, paper, and cut geometry. Relevant settings or artwork changes reopen the
+  section for review. A verified captured template automatically completes both setup sections;
+  physical calibration is marked done only when you confirm it yourself.
+  Settings, setup, and reminders appear above the prepare controls, followed by the PDF preview.
 
 The selected DPI controls export density; it cannot add detail absent from the source image. The 900 and 1200 DPI modes are intended for high-resolution MPC Autofill or custom artwork and use substantially more memory.
 

@@ -3838,6 +3838,89 @@ html[data-theme='dark'] .app-shell .donation-link:focus-visible {
 .registered-content {
   padding: 22px 26px;
 }
+.print-section {
+  margin-top: 14px;
+  border: 1px solid #e6ddf2;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.print-section-heading {
+  margin: 0;
+}
+.print-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  border: 0;
+  background: #fbf9ff;
+  color: #6d5b7a;
+  text-align: left;
+}
+.print-section-toggle:hover {
+  background: #f4eefc;
+}
+.print-section-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+}
+.print-section-label small {
+  display: block;
+  margin-top: 4px;
+  color: #867591;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.print-section-status {
+  font-size: 10px;
+  font-weight: 400;
+}
+.print-section-check,
+.print-section.completed .print-section-status {
+  color: #348260;
+}
+.print-section-toggle > svg {
+  flex-shrink: 0;
+}
+.print-section-toggle .expanded {
+  transform: rotate(180deg);
+}
+.print-section-content {
+  padding: 0 15px 14px;
+}
+.print-section-content[hidden] {
+  display: none;
+}
+.print-section-content > .registration-step {
+  margin: 15px 0;
+}
+.print-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+html[data-theme='dark'] .print-section {
+  border-color: #45394f;
+}
+html[data-theme='dark'] .print-section-toggle {
+  background: #2c2433;
+  color: #e3d7ee;
+}
+html[data-theme='dark'] .print-section-toggle:hover {
+  background: #372c41;
+}
+html[data-theme='dark'] .print-section-label small {
+  color: #b2a3c1;
+}
+html[data-theme='dark'] .print-section-check,
+html[data-theme='dark'] .print-section.completed .print-section-status {
+  color: #80cca4;
+}
 .registration-summary {
   display: flex;
   align-items: center;
