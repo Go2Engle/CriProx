@@ -11,6 +11,13 @@
   rarity, mana value, or artist in ascending or descending order. Sorting applies to the entire set;
   **Load more cards** continues in that order. Adding a card keeps the chosen printing, and repeat
   additions increase its quantity without replacing other printings of the same card.
+- Choose **Find a card → Commander precons** to browse individual preconstructed Commander decks
+  from MTGJSON. Filter by deck name or set code, and sort newest first or alphabetically.
+- Open a precon to see its exact Scryfall printings, commander labels, and included quantities.
+  Add individual cards or use **Add deck** to add all commanders and mainboard cards with their
+  quantities, including basic lands. Tokens, display commanders, and other supplemental cards are
+  excluded. Whole-deck additions require every printing to have artwork and enough room within
+  the 500-card project limit; unavailable printings are listed with a retry option.
 - Start with four example Scryfall card records in a new workspace.
 - Search loaded cards and filter printings by set and collector number.
 - Select either face of a double-faced card from the inspector.
@@ -23,6 +30,10 @@
 - Keep the complete card interior opaque, even when the source image contains transparent pixels.
 
 Deck-list requests are batched in groups of at most 75 unique identifiers. Request starts are serialized with at least 120 ms between them and at least 500 ms between card-search requests, and a `429` response stops the operation instead of continuing to pressure the service.
+
+Precon browsing needs an internet connection on first use. MTGJSON catalog and decklist responses
+and complete Scryfall printing lookups are cached for one day. Catalog coverage follows MTGJSON;
+newly announced products may not have decklists or artwork yet.
 
 ## Sheet design
 

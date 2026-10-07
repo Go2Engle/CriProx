@@ -7,6 +7,7 @@ export type CardSearchResultsProps = {
   added: Record<string, number>;
   remaining: number;
   add: (card: Card) => void;
+  deckContents?: Record<string, { quantity: number; commander: boolean }>;
 };
 
 export default function CardSearchResults({
@@ -14,6 +15,7 @@ export default function CardSearchResults({
   added,
   remaining,
   add,
+  deckContents,
 }: CardSearchResultsProps) {
   return (
     <div className="card-search-results">
@@ -28,6 +30,12 @@ export default function CardSearchResults({
                 {card.setName} · {card.set.toUpperCase()}
                 {card.collector && ` #${card.collector}`}
               </span>
+              {deckContents?.[card.id] && (
+                <span>
+                  {deckContents[card.id].quantity}× in deck
+                  {deckContents[card.id].commander ? ' · Commander' : ''}
+                </span>
+              )}
             </div>
             <button
               className={addedCount ? 'secondary compact added-card' : 'secondary compact'}

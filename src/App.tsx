@@ -6,6 +6,8 @@ import ArtworkTrimControl from './components/ArtworkTrimControl';
 import ManualGuideControls from './components/ManualGuideControls';
 import CardSearchResults from './components/CardSearchResults';
 import SetBrowser from './components/SetBrowser';
+import PreconBrowser from './components/PreconBrowser';
+import type { PreconEntry } from './lib/precons';
 import {
   useCallback,
   useEffect,
@@ -914,14 +916,16 @@ function ImportModal({
 }
 function CardSearchModal({
   add,
+  addEntries,
   remaining,
   close,
 }: {
   add: (card: Card) => void;
+  addEntries: (entries: Entry[]) => void;
   remaining: number;
   close: () => void;
 }) {
-  const [mode, setMode] = useState<'search' | 'sets'>('search');
+  const [mode, setMode] = useState<'search' | 'sets' | 'precons'>('search');
   const [query, setQuery] = useState(''),
     [cards, setCards] = useState<Card[]>([]),
     [next, setNext] = useState<string>(),
@@ -979,12 +983,25 @@ function CardSearchModal({
     setAdded((current) => ({ ...current, [key]: (current[key] || 0) + 1 }));
   }
 
+  function addPrecon(entries: PreconEntry[]) {
+    if (entries.reduce((sum, entry) => sum + entry.quantity, 0) > remaining) return;
+    addEntries(
+      entries.map(({ card, quantity }) => ({ id: crypto.randomUUID(), card, quantity, face: 0 })),
+    );
+    setAdded((current) => {
+      const updated = { ...current };
+      for (const entry of entries)
+        updated[entry.card.id] = (updated[entry.card.id] || 0) + entry.quantity;
+      return updated;
+    });
+  }
+
   return (
     <Modal
       wide
       className="card-search-modal"
       title="Find a card"
-      subtitle="Search cards and tokens, or browse a set to add its printings to your project."
+      subtitle="Search cards and tokens, browse sets, or explore commander precon decks."
       close={() => {
         if (!busy) close();
       }}
@@ -1007,6 +1024,14 @@ function CardSearchModal({
           >
             <Layers3 size={15} /> Browse sets
           </button>
+          <button
+            className={mode === 'precons' ? 'primary compact' : 'secondary compact'}
+            aria-pressed={mode === 'precons'}
+            disabled={!!busy}
+            onClick={() => setMode('precons')}
+          >
+            <Layers3 size={15} /> Commander precons
+          </button>
         </div>
         {Object.values(added).reduce((sum, count) => sum + count, 0) > 0 && (
           <div className="card-search-summary" aria-live="polite">
@@ -1017,6 +1042,8 @@ function CardSearchModal({
         )}
         {mode === 'sets' ? (
           <SetBrowser add={addCard} added={added} remaining={remaining} />
+        ) : mode === 'precons' ? (
+          <PreconBrowser add={addCard} addDeck={addPrecon} added={added} remaining={remaining} />
         ) : (
           <>
             <form className="card-search-form" onSubmit={search}>
@@ -3495,7 +3522,12 @@ export default function App() {
         <ImportModal close={() => setModal(null)} add={add} remaining={500 - count} />
       )}
       {modal === 'search' && (
-        <CardSearchModal close={() => setModal(null)} add={addCard} remaining={500 - count} />
+        <CardSearchModal
+          close={() => setModal(null)}
+          add={addCard}
+          addEntries={add}
+          remaining={500 - count}
+        />
       )}
       {modal === 'guide' && <Guide close={() => setModal(null)} />}
       {ENABLE_DESIGN_SPACE_EXPORT && modal === 'export' && count > 0 && (

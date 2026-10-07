@@ -2072,6 +2072,16 @@ html[data-theme='dark'] .app-shell .guide-choice button.selected {
   justify-content: space-between;
   gap: 10px;
 }
+.precon-deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.precon-deck-actions > span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
 .card-search-modal .modal-heading,
 .card-search-modal .modal-footer {
   flex-shrink: 0;

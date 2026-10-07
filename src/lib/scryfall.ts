@@ -110,6 +110,38 @@ function comparableName(name: string) {
 export function scryfallLookupName(name: string) {
   return name.split(/\s*\/\/\s*/, 1)[0].trim();
 }
+// Precon lists identify exact printings, including cards from older sets.
+export async function resolveCardIds(ids: string[]): Promise<Card[]> {
+  const unique = [...new Set(ids)];
+  const cards: Card[] = [];
+  for (let index = 0; index < unique.length; index += 75) {
+    const batch = unique.slice(index, index + 75);
+    const key = `card-ids:v1:${JSON.stringify(batch)}`;
+    const cached = await Promise.resolve()
+      .then(() => get<{ time: number; data: RawCard[] }>(key))
+      .catch(() => undefined);
+    const data =
+      cached && Date.now() - cached.time < 86400000
+        ? cached.data
+        : (
+            await request<Collection>('/cards/collection', {
+              method: 'POST',
+              body: JSON.stringify({ identifiers: batch.map((id) => ({ id })) }),
+            })
+          ).data;
+    const normalized = data.map(normalizeScryfallCard).filter((card) => card.faces.length);
+    // Retry unavailable artwork on the next visit instead of caching a partial collection.
+    if (
+      batch.every((id) => normalized.some((card) => card.id === id)) &&
+      (!cached || Date.now() - cached.time >= 86400000)
+    )
+      await Promise.resolve()
+        .then(() => set(key, { time: Date.now(), data }))
+        .catch(() => {});
+    cards.push(...normalized);
+  }
+  return cards;
+}
 export function cardMatchesDeckLine(card: Card, line: DeckLine) {
   const names = [card.name, ...card.faces.map((f) => f.name)].map(comparableName);
   return (

@@ -16,6 +16,7 @@ Cricut recommends completing printing and cutting in the same Design Space sessi
 ## Artwork and card data
 
 - [Scryfall](https://scryfall.com/) supplies card metadata and hosted image references. CriProx follows the [Scryfall API traffic requirements](https://scryfall.com/docs/faqs/i-m-having-trouble-accessing-the-scryfall-api-or-i-m-blocked-17).
+- [MTGJSON](https://mtgjson.com/) supplies the [preconstructed deck catalog](https://mtgjson.com/data-models/deck-list/) and [deck contents](https://mtgjson.com/data-models/deck/) used for Commander precon browsing. Exact printings are resolved through their Scryfall identifiers.
 - Optional local image enhancement uses [UpscalerJS](https://upscalerjs.com/) and its ESRGAN Thick model (MIT), with [TensorFlow.js](https://www.tensorflow.org/js) (Apache-2.0). Model weights load from the UpscalerJS package CDN only when the user enables enhancement. Review [Scryfall's imagery guidelines](https://scryfall.com/docs/api/images) before distributing enhanced images.
 - [MPC Autofill](https://mpcfill.com/) supplies optional community-art search and full-resolution image references through its official image CDN. Its API implementation is [open source](https://github.com/chilli-axe/mpc-autofill).
 - [Proxxied](https://proxxied.com/) was the original product reference for deck import and printing selection.
