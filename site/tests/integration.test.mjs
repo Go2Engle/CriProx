@@ -41,7 +41,13 @@ test('complete build keeps current docs, uses stable installer assets, and verif
     assert.match(timeline, /id="v1.2.3-new"/);
     assert.doesNotMatch(timeline, /v1.2.4-draft|v1.3.0-beta/);
     assert.match(guide, /Card and artwork sources/);
-    assert.doesNotMatch(home, /<script\b/);
+    assert.match(home, /<script src="\/CriProx\/assets\/nav.js" defer><\/script>/);
+    assert.doesNotMatch(home, /<script(?! src=)/);
+    assert.match(home, /<details class="mobile-navigation">/);
+    assert.match(timeline, /<h2>Add a new image source<\/h2>/);
+    assert.match(timeline, /class="version" href="#v1.2.3"/);
+    assert.match(timeline, /class="atom-link"/);
+    assert.match(await readFile(path.join(site, '_site/assets/nav.js'), 'utf8'), /Escape/);
     await verifySite(path.join(site, '_site'), '/CriProx/');
     // The same source must work at a custom domain's root as well.
     execFileSync(process.execPath, [path.join(site, 'build.mjs')], {
@@ -58,7 +64,7 @@ test('generated-site verification rejects broken Markdown links and duplicate an
   try {
     await writeFile(
       path.join(temporary, 'index.html'),
-      '<h1 id="a">A</h1><h2 id="a">B</h2><a href="/CriProx/missing/">Missing</a>',
+      '<h1 id="a">A</h1><h2 id="a">B</h2><a href="/CriProx/missing/">Missing</a><script src="/CriProx/assets/missing.js"></script>',
     );
     await assert.rejects(verifySite(temporary, '/CriProx/'), /duplicate id a[\s\S]*missing target/);
   } finally {

@@ -47,13 +47,19 @@ The release timeline contains stable, published releases only. Drafts and prerel
 installer builds must finish before the latest stable download links change. The generator fetches
 all release pages, removes commit hashes and duplicate entries, preserves issue links, and labels
 the existing categories as **New**, **Improvements**, and **Fixes**. It does not invent release prose
-or hide technical changes. Use readable Conventional Commit subjects, since Release Please turns
-those subjects into release notes. Release notes can also be edited on GitHub and the site will
+or hide technical changes. Each timeline entry links to its version and date. Its heading uses a
+custom GitHub release title when present, otherwise the first feature subject (or the first change
+for a release without features). These headings come from existing notes and need no separate
+maintenance. Use readable Conventional Commit subjects, since Release Please turns those subjects
+into release notes. Release notes can also be edited on GitHub and the site will
 pick up those edits automatically.
 
 Production builds fail if GitHub cannot supply release data, preserving the last deployed site
 instead of silently replacing it with an incomplete or stale release timeline. The published site
-needs no JavaScript, API calls from visitors, external fonts, or app dependencies.
+makes no API calls from visitors and uses no external fonts or app dependencies. Navigation and
+release notes remain usable without JavaScript. A small local script enhances the native mobile
+menu with Escape, outside-click, link-selection, and desktop-resize dismissal. Desktop navigation
+uses inline links; below 768px it becomes a floating menu with the same destinations and support link.
 
 ## Website changes and app releases
 

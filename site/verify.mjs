@@ -21,6 +21,7 @@ export async function verifySite(root, base) {
             }
             if (['a', 'link'].includes(tag) && attrs.href) links.push(attrs.href);
             if (tag === 'img' && attrs.src) links.push(attrs.src);
+            if (tag === 'script' && attrs.src) links.push(attrs.src);
           },
         }).end(await readFile(file, 'utf8'));
         pages.set(file, { ids, links });
