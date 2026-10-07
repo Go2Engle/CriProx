@@ -69,7 +69,7 @@ export function escapeHtml(value) {
   );
 }
 
-export function normalizeBase(value = '/CriProx/') {
+export function normalizeBase(value = '/') {
   if (
     !/^\/(?:[\w.-]+\/)*$/.test(value) ||
     value.split('/').some((segment) => segment === '.' || segment === '..')
@@ -130,10 +130,7 @@ export function rewriteLink(href, source, base) {
   return `${github}/blob/main/${resolved}${suffix}`;
 }
 
-export function markdown(
-  content,
-  { source = 'README.md', base = '/CriProx/', headingPrefix = '' } = {},
-) {
+export function markdown(content, { source = 'README.md', base = '/', headingPrefix = '' } = {}) {
   const headings = new Map();
   const parser = new Marked({
     gfm: true,

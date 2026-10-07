@@ -32,7 +32,12 @@ test('complete build keeps current docs, uses stable installer assets, and verif
   try {
     await writeFile(fixture, JSON.stringify(releases));
     execFileSync(process.execPath, [path.join(site, 'build.mjs')], {
-      env: { ...process.env, RELEASES_FILE: fixture, SITE_BASE_PATH: '/CriProx/' },
+      env: {
+        ...process.env,
+        RELEASES_FILE: fixture,
+        SITE_BASE_PATH: '/CriProx/',
+        SITE_ORIGIN: 'https://example.test',
+      },
     });
     const home = await readFile(path.join(site, '_site/index.html'), 'utf8');
     const timeline = await readFile(path.join(site, '_site/changelog/index.html'), 'utf8');
@@ -49,10 +54,36 @@ test('complete build keeps current docs, uses stable installer assets, and verif
     assert.match(timeline, /class="atom-link"/);
     assert.match(await readFile(path.join(site, '_site/assets/nav.js'), 'utf8'), /Escape/);
     await verifySite(path.join(site, '_site'), '/CriProx/');
-    // The same source must work at a custom domain's root as well.
+    // Production defaults must use the custom domain at the root, without env overrides.
+    const productionEnv = { ...process.env, RELEASES_FILE: fixture };
+    delete productionEnv.SITE_BASE_PATH;
+    delete productionEnv.SITE_ORIGIN;
     execFileSync(process.execPath, [path.join(site, 'build.mjs')], {
-      env: { ...process.env, RELEASES_FILE: fixture, SITE_BASE_PATH: '/' },
+      env: productionEnv,
     });
+    const origin = 'https://criprox.themanamarket.com';
+    const rootHome = await readFile(path.join(site, '_site/index.html'), 'utf8');
+    const rootGuide = await readFile(path.join(site, '_site/docs/features/index.html'), 'utf8');
+    const feed = await readFile(path.join(site, '_site/feed.xml'), 'utf8');
+    const sitemap = await readFile(path.join(site, '_site/sitemap.xml'), 'utf8');
+    const robots = await readFile(path.join(site, '_site/robots.txt'), 'utf8');
+    assert.ok(rootHome.includes(`<link rel="canonical" href="${origin}/">`));
+    assert.ok(rootHome.includes(`<meta property="og:url" content="${origin}/">`));
+    assert.ok(rootHome.includes(`${origin}/docs/assets/criprox-studio.png`));
+    assert.match(rootHome, /<script src="\/assets\/nav.js" defer><\/script>/);
+    assert.match(rootHome, /href="\/changelog\/"/);
+    assert.ok(rootGuide.includes(`<link rel="canonical" href="${origin}/docs/features/">`));
+    assert.ok(feed.includes(`<link href="${origin}/feed.xml" rel="self"/>`));
+    assert.ok(feed.includes(`${origin}/changelog/#v1.2.3`));
+    const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+    assert.ok(sitemapUrls.length > 0);
+    assert.ok(
+      sitemapUrls.every((url) => url.startsWith(`${origin}/`) && !url.includes('/CriProx/')),
+    );
+    assert.equal(robots, `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
+    for (const content of [rootHome, rootGuide, feed, sitemap, robots]) {
+      assert.doesNotMatch(content, /https:\/\/go2engle\.github\.io|(?:href|src)="\/CriProx\//);
+    }
     await verifySite(path.join(site, '_site'), '/');
   } finally {
     await rm(temporary, { recursive: true, force: true });
