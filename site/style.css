@@ -107,6 +107,84 @@ main,
 .header nav .github-link {
   color: #292c3b;
 }
+.donation-link {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.donation-coin {
+  display: block;
+  width: 32px;
+  height: 32px;
+  transform-origin: 50% 72%;
+  filter: drop-shadow(0 3px 3px #81531938);
+  animation: donation-coin-wiggle 8s ease-in-out infinite;
+}
+.donation-coin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.donation-link:hover .donation-coin,
+.donation-link:focus-visible .donation-coin {
+  animation: none;
+  transform: scale(1.1) rotate(-5deg);
+}
+.donation-link:hover,
+.donation-link:focus-visible {
+  background: #fff8e5;
+}
+.donation-tooltip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 7px);
+  padding: 7px 9px;
+  border: 1px solid #4d405e;
+  border-radius: 6px;
+  background: #302a3c;
+  color: #f8f0ff;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px #24163225;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+}
+.donation-link:hover .donation-tooltip,
+.donation-link:focus-visible .donation-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+@keyframes donation-coin-wiggle {
+  0%,
+  85%,
+  100% {
+    transform: rotate(0deg);
+  }
+  87% {
+    transform: rotate(-9deg);
+  }
+  89% {
+    transform: rotate(8deg);
+  }
+  91% {
+    transform: rotate(-5deg);
+  }
+  93% {
+    transform: rotate(2deg);
+  }
+}
 .skip-link {
   position: absolute;
   top: -100px;
@@ -210,7 +288,7 @@ figcaption {
   border-bottom: 1px solid var(--border);
 }
 .section:nth-of-type(odd) {
-  --section-bg: #f1edfc;
+  --section-bg: #f3f3f3;
 }
 .section::before {
   content: '';
@@ -345,9 +423,6 @@ figcaption {
   margin-top: 20px;
   color: var(--muted);
   font-size: 12px;
-}
-.whats-new {
-  border-bottom: 0;
 }
 .page-intro {
   margin-block: 68px 55px;
@@ -711,5 +786,8 @@ figcaption {
   }
   * {
     transition: none !important;
+  }
+  .donation-coin {
+    animation: none;
   }
 }

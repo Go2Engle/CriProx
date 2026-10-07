@@ -30,6 +30,13 @@ Use `feat!:` or a `BREAKING CHANGE:` footer when a change is incompatible. `feat
 
 Pull requests should describe the implementation, validation, and any user-facing or compatibility impact. A maintainer may squash-merge a pull request, so its title must also be a valid Conventional Commit.
 
+Website updates must use non-breaking `chore(site):`, `docs(site):`, or `style(site):` commits and
+PR titles. Do not use `feat`, `fix`, `perf`, or breaking-change footers for website work; the site
+publishes independently and must not trigger app releases or add app release notes. Keep application
+behavior changes in a separate PR. Release Please excludes commits confined to `site/` and
+`docs/assets/`; CI also rejects release-triggering website PR titles, including changes to the
+website workflow or shared README alongside website files.
+
 For user-facing features, update the feature reference or relevant guide in the same pull request.
 Update the README feature table when a capability belongs on the homepage. The website publishes
 these sources automatically, and CI checks that feature PRs include a documentation update.

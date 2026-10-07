@@ -7,6 +7,7 @@
     ".": {
       "release-type": "node",
       "package-name": "CriProx",
+      "exclude-paths": ["site", "docs/assets"],
       "include-component-in-tag": false,
       "include-v-in-tag": true
     }

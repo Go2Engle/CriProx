@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { needsDocumentation } from './lib.mjs';
+import { assertSiteReleasePolicy } from './release-policy.mjs';
 
 if (!process.env.GITHUB_EVENT_PATH) {
   console.log('Documentation freshness is checked on feature pull requests in CI.');
@@ -13,6 +14,7 @@ if (!process.env.GITHUB_EVENT_PATH) {
     })
       .trim()
       .split('\n');
+    assertSiteReleasePolicy({ title: pr.title, body: pr.body || '', files });
     if (
       needsDocumentation({ title: pr.title, files, labels: pr.labels.map((label) => label.name) })
     ) {
@@ -20,6 +22,6 @@ if (!process.env.GITHUB_EVENT_PATH) {
         'Feature PRs changing the app must update README.md or a docs/*.md guide so the website stays current. For a feature with no documentation impact, a maintainer may apply documentation-not-needed and rerun CI.',
       );
     }
-    console.log('Documentation freshness check passed.');
+    console.log('Website release policy and documentation freshness checks passed.');
   }
 }

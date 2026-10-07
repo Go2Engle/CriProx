@@ -24,7 +24,7 @@
   </p>
 </div>
 
-![CriProx artwork preview showing six cards in the default layout](docs/assets/criprox-studio.png)
+![CriProx desktop studio showing an eight-card print sheet and sheet settings](docs/assets/criprox-studio.png)
 
 <p align="center"><em>Six-card artwork preview · Demo card imagery loaded through Scryfall.</em></p>
 

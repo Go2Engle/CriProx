@@ -52,6 +52,19 @@ const releaseHtml = (release, index) => `<article class="release" id="${esc(rele
   <div class="release-body prose">${release.name && release.name !== release.tag_name && release.name !== release.tag_name.replace(/^v/, '') ? `<h2>${esc(release.name)}</h2>` : ''}${markdown(cleanReleaseNotes(release.body || '') || 'Release notes are available on GitHub.', { base, headingPrefix: `${releaseId(release)}-` })}<a class="text-link" href="${esc(release.html_url)}">Release & downloads <span aria-hidden="true">↗</span></a></div>
 </article>`;
 
+// Match the coin artwork and animation used by DonationLink in the app.
+const donationLink = `<a class="donation-link" href="https://ko-fi.com/go2engle" target="_blank" rel="noopener noreferrer" aria-label="Donate on Ko-fi">
+<span class="donation-coin" aria-hidden="true"><svg viewBox="0 0 48 48" focusable="false">
+<defs><linearGradient id="donation-coin-face" x1="13" y1="9" x2="35" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#ffe38a"/><stop offset="0.5" stop-color="#f4b83f"/><stop offset="1" stop-color="#d89025"/></linearGradient></defs>
+<ellipse cx="24" cy="27" rx="17" ry="16" fill="#a9661d" opacity="0.45"/>
+<circle cx="24" cy="23" r="17" fill="url(#donation-coin-face)" stroke="#ad6b1b" stroke-width="1.5"/>
+<circle cx="24" cy="23" r="12.5" fill="none" stroke="#ffe596" stroke-width="1.5" opacity="0.9"/>
+<path d="M16.5 21.5h13v4.1c0 3.2-2.5 5.7-6.5 5.7s-6.5-2.5-6.5-5.7v-4.1Z" fill="#8c531d"/>
+<path d="M29.5 23h1.2c1.4 0 2.2.7 2.2 1.8s-.8 1.8-2.2 1.8h-1.2" fill="none" stroke="#8c531d" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M19.5 19c-.7-1.4.2-2.1-.3-3.3M24 19c-.7-1.4.2-2.1-.3-3.3" fill="none" stroke="#8c531d" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M18.5 34.5h11" stroke="#fff0b0" stroke-width="1.2" stroke-linecap="round" opacity="0.75"/>
+</svg></span><span class="donation-tooltip" aria-hidden="true">Donate on Ko-fi</span></a>`;
+
 function shell({ title, description, route, active, content }) {
   const nav = [
     ['', 'Overview', 'home'],
@@ -65,7 +78,7 @@ function shell({ title, description, route, active, content }) {
 <meta property="og:title" content="${esc(title)} · CriProx"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${esc(origin + url(route))}"><meta property="og:image" content="${esc(origin + url('docs/assets/criprox-studio.png'))}">
 <link rel="stylesheet" href="${url('assets/style.css')}"><link rel="alternate" type="application/atom+xml" title="CriProx releases" href="${url('feed.xml')}"></head>
 <body><a class="skip-link" href="#main">Skip to content</a><header class="header"><a class="brand" href="${url('')}"><img src="${url('assets/favicon.svg?v=layers')}" alt="" width="33" height="36">Cri<span>Prox</span></a>
-<nav aria-label="Main navigation">${nav.map(([route, title, key]) => `<a href="${url(route)}"${active === key ? ' aria-current="page"' : ''}>${title}</a>`).join('')}<a href="${github}" class="github-link">GitHub <span aria-hidden="true">↗</span></a></nav></header>
+<nav aria-label="Main navigation">${nav.map(([route, title, key]) => `<a href="${url(route)}"${active === key ? ' aria-current="page"' : ''}>${title}</a>`).join('')}<a href="${github}" class="github-link">GitHub <span aria-hidden="true">↗</span></a>${donationLink}</nav></header>
 <main id="main">${content}</main><footer class="footer"><div><a class="brand" href="${url('')}">Cri<span>Prox</span></a><p>Made for playtesting. Built to stay local.</p></div><div class="footer-links"><a href="${github}">Source code</a><a href="${github}/issues">Feedback</a><a href="https://ko-fi.com/go2engle">Support the project</a><a href="${github}/blob/main/LICENSE">GPL-3.0</a></div><p class="credits">An independent, open-source project. Unaffiliated with Cricut or Wizards of the Coast.<br>Card artwork belongs to its respective owners. <a href="${url('docs/references/')}">References & credits</a>.</p></footer></body></html>`;
 }
 
@@ -76,7 +89,7 @@ const downloads = [
   ['Linux', '.AppImage', '64-bit AppImage'],
 ];
 const home = `<section class="hero"><p class="eyebrow">THE LOCAL CARD SHEET STUDIO</p><h1>Your next deck.<br><span>Ready to print.</span></h1><p class="hero-description">${esc(readme.match(/<p><strong>(.*?)<\/strong><\/p>/)?.[1] || 'A local-first card sheet studio for Cricut Print Then Cut.')}</p><p class="hero-subtitle">${esc(readme.match(/<p>(Turn .*?)<\/p>/)?.[1] || 'Turn card lists and artwork into precise, reusable print sheets.')}</p><div class="actions"><a class="button primary" href="#download">Download CriProx <span aria-hidden="true">↓</span></a><a class="button" href="${url('docs/cricut-workflow/')}">Read the print guide <span aria-hidden="true">→</span></a></div><p class="hero-note">Free & open source <span>·</span> macOS, Windows & Linux${latest ? ` <span>·</span> <a href="${url(`changelog/#${releaseId(latest)}`)}">${esc(latest.tag_name)}</a>` : ''}</p></section>
-<figure class="studio-preview"><img src="${url('docs/assets/criprox-studio.png')}" alt="CriProx desktop studio with a card list, six-card sheet preview, and print settings" width="2872" height="2014" fetchpriority="high"><figcaption>One workspace for your artwork, sheet layout, and print files.</figcaption></figure>
+<figure class="studio-preview"><img src="${url('docs/assets/criprox-studio.png')}" alt="CriProx desktop studio with a card list, eight-card sheet preview, and print settings" width="3192" height="2192" fetchpriority="high"><figcaption>One workspace for your artwork, sheet layout, and print files.</figcaption></figure>
 <section class="section" id="features"><div class="section-heading"><p class="eyebrow">FROM LIST TO LAYOUT</p><h2>The little details, handled.</h2><p>Keep your attention on the deck. CriProx takes care of the sheet.</p></div><div class="features">${features.map((feature, index) => `<article class="feature"><span class="feature-number" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><h3>${esc(feature.title)}</h3>${render(feature.description)}</article>`).join('')}</div><a class="text-link" href="${url('docs/features/')}">Explore the full feature reference <span aria-hidden="true">→</span></a></section>
 <section class="section workflow"><div class="section-heading"><p class="eyebrow">A SIMPLE WORKFLOW</p><h2>Build. Print. Cut. Repeat.</h2></div><div class="prose steps">${render(section(readme, 'From card list to cut').split('\n\nCriProx also')[0])}</div><aside class="note">CriProx prepares the artwork and print files. Cricut Design Space supplies the registration marks and cut job. Experimental layouts need a measured test print and cut. <a href="${url('docs/cricut-workflow/')}">Read the workflow guide →</a></aside></section>
 <section class="section" id="download"><div class="section-heading"><p class="eyebrow">MAKE ROOM FOR YOUR NEXT DECK</p><h2>At home on your desktop.</h2><p>${latest ? `Latest stable release: <a href="${url(`changelog/#${releaseId(latest)}`)}">${esc(latest.tag_name)}</a> · ${date(latest.published_at)}` : 'Stable desktop packages are available on GitHub.'}</p></div><div class="downloads">${downloads
@@ -86,8 +99,7 @@ const home = `<section class="hero"><p class="eyebrow">THE LOCAL CARD SHEET STUD
   })
   .join(
     '',
-  )}</div><p class="download-note">Current installers are unsigned. See the <a href="${url('docs/installation/')}">installation guide</a> for first-launch steps. Cricut Design Space is unavailable on Linux.</p></section>
-<section class="section whats-new"><div class="section-heading"><p class="eyebrow">ALWAYS MOVING FORWARD</p><h2>A little better with every release.</h2><p>Follow the latest additions, improvements, and fixes.</p></div>${latest ? releaseHtml(latest, 0) : '<p>No stable releases have been published yet.</p>'}<a class="text-link" href="${url('changelog/')}">Read the full changelog <span aria-hidden="true">→</span></a></section>`;
+  )}</div><p class="download-note">Current installers are unsigned. See the <a href="${url('docs/installation/')}">installation guide</a> for first-launch steps. Cricut Design Space is unavailable on Linux.</p></section>`;
 
 await rm(output, { recursive: true, force: true });
 await mkdir(path.join(output, 'assets'), { recursive: true });

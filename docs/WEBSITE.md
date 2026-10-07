@@ -55,6 +55,19 @@ Production builds fail if GitHub cannot supply release data, preserving the last
 instead of silently replacing it with an incomplete or stale release timeline. The published site
 needs no JavaScript, API calls from visitors, external fonts, or app dependencies.
 
+## Website changes and app releases
+
+Website updates publish through the Website workflow independently of app releases. Use non-breaking
+`chore(site):`, `docs(site):`, or `style(site):` commits and PR titles for website changes. They must
+never produce application release notes or version bumps; do not use `feat`, `fix`, `perf`, `!`,
+or breaking-change footers. Keep app behavior changes in a separate PR with its own release subject.
+
+The application package in `release-please-config.json` excludes commits confined to the `site/`
+and `docs/assets/` directories before calculating versions and generating release notes. These are
+directory prefixes, not file globs. CI additionally checks website PR titles, including website
+workflow changes and README updates accompanying website files. Mixed app and documentation commits
+remain eligible for app releases, so genuine app features are still released normally.
+
 ## Adding a feature
 
 Update `docs/FEATURES.md` or the relevant workflow guide in the same PR as the feature. Add a row
