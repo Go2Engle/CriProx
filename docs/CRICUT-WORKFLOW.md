@@ -4,6 +4,9 @@
 template and registration marks during one-time setup. For each deck, CriProx saves the finished
 PDF, a dedicated PDF application prints it, and Design Space runs the matching saved cut job.
 
+To add cards by name, open **Find a card** and start typing. The search box receives keyboard
+focus automatically when the dialog opens.
+
 ## Build a sheet from a set
 
 1. Open **Find a card** and choose **Browse sets**. Filter by a set name or code, such as `MH2`.

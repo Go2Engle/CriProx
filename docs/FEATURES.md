@@ -5,6 +5,7 @@
 - Import a public or unlisted Moxfield or Archidekt deck link, preserving selected printings when available.
 - Paste a deck list and resolve cards through Scryfall.
 - Search the Scryfall card catalog by full or partial name and add cards one at a time.
+  **Find a card** focuses the search box when it opens, so you can start typing immediately.
 - Choose **Find a card → Browse sets** to browse all paper sets, including token and supplemental
   sets. Filter by set name or code, and list sets newest first or alphabetically.
 - Browse every available printing in a selected set, sorted by collector number, name, color,
