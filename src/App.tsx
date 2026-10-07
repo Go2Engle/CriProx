@@ -17,6 +17,7 @@ import {
   useState,
   type DragEvent,
   type ReactNode,
+  type RefObject,
 } from 'react';
 import { get, set } from 'idb-keyval';
 import {
@@ -255,6 +256,7 @@ function Modal({
   close,
   wide = false,
   className = '',
+  initialFocus,
 }: {
   title: string;
   subtitle?: string;
@@ -262,11 +264,13 @@ function Modal({
   close: () => void;
   wide?: boolean;
   className?: string;
+  initialFocus?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     ref.current?.showModal();
-  }, []);
+    initialFocus?.current?.focus();
+  }, [initialFocus]);
   return (
     <dialog
       ref={ref}
@@ -926,6 +930,7 @@ function CardSearchModal({
   close: () => void;
 }) {
   const [mode, setMode] = useState<'search' | 'sets' | 'precons'>('search');
+  const searchInput = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState(''),
     [cards, setCards] = useState<Card[]>([]),
     [next, setNext] = useState<string>(),
@@ -1000,6 +1005,7 @@ function CardSearchModal({
     <Modal
       wide
       className="card-search-modal"
+      initialFocus={searchInput}
       title="Find a card"
       subtitle="Search cards and tokens, browse sets, or explore commander precon decks."
       close={() => {
@@ -1050,6 +1056,7 @@ function CardSearchModal({
               <div className="search-field">
                 <Search size={17} />
                 <input
+                  ref={searchInput}
                   autoFocus
                   aria-label="Search Scryfall cards and tokens"
                   placeholder="Search by card or token name…"
