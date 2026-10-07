@@ -20,6 +20,25 @@ can appear before searchable card artwork is available.
 
 ![Find a card showing a set's printings and sorting controls](assets/criprox-set-browser.png)
 
+## Build a sheet from a commander precon
+
+1. Open **Find a card → Commander precons**. Filter by a deck name or set code, such as `40K`,
+   and choose **Newest first** or **Name A–Z** to sort the catalog.
+2. Open a deck to see its included printings. Each card shows its deck quantity, and commanders
+   are labeled. **Add card** adds one copy of that printing; repeat additions increase its quantity.
+3. Use **Add deck** to add the commanders and mainboard together, preserving all quantities,
+   including basic lands. Tokens, display commanders, sideboards, planes, and schemes are excluded.
+   The whole deck must fit within the 500-card project limit and have artwork for every printing.
+   If artwork is missing, retry or add the available cards individually.
+4. Use **All precons** to choose another deck, or **Done** to review the sheet and prepare the
+   print PDF with your chosen paper, layout, bleed, and card backs.
+
+Precon decklists come from MTGJSON and their exact printing artwork comes from Scryfall. First use
+needs an internet connection; catalog, decklists, and complete printing lookups are cached for one
+day. Availability follows the source catalog rather than a fixed bundled list.
+
+![Find a card showing commander precon contents and quantities](assets/criprox-precon-browser.png)
+
 ## Understand the integration boundary
 
 CriProx does **not** generate or reproduce Cricut registration marks, create native Design Space project files, or control the machine. Design Space creates the sensor marks and owns the actual Print Then Cut job. CriProx's registered-print workflow preserves marks from a PDF that Design Space produced for the exact saved job.
