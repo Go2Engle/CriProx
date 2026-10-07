@@ -30,6 +30,12 @@ Use `feat!:` or a `BREAKING CHANGE:` footer when a change is incompatible. `feat
 
 Pull requests should describe the implementation, validation, and any user-facing or compatibility impact. A maintainer may squash-merge a pull request, so its title must also be a valid Conventional Commit.
 
+For user-facing features, update the feature reference or relevant guide in the same pull request.
+Update the README feature table when a capability belongs on the homepage. The website publishes
+these sources automatically, and CI checks that feature PRs include a documentation update.
+Write commit subjects as readable release notes. See [website and living documentation](docs/WEBSITE.md)
+for the source mapping, documentation-check exemption, and local website preview commands.
+
 By submitting a contribution, you agree to license it under the project's GNU General Public License v3.0 only and confirm that you have the right to do so.
 
 ## Releases
