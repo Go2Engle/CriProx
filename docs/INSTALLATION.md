@@ -82,4 +82,11 @@ CriProx has no user account, hosted project service, or cloud sync. Browser-mode
 
 ## Next step
 
-Before printing, continue with the [Cricut workflow and physical validation guide](CRICUT-WORKFLOW.md). The Design Space handoff is an essential part of the process, not an optional driver setup.
+Before printing, continue with the [Cricut workflow and physical validation guide](CRICUT-WORKFLOW.md).
+For registered Cricut layouts, set up and save the cut template in Design Space once, capture its
+print output as a PDF, and import it into CriProx. For each deck, save the finished PDF from
+CriProx, print it from a dedicated PDF application at **100% / Actual size**, then cut with the
+matching saved Design Space project using **Already Printed / Skip printing** when available.
+CriProx saves print files; it does not print directly or control the cutter. Manual cutting also
+uses a saved PDF printed from a PDF application, with paper-edge guides for trimming or a matched
+Basic Cut template for Cricut.

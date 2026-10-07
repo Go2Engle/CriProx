@@ -13,6 +13,11 @@ Workflow references checked September 9, 2026:
 
 Cricut recommends completing printing and cutting in the same Design Space session. Its available Print Then Cut area varies with the machine, paper size, and image shape; CriProx's dashed rectangle is therefore a planning guide, not a firmware model or certified cuttable-area outline.
 
+CriProx's reusable registered-PDF workflow uses Design Space during one-time template capture
+and for the saved cut job. Finished card-sheet PDFs are printed from a dedicated PDF application
+at **100% / Actual size**. This differs from Cricut's recommended print flow and requires the
+measured tests in the [Cricut workflow guide](CRICUT-WORKFLOW.md).
+
 ## Artwork and card data
 
 - [Scryfall](https://scryfall.com/) supplies card metadata and hosted image references. CriProx follows the [Scryfall API traffic requirements](https://scryfall.com/docs/faqs/i-m-having-trouble-accessing-the-scryfall-api-or-i-m-blocked-17).

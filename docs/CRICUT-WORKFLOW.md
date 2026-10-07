@@ -1,5 +1,9 @@
 # Cricut workflow and physical validation
 
+**Print the PDF. Cut with your saved Design Space project.** Design Space supplies the cut
+template and registration marks during one-time setup. For each deck, CriProx saves the finished
+PDF, a dedicated PDF application prints it, and Design Space runs the matching saved cut job.
+
 ## Build a sheet from a set
 
 1. Open **Find a card** and choose **Browse sets**. Filter by a set name or code, such as `MH2`.
@@ -49,17 +53,36 @@ The layout engine works in millimeters. PNG density metadata is included, but al
 
 The dashed rectangle in the preview is a planning guide. It is not a registration mark or a certified, model-specific outline of Cricut's usable area. Machine selection records the intended target and tailors instructions; it does not emulate firmware or guarantee that a particular job will pass Design Space's checks.
 
-## Recommended handoff
+## Recommended workflow: print the PDF, reuse the saved cut project
 
-1. Export the transparent PNG package from CriProx.
-2. Upload the PNG to Design Space as one flat Print Then Cut image and preserve transparency.
-3. Set its width and height from the included manifest and confirm the expected number of rounded contours.
-4. Print through Design Space at 100% / Actual size with fit-to-page disabled.
-5. Complete the cut from the same saved Design Space project, mat, session, and device.
+### One-time template setup
 
-For reusable registered printing, download CriProx's setup PNG, create and save the cut job in Design Space, print that job to a one-page portrait PDF at actual size, and import the PDF into CriProx. Future registered pages must be cut with that same saved job.
+1. Choose your machine, output paper, and layout in CriProx, then open **Create print PDF** and download the magenta setup PNG.
+2. Upload that PNG to Design Space as one flat **Print Then Cut** image, preserve transparency, and set both Canvas dimensions to the values shown with the template. Inspect the contours, then save the project and keep its mat arrangement unchanged.
+3. Use Design Space's **Make → Send to Printer** flow to save the job's print output as a complete one-page portrait PDF at **100% / Actual size**, with bleed off. This captures the template; it does not print the deck. Follow the layout-specific paper settings below: six-card and seven-card captures use the selected output paper, while eight-card requires a complete Tabloid capture.
+4. Import the captured PDF into CriProx. CriProx verifies the template and saves it for reuse with the matching cut geometry.
 
-CriProx saves completed registered pages as PDFs and does not print them directly. Open the saved PDF in a dedicated PDF application and print at **100% / Actual size** with fit, shrink, headers, and margins disabled. This preserves the selected artwork resolution and the captured PDF content.
+### For each deck
+
+1. In **Create print PDF**, prepare and inspect the card sheets, then save the finished PDF from CriProx.
+2. Open the saved PDF in a dedicated PDF application and print on the selected output paper at **100% / Actual size**. Disable fit, shrink, headers, and added margins. CriProx saves PDFs rather than printing directly, preserving the selected artwork resolution and captured PDF content.
+3. If backs are enabled, print their artwork onto the same sheets using the chosen refeed or duplex order. Back pages have no registration marks or cut lines.
+4. Reopen the exact saved Design Space project and mat. Choose **Already Printed / Skip printing** when available, load the sheet front-side up as instructed, and run the cut.
+
+Run a measured plain-paper test before using card stock. Reuse the template for later decks while
+the cut geometry remains unchanged. Changes to paper, spacing, machine, layout, or the saved cut
+job require a matching new capture; recapture after changes to Design Space or printer setup.
+This reusable PDF process is outside Cricut's recommended print flow and still requires physical
+validation on your equipment.
+
+### Alternative: direct PNG printing through Design Space
+
+The separate **Export** package contains artwork PNGs, SVG geometry, dimensions, and a handoff
+guide. Its PNGs contain no registration marks. For six-card and seven-card direct PNG exports, upload the artwork PNG
+as a flat Print Then Cut image, set both dimensions from the manifest, inspect the contours, and
+let Design Space generate the marks and handle printing and cutting in the same session and
+device. Eight-card exports direct you to **Create print PDF** instead. Use **Create print PDF**
+for the reusable workflow described above.
 
 ## Experimental manual nine-card workflow
 
@@ -100,34 +123,35 @@ This is the remaining hardware acceptance test. It cannot be completed by a brow
 
 1. Record the Cricut model, Design Space version, OS, printer/driver, paper size, material, and mat. Choose the corresponding machine in Design Space and CriProx.
 2. Calibrate Print Then Cut using Cricut's built-in calibration flow.
-3. In CriProx, leave the layout on **6 cards · Print and Cut** and select your desired card size. Open Export and download a size-check card. This package contains a single card with a 5 mm grid, not a sensor calibration page.
-4. Upload the PNG as a flat/single-layer Print Then Cut image. Preserve transparency. Inspect its contour: exactly one rounded rectangle, with no interior holes. Set both Canvas dimensions to the values in START-HERE.txt. Confirm that Design Space accepts those dimensions without resizing.
-5. For US Letter or A4 output, choose **Tabloid (11 × 17 in)** in Design Space, then change the system print dialog to your selected output paper (**US Letter** or **A4**), portrait, at **100% / Actual size**. Continue only if all six slots and all four sensor marks remain on one page.
-6. Print through Design Space with bleed enabled and with printer fit-to-page/shrink-to-fit disabled. Complete cutting in the same session from the same device. Follow the model-specific mat-loading instructions.
+3. In CriProx, leave the layout on **6 cards · Print and Cut** and select your desired card size. Open **Create print PDF** and download the reusable magenta setup PNG.
+4. Upload the setup PNG as a flat/single-layer Print Then Cut image. Preserve transparency. Inspect its contours: exactly six rounded rectangles, with no interior holes. Set both Canvas dimensions to the values shown with the template. Confirm that Design Space accepts those dimensions without resizing, then save the project and mat arrangement.
+5. For US Letter or A4 output, choose **Tabloid (11 × 17 in)** in Design Space. Use **Make → Send to Printer**, turn bleed off, and change the system print dialog to your selected output paper (**US Letter** or **A4**), portrait, at **100% / Actual size**. Save a PDF only if all six slots and all four sensor marks remain on one page, then import it into CriProx.
+6. Choose **Prepare size-check sheet** and save its PDF. This is a physical measurement target, not a sensor calibration page. Print it from a dedicated PDF application at **100% / Actual size**, with fit-to-page/shrink-to-fit disabled. Reopen the exact saved Design Space project and mat, choose **Already Printed / Skip printing** when available, and cut the sheet following the model-specific mat-loading instructions.
 7. Measure width and height of the cut card and its internal 5 mm grid. A consistent scale error suggests printer scaling or incorrect Canvas dimensions. Correctly sized grid with displaced edges suggests calibration/alignment. Record the error; do not change the physical card dimensions to conceal a sensor alignment issue.
-8. Repeat using a full six-card sheet and measure every card, including diagonal position differences. Use three sheets to check repeatability. Decide your own acceptable tolerance before committing a full deck (for example, target at most 0.25 mm edge displacement if your equipment supports it). The 180 × 220 mm planning envelope is a candidate, not a validated Cricut area. Do not use Auto-Resize if rejected; use a smaller batch instead. Recheck the rotated card dimensions.
+8. Repeat using a full six-card PDF printed from the PDF application and cut with the same saved project. Measure every card, including diagonal position differences. Use three sheets to check repeatability. Decide your own acceptable tolerance before committing a full deck (for example, target at most 0.25 mm edge displacement if your equipment supports it). The 180 × 220 mm planning envelope is a candidate, not a validated Cricut area. Do not use Auto-Resize if rejected; use a smaller batch instead. Recheck the rotated card dimensions.
 
 ## Experimental seven-card test
 
 The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fixes the cards at 63 × 88 mm, the corners at 2.5 mm, the spacing at 0.1 mm, and the complete template at 189.2 × 214.2 mm. Do not modify those values.
 
 1. Download the reusable setup template from **Create print PDF** and upload the magenta PNG as one flat Print Then Cut image.
-2. Set both Canvas dimensions to 189.2 × 214.2 mm and confirm seven rounded contours.
+2. Set both Canvas dimensions to 189.2 × 214.2 mm and confirm seven rounded contours. Save the project and keep its mat arrangement unchanged.
 3. Choose **Tabloid (11 × 17 in)** as the Print Then Cut page size in Design Space. A4 is too narrow for the middle row.
 4. Choose Make → Send to Printer, disable bleed, and open the system print dialog. Change the printer paper to **US Letter**, portrait, at **100% / Actual size**.
-5. Continue only if the preview remains one page with all seven magenta slots and all four sensor marks. Cancel if it clips a mark or creates a second page.
-6. Import the resulting one-page Letter PDF into CriProx. Prepare a size-check page before using a full artwork sheet.
-7. Reopen the same saved Design Space project and mat for the cut. Design Space may require a 12 × 24 in mat because the declared page is Tabloid, even though the printed sheet is Letter.
+5. Save the setup as a PDF only if the preview remains one page with all seven magenta slots and all four sensor marks. Cancel if it clips a mark or creates a second page.
+6. Import the resulting one-page Letter PDF into CriProx. Prepare and save a size-check PDF, then print it from a dedicated PDF application on Letter at **100% / Actual size**, with fit-to-page/shrink-to-fit disabled, before using a full artwork sheet.
+7. Reopen the same saved Design Space project and mat, choose **Already Printed / Skip printing** when available, and cut the printed sheet. Design Space may require a 12 × 24 in mat because the declared page is Tabloid, even though the printed sheet is Letter.
 8. Record sensor acquisition, every cut dimension, edge displacement, and repeatability. The successful one-page PDF capture confirms only the software geometry—not that a physical machine will read or cut it accurately.
 
 ## Experimental eight-card Tabloid capture
 
 The eight-card profile fixes two horizontal cards per row across four rows at 63 × 88 mm per card, 1 mm gaps, and 2.5 mm corners. The complete magenta template is 177 × 255 mm.
 
-1. Select the eight-card profile in CriProx, download its magenta setup PNG, and upload it to Design Space as one flat Print Then Cut image. Set both Canvas dimensions to 177 × 255 mm.
+1. Select the eight-card profile in CriProx, download its magenta setup PNG, and upload it to Design Space as one flat Print Then Cut image. Set both Canvas dimensions to 177 × 255 mm, save the project, and keep its mat arrangement unchanged.
 2. Select portrait **Tabloid (11 × 17 in)** in Design Space and the system print dialog. Turn bleed off and save one complete Tabloid PDF at **100% / Actual size**. Keep every card and all four sensor marks on one page.
 3. Import that PDF into **Create print PDF**. CriProx verifies the eight-card pattern and checks that all printed content fits on your selected portrait output paper (**US Letter** or **A4**) with at least 1 mm clearance. It moves the complete captured page content and card artwork together, without changing their size. A4 is narrower than Letter; captures that cannot fit are rejected.
-4. Save the resulting size-check PDF and print it on the selected **US Letter** or **A4** paper at **100% / Actual size**. Check all four marks on plain paper, then confirm the machine reads them and cuts a 63 × 88 mm card before printing a full deck.
+4. Save the resulting size-check PDF and print it from a dedicated PDF application on the selected **US Letter** or **A4** paper at **100% / Actual size**, with fit-to-page/shrink-to-fit disabled. Check all four marks on plain paper.
+5. Reopen the same saved Design Space project and mat, choose **Already Printed / Skip printing** when available, and cut the printed sheet. Confirm the machine reads the marks and cuts a 63 × 88 mm card before printing a full deck.
 
 The Sheet area selector follows the selected paper and cutting method. Maker and Explore offer six-, eight-, and nine-card layouts for A4; seven-card remains Letter-only. Changing an eight-card project between Letter and A4 preserves its layout but requires a matching capture for the new output paper.
 
