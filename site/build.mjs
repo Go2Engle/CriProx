@@ -104,10 +104,10 @@ const downloads = [
   ['Windows', '.exe', '64-bit installer'],
   ['Linux', '.AppImage', '64-bit AppImage'],
 ];
-const home = `<section class="hero"><p class="eyebrow">THE LOCAL CARD SHEET STUDIO</p><h1>Your next deck.<br><span>Ready to print.</span></h1><p class="hero-description">${esc(readme.match(/<p><strong>(.*?)<\/strong><\/p>/)?.[1] || 'A local-first card sheet studio for Cricut Print Then Cut.')}</p><p class="hero-subtitle">${esc(readme.match(/<p>(Turn .*?)<\/p>/)?.[1] || 'Turn card lists and artwork into precise, reusable print sheets.')}</p><div class="actions"><a class="button primary" href="#download">Download CriProx <span aria-hidden="true">↓</span></a><a class="button" href="${url('docs/cricut-workflow/')}">Read the print guide <span aria-hidden="true">→</span></a></div><p class="hero-note">Free & open source <span>·</span> macOS, Windows & Linux${latest ? ` <span>·</span> <a href="${url(`changelog/#${releaseId(latest)}`)}">${esc(latest.tag_name)}</a>` : ''}</p></section>
+const home = `<section class="hero"><p class="eyebrow">THE LOCAL CARD SHEET STUDIO</p><h1>Your next deck.<br><span>Ready to print.</span></h1><p class="hero-description">${esc(readme.match(/<p><strong>(.*?)<\/strong><\/p>/)?.[1] || 'A local-first studio for printable card PDFs and reusable Cricut cuts.')}</p><p class="hero-subtitle">${esc(readme.match(/<p>(Turn .*?)<\/p>/)?.[1] || 'Turn card lists and artwork into precise, reusable print sheets.')}</p><div class="actions"><a class="button primary" href="#download">Download CriProx <span aria-hidden="true">↓</span></a><a class="button" href="${url('docs/cricut-workflow/')}">Read the print guide <span aria-hidden="true">→</span></a></div><p class="hero-note">Free & open source <span>·</span> macOS, Windows & Linux${latest ? ` <span>·</span> <a href="${url(`changelog/#${releaseId(latest)}`)}">${esc(latest.tag_name)}</a>` : ''}</p></section>
 <figure class="studio-preview"><img src="${url('docs/assets/criprox-studio.png')}" alt="CriProx desktop studio with a card list, eight-card sheet preview, and print settings" width="3192" height="2192" fetchpriority="high"><figcaption>One workspace for your artwork, sheet layout, and print files.</figcaption></figure>
 <section class="section" id="features"><div class="section-heading"><p class="eyebrow">FROM LIST TO LAYOUT</p><h2>The little details, handled.</h2><p>Keep your attention on the deck. CriProx takes care of the sheet.</p></div><div class="features">${features.map((feature, index) => `<article class="feature"><span class="feature-number" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><h3>${esc(feature.title)}</h3>${render(feature.description)}</article>`).join('')}</div><a class="text-link" href="${url('docs/features/')}">Explore the full feature reference <span aria-hidden="true">→</span></a></section>
-<section class="section workflow"><div class="section-heading"><p class="eyebrow">A SIMPLE WORKFLOW</p><h2>Build. Print. Cut. Repeat.</h2></div><div class="prose steps">${render(section(readme, 'From card list to cut').split('\n\nCriProx also')[0])}</div><aside class="note">CriProx prepares the artwork and print files. Cricut Design Space supplies the registration marks and cut job. Experimental layouts need a measured test print and cut. <a href="${url('docs/cricut-workflow/')}">Read the workflow guide →</a></aside></section>
+<section class="section workflow"><div class="section-heading"><p class="eyebrow">A SIMPLE WORKFLOW</p><h2>Build. Print. Cut. Repeat.</h2></div><div class="prose steps">${render(section(readme, 'From card list to cut').split('\n\n')[0])}</div><aside class="note">Set up and capture the Design Space template once. Print each finished CriProx PDF from a dedicated PDF application, then cut with the matching saved Design Space project. Experimental layouts need a measured test print and cut. <a href="${url('docs/cricut-workflow/')}">Read the workflow guide →</a></aside></section>
 <section class="section" id="download"><div class="section-heading"><p class="eyebrow">MAKE ROOM FOR YOUR NEXT DECK</p><h2>At home on your desktop.</h2><p>${latest ? `Latest stable release: <a href="${url(`changelog/#${releaseId(latest)}`)}">${esc(latest.tag_name)}</a> · ${date(latest.published_at)}` : 'Stable desktop packages are available on GitHub.'}</p></div><div class="downloads">${downloads
   .map(([platform, extension, detail]) => {
     const asset = latest?.assets?.find((asset) => asset.name.endsWith(extension));
@@ -135,7 +135,7 @@ async function page(route, title, description, active, content) {
 await page(
   '',
   'Card sheets, made simple',
-  'A local-first card sheet studio for Cricut Print Then Cut. Free, open source, and available on macOS, Windows, and Linux.',
+  'A local-first studio for printable card PDFs and reusable Cricut cuts. Free, open source, and available on macOS, Windows, and Linux.',
   'home',
   home,
 );
@@ -149,7 +149,7 @@ await page(
 await page(
   'docs/',
   'Documentation',
-  'Everything you need to install CriProx, build card sheets, and complete your print and cut workflow.',
+  'Install CriProx, set up a reusable cut template, print card-sheet PDFs, and cut with your saved Design Space project.',
   'docs',
   `<div class="page-intro"><p class="eyebrow">A LITTLE GUIDANCE</p><h1>Let’s make a sheet<span>.</span></h1><p>Start here, then keep these guides nearby as you print.</p><p class="docs-note">These guides track the current project on main. For changes in a specific release, see the <a href="${url('changelog/')}">changelog</a>.</p></div><div class="guide-grid">${guides.map((guide) => `<a class="guide-card" href="${url(`docs/${guide.slug}/`)}"><h2>${esc(guide.title)} <span aria-hidden="true">↗</span></h2><p>${esc(guide.description)}</p></a>`).join('')}</div>`,
 );

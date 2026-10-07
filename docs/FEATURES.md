@@ -53,7 +53,9 @@ The print PDF dialog also offers **Upscale Scryfall card images (high detail)**.
 
 ## Export packages
 
-A normal export can include:
+Use **Create print PDF** for finished card-sheet PDFs that you print from a dedicated PDF
+application and cut with a reusable saved Design Space project. The separate **Export** package
+provides artwork and geometry for the alternative direct PNG workflow and can include:
 
 - Transparent artwork PNGs with one opaque, rounded silhouette per card.
 - Matched vector-only SVG silhouettes with the same size, origin, positions, rotation, and corner radii.
@@ -67,7 +69,11 @@ The SVG is a geometry reference or a separate Basic Cut template. It is not a re
 
 ## Registered printing
 
-CriProx can import a one-page PDF captured from Design Space, recognize the surrounding marks, and place current artwork into that template without changing the saved cut geometry.
+**Print the PDF. Cut with your saved Design Space project.** Set up and save the cut template
+in Design Space once, save its print output as a one-page PDF, and import that PDF into CriProx.
+CriProx recognizes the surrounding marks and places current artwork into the captured template
+without changing the saved cut geometry. For later decks, save the finished PDF from CriProx,
+print it from a dedicated PDF application, and reuse the matching saved Design Space cut project.
 
 - Front and back bleed are independent toggles.
 - Front bleed and the bleed between card backs are fixed at 0.5 mm for six-card and eight-card sheets and
@@ -80,7 +86,10 @@ CriProx can import a one-page PDF captured from Design Space, recognize the surr
 - CriProx preserves captured marks; it does not generate or imitate them.
 - CriProx saves the finished PDF instead of printing it through the browser, which would rasterize
   and reduce higher-resolution output. Print the saved file from a dedicated PDF application at
-  100% / Actual size with fit-to-page disabled.
+  **100% / Actual size** with fit-to-page/shrink-to-fit disabled.
+- In Design Space, reopen the exact saved project and mat, choose **Already Printed / Skip printing**
+  when available, and cut the printed sheet front-side up. Keep the cut geometry and mat arrangement
+  unchanged; changes to paper, spacing, machine, layout, or the saved cut job require a matching new capture.
 
 See [Cricut workflow and physical validation](CRICUT-WORKFLOW.md) for the complete setup and reuse procedure.
 
@@ -165,15 +174,15 @@ Remote URLs in a project backup are references, not embedded copies of the remot
 
 ### Six-card candidate area
 
-The default 180 × 220 mm candidate area produces six rotated cards. With US Letter or A4 output, the workflow declares Tabloid inside Design Space and then selects the output paper at 100% / Actual size in the system print dialog. It is not a Cricut-certified profile.
+The default 180 × 220 mm candidate area produces six rotated cards. For the reusable template capture, declare Tabloid inside Design Space, then select US Letter or A4 in the system print dialog and save the one-page PDF at 100% / Actual size. Import that capture into CriProx, print the finished card-sheet PDFs from a dedicated PDF application, and cut with the saved Design Space project. It is not a Cricut-certified profile.
 
 ### Seven-card 2–3–2 layout
 
-The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 mm corners, 0.1 mm spacing, and a 189.2 × 214.2 mm template. It also uses the Tabloid-to-Letter handoff. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
+The Maker/Explore experimental profile uses seven fixed 63 × 88 mm cards, 2.5 mm corners, 0.1 mm spacing, and a 189.2 × 214.2 mm template. Its one-time setup declares Tabloid in Design Space and captures a one-page Letter PDF. Print the finished CriProx PDFs from a dedicated PDF application and cut with that saved project. A one-page PDF capture has passed software geometry checks; sensor acquisition and physical cutting remain unverified.
 
 ### Eight-card portrait layout
 
-The Maker/Explore experimental profile uses eight fixed horizontal cards in a 2 × 4 layout with 1 mm gaps. The magenta setup image is 177 × 255 mm. Design Space produces a complete portrait Tabloid capture; CriProx checks every slot and the complete marked footprint, then moves the capture and artwork together onto US Letter or A4 pages at actual size with at least 1 mm clearance. Fronts, backs, and previews use the selected output paper. A capture must fit that paper; changing paper requires a matching capture. The Sheet area selector hides layouts unavailable for the selected paper and cutting method; seven-card is Letter-only. Printer margins, sensor acquisition, and physical cutting remain unverified.
+The Maker/Explore experimental profile uses eight fixed horizontal cards in a 2 × 4 layout with 1 mm gaps. The magenta setup image is 177 × 255 mm. Design Space produces a complete portrait Tabloid capture; CriProx checks every slot and the complete marked footprint, then moves the capture and artwork together onto US Letter or A4 pages at actual size with at least 1 mm clearance. Print the finished PDFs from a dedicated PDF application and cut with the saved Design Space project. Fronts, backs, and previews use the selected output paper. A capture must fit that paper; changing paper requires a matching capture. The Sheet area selector hides layouts unavailable for the selected paper and cutting method; seven-card is Letter-only. Printer margins, sensor acquisition, and physical cutting remain unverified.
 
 ### Nine-card manual layout
 

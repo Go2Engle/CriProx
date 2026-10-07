@@ -1,7 +1,7 @@
 <div align="center">
   <img src="build/icon.png" alt="CriProx icon" width="112" height="112">
   <h1>CriProx</h1>
-  <p><strong>A local-first card sheet studio for Cricut Print Then Cut.</strong></p>
+  <p><strong>A local-first studio for printable card PDFs and reusable Cricut cuts.</strong></p>
   <p>Turn playtest card lists and custom artwork into precise, reusable print sheets—without an account, cloud workspace, or subscription.</p>
 
   <p>
@@ -30,7 +30,7 @@
 
 ## Why CriProx?
 
-CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, preview the physical layout, and export the matched files needed to finish the job in Design Space.
+CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, and preview the physical layout. Print the finished PDF from a dedicated PDF application, then cut with your saved Design Space project.
 
 |                              |                                                                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -38,7 +38,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
 | 🃏 **Flexible artwork**      | Search cards, browse sets or commander precons, choose Scryfall printings or MPC Autofill community art, or use local images.      |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
-| ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.                         |
+| ✂️ **Reusable cuts**         | Capture a Design Space template once, print CriProx PDFs from a PDF application, and cut with the same saved project.             |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
 | 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
 | 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.                   |
@@ -50,10 +50,14 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 
 1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse a set or commander precon, or add local artwork.
 2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs.
-3. **Export from CriProx.** Download transparent artwork, matched vector geometry, dimensions, and the Design Space handoff guide.
-4. **Print and cut in Design Space.** Preserve the supplied dimensions, print at 100% / Actual size, and complete the cut from the same saved job.
+3. **Set up the cut template once.** In Create print PDF, download the setup PNG. Upload it to Design Space as a flat Print Then Cut image, preserve the supplied dimensions, and save the project and mat arrangement.
+4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks.
+5. **Print the PDF.** Save the finished card-sheet PDF from CriProx. Open it in a dedicated PDF application and print at 100% / Actual size, with fit or shrink scaling disabled.
+6. **Cut with the saved project.** Reopen the matching Design Space project and mat, choose Already Printed / Skip printing when available, and cut the printed sheet.
 
-CriProx also supports a registered-print workflow: save a one-page PDF from Design Space, import it into CriProx, and reuse those captured marks for later artwork pages while keeping the cut geometry unchanged.
+Reuse the captured template for later decks with the same cut geometry. Changing paper, spacing, machine, layout, or the saved cut job requires a matching new capture. The [workflow guide](docs/CRICUT-WORKFLOW.md) covers the paper settings and a measured test print and cut before a full deck.
+
+CriProx also exports transparent artwork PNGs, matched vector geometry, dimensions, and a Design Space handoff guide for the separate direct PNG workflow. Those exports do not contain registration marks; use **Create print PDF** for reusable registered pages.
 
 Export filenames use the deck name, output paper, layout, and purpose, such as
 `My-Deck-US-Letter-6-card-fronts.pdf` or `My-Deck-US-Letter-6-card-sheet-01-artwork.png`.
@@ -150,7 +154,7 @@ npm run package   # Build an installer for the current operating system
 
 CriProx is a software-tested prototype. Its layout, export, density metadata, project validation, and registered-PDF recognition are covered by automated and manual checks. Real-world sensor acquisition, printer scaling, cutter alignment, and repeatability still depend on the exact machine, calibration, printer, paper, and mat.
 
-The six-card layout uses an experimental Tabloid setup in Design Space before printing on Letter or A4; seven-card supports Letter only. The eight-card layout captures a full Tabloid PDF from Design Space and reframes its complete marked area onto the selected US Letter or A4 output paper without scaling, provided it fits with at least 1 mm clearance. The Sheet area selector shows only layouts supported by the selected paper and cutting method. Test one size-check sheet and record physical measurements before printing a full deck. The [validation record](docs/VALIDATION.md) tracks what is proven in software and what still needs hardware acceptance.
+The six-card layout uses an experimental Tabloid setup in Design Space to capture a reusable Letter or A4 template; seven-card supports Letter only. Print the finished CriProx PDFs from a dedicated PDF application and cut with the matching saved Design Space project. The eight-card layout captures a full Tabloid PDF from Design Space and reframes its complete marked area onto the selected US Letter or A4 output paper without scaling, provided it fits with at least 1 mm clearance. The Sheet area selector shows only layouts supported by the selected paper and cutting method. Test one size-check sheet and record physical measurements before printing a full deck. The [validation record](docs/VALIDATION.md) tracks what is proven in software and what still needs hardware acceptance.
 
 ## Community
 

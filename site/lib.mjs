@@ -22,7 +22,7 @@ export const guides = [
     file: 'docs/CRICUT-WORKFLOW.md',
     slug: 'cricut-workflow',
     title: 'Print & cut guide',
-    description: 'Design Space setup, reusable captures, and test cuts.',
+    description: 'One-time template setup, PDF printing, and saved Design Space cuts.',
   },
   {
     file: 'docs/VALIDATION.md',
