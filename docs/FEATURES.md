@@ -5,6 +5,12 @@
 - Import a public or unlisted Moxfield or Archidekt deck link, preserving selected printings when available.
 - Paste a deck list and resolve cards through Scryfall.
 - Search the Scryfall card catalog by full or partial name and add cards one at a time.
+- Choose **Find a card → Browse sets** to browse all paper sets, including token and supplemental
+  sets. Filter by set name or code, and list sets newest first or alphabetically.
+- Browse every available printing in a selected set, sorted by collector number, name, color,
+  rarity, mana value, or artist in ascending or descending order. Sorting applies to the entire set;
+  **Load more cards** continues in that order. Adding a card keeps the chosen printing, and repeat
+  additions increase its quantity without replacing other printings of the same card.
 - Start with four example Scryfall card records in a new workspace.
 - Search loaded cards and filter printings by set and collector number.
 - Select either face of a double-faced card from the inspector.
@@ -16,7 +22,7 @@
   with a per-face toggle to correct the suggestion when custom artwork uses a different layout.
 - Keep the complete card interior opaque, even when the source image contains transparent pixels.
 
-Deck-list requests are batched in groups of at most 75 unique identifiers. Request starts are serialized with at least 120 ms between them, and a `429` response stops the operation instead of continuing to pressure the service.
+Deck-list requests are batched in groups of at most 75 unique identifiers. Request starts are serialized with at least 120 ms between them and at least 500 ms between card-search requests, and a `429` response stops the operation instead of continuing to pressure the service.
 
 ## Sheet design
 
@@ -134,6 +140,11 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 - Project deletion moves the complete project folder to the operating system Trash for recovery.
 - Portable JSON backups that include local artwork and selected remote URLs.
 - Successful API responses cached for one day.
+- Find Card preview images cached locally by their complete image URL, shared across searches,
+  sets, and sort orders. Cached previews survive app restarts. Only visible and nearby cards load
+  previews, with at most four loads at once. The preview cache retains up to 1,024 images within
+  128 MiB on disk and 32 MiB in memory, evicting older images as it fills. If local storage is
+  unavailable or full, previews still load and use the session cache.
 - Export artwork cached for reuse.
 - No account, telemetry service, hosted backend, or cloud project sync.
 

@@ -4,6 +4,18 @@ export type EntryCopy = { entryId: string; copy: number };
 export type EntryArtworkPatch = Partial<Pick<Entry, 'card' | 'face'>>;
 export type SplitEntryIds = { edited: string; remainder: string };
 
+export function addCardToEntries(entries: Entry[], card: Card, newId: string): Entry[] {
+  if (entries.reduce((sum, entry) => sum + entry.quantity, 0) >= 500) return entries;
+  const matching = entries.find(
+    (entry) => entry.card.id === card.id && entry.face === 0 && entry.quantity < 100,
+  );
+  if (matching)
+    return entries.map((entry) =>
+      entry.id === matching.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
+    );
+  return [...entries, { id: newId, card, quantity: 1, face: 0 }];
+}
+
 export function isDoubleSidedCard(card: Card) {
   return card.faces.length === 2;
 }

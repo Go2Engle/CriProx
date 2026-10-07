@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  addCardToEntries,
   doubleSidedCardCount,
   editEntryCopy,
   isDoubleSidedCard,
@@ -54,6 +55,41 @@ const doubleSidedEntry: Entry = {
     ],
   },
 };
+
+test('adding a catalog card preserves the chosen printing even when its oracle card is already present', () => {
+  const original = { ...entry, card: { ...entry.card, oracleId: 'same-oracle' } };
+  const printing = { ...newCard, oracleId: 'same-oracle', set: 'lea', collector: '1' };
+  const added = addCardToEntries([original], printing, 'new-printing');
+  assert.equal(added.length, 2);
+  assert.equal(added[0].quantity, 4);
+  assert.equal(added[1].card, printing);
+  const repeated = addCardToEntries(added, printing, 'unused');
+  assert.equal(repeated.length, 2);
+  assert.equal(repeated[1].quantity, 2);
+});
+
+test('catalog additions respect the project and entry limits and preserve the selected front face', () => {
+  const full = Array.from({ length: 5 }, (_, index) => ({
+    ...entry,
+    id: String(index),
+    quantity: 100,
+  }));
+  assert.equal(addCardToEntries(full, newCard, 'extra'), full);
+  const capped = addCardToEntries([{ ...entry, quantity: 100 }], entry.card, 'overflow');
+  assert.deepEqual(
+    capped.map((item) => item.quantity),
+    [100, 1],
+  );
+  const reversed = { ...doubleSidedEntry, face: 1 };
+  const added = addCardToEntries([reversed], reversed.card, 'front');
+  assert.deepEqual(
+    added.map((item) => [item.face, item.quantity]),
+    [
+      [1, 2],
+      [0, 1],
+    ],
+  );
+});
 
 test('double-sided entries expose the opposite face and shared-back requirement', () => {
   assert.equal(isDoubleSidedCard(doubleSidedEntry.card), true);
