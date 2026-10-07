@@ -4,6 +4,7 @@ import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
 import ManualGuideControls from './components/ManualGuideControls';
+import SettingsModal from './components/SettingsModal';
 import CardSearchResults from './components/CardSearchResults';
 import SetBrowser from './components/SetBrowser';
 import PreconBrowser from './components/PreconBrowser';
@@ -34,7 +35,6 @@ import {
   Download,
   ExternalLink,
   FilePlus2,
-  FolderCog,
   FolderOpen,
   Grid2X2,
   ImagePlus,
@@ -70,14 +70,10 @@ import {
 } from './lib/types';
 import {
   FACTORY_PROJECT_DEFAULTS,
-  manualGuideDefaultsFrom,
-  projectDefaultsFrom,
   projectFromDefaults,
   sheetSettingsMatch,
   validateProjectDefaults,
-  withManualGuideDefaults,
   withSheetSettingsDefaults,
-  type ManualGuideDefaults,
   type ProjectDefaults,
 } from './lib/project-defaults';
 import { grid, type Sheet } from './lib/layout';
@@ -472,246 +468,6 @@ function ProjectsModal({
         <button className="primary compact" disabled={busy} onClick={saveCurrent}>
           {busy ? <LoaderCircle className="spin" size={14} /> : <Save size={14} />}
           Save current project
-        </button>
-      </div>
-    </Modal>
-  );
-}
-function SettingsModal({
-  defaults,
-  snapshot,
-  busy,
-  colorTheme,
-  close,
-  changeTheme,
-  saveDefaults,
-  saveGuideDefaults,
-  applyDefaults,
-  restoreFactoryDefaults,
-  changeDirectory,
-  importDocuments,
-  reveal,
-}: {
-  defaults: ProjectDefaults;
-  snapshot: ProjectLibrarySnapshot | null;
-  busy: boolean;
-  colorTheme: ColorTheme;
-  close: () => void;
-  changeTheme: (theme: ColorTheme) => void;
-  saveDefaults: () => void;
-  saveGuideDefaults: (settings: Settings) => Promise<void>;
-  applyDefaults: () => void;
-  restoreFactoryDefaults: () => void;
-  changeDirectory: () => void;
-  importDocuments: () => void;
-  reveal: () => void;
-}) {
-  const settings = defaults.settings;
-  const [guideDraft, setGuideDraft] = useState<ManualGuideDefaults>(() =>
-    manualGuideDefaultsFrom(settings),
-  );
-  useEffect(() => setGuideDraft(manualGuideDefaultsFrom(settings)), [settings]);
-  const guideSettings = { ...settings, ...guideDraft };
-  const machine =
-    settings.machine === 'maker'
-      ? 'Cricut Maker series'
-      : settings.machine === 'explore'
-        ? 'Cricut Explore series'
-        : settings.machine === 'manual'
-          ? 'Manual cutting'
-          : 'Cricut Joy Xtra';
-  const profile =
-    settings.profile === 'expanded'
-      ? 'Print and Cut'
-      : settings.profile === 'seven' || settings.profile === 'eight'
-        ? 'Experimental Print and Cut'
-        : 'Manual Alignment';
-  const signedMm = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)} mm`;
-  const fileExplorerName =
-    window.criprox?.platform === 'darwin'
-      ? 'Finder'
-      : window.criprox?.platform === 'win32'
-        ? 'File Explorer'
-        : 'file manager';
-  return (
-    <Modal
-      title="Settings"
-      subtitle="Configure CriProx and choose the setup used by every new project."
-      close={close}
-      wide
-      className="app-settings-modal"
-    >
-      <div className="app-settings-content">
-        <section className="app-settings-section">
-          <div className="app-settings-heading">
-            <span>{colorTheme === 'dark' ? <Moon size={17} /> : <Sun size={17} />}</span>
-            <div>
-              <h3>Appearance</h3>
-              <p>Choose how CriProx looks on this device.</p>
-            </div>
-          </div>
-          <div className="segmented settings-theme-options" aria-label="Color theme">
-            <button
-              className={colorTheme === 'light' ? 'selected' : ''}
-              aria-pressed={colorTheme === 'light'}
-              onClick={() => changeTheme('light')}
-            >
-              <Sun size={14} /> Light
-            </button>
-            <button
-              className={colorTheme === 'dark' ? 'selected' : ''}
-              aria-pressed={colorTheme === 'dark'}
-              onClick={() => changeTheme('dark')}
-            >
-              <Moon size={14} /> Dark
-            </button>
-          </div>
-        </section>
-
-        <section className="app-settings-section defaults-settings-section">
-          <div className="app-settings-heading">
-            <span>
-              <SlidersHorizontal size={17} />
-            </span>
-            <div>
-              <h3>New project defaults</h3>
-              <p>
-                Set up the current project exactly how you want, then save that setup here. Project
-                names and card lists are never included.
-              </p>
-            </div>
-          </div>
-          <div className="defaults-summary-grid">
-            <article>
-              <span>LAYOUT</span>
-              <strong>
-                {grid(settings).capacity}-card {profile}
-              </strong>
-              <small>
-                {machine} · {settings.paper === 'letter' ? 'US Letter' : 'A4'} ·{' '}
-                {settings.units === 'in' ? 'inches' : 'millimeters'}
-              </small>
-            </article>
-            <article>
-              <span>CARD GEOMETRY</span>
-              <strong>
-                {settings.width} × {settings.height} mm
-              </strong>
-              <small>
-                {settings.gap} mm gap · {settings.radius} mm corners
-              </small>
-            </article>
-            <article>
-              <span>PRINT</span>
-              <strong>{settings.dpi} DPI</strong>
-              <small>
-                Front bleed {settings.bleed > 0 ? 'on' : 'off'} · Back bleed{' '}
-                {settings.backBleedEnabled ? 'on' : 'off'} · Labels{' '}
-                {settings.proxyLabel ? 'on' : 'off'}
-              </small>
-            </article>
-            <article>
-              <span>CARD BACKS</span>
-              <strong>{settings.backsEnabled ? 'Enabled' : 'Disabled'}</strong>
-              <small>
-                {settings.backPrintMode === 'manual' ? 'Manual refeed' : 'Duplex'} ·{' '}
-                {settings.backFlip === 'long-edge' ? 'Long-edge flip' : 'Short-edge flip'} ·{' '}
-                {settings.backRotation}° · Shared artwork{' '}
-                {defaults.backArtwork ? 'saved' : 'not set'}
-              </small>
-            </article>
-            <article>
-              <span>BACK ALIGNMENT</span>
-              <strong>
-                X {signedMm(settings.backOffsetX)} · Y {signedMm(settings.backOffsetY)}
-              </strong>
-              <small>Saved printer-side alignment compensation</small>
-            </article>
-            <article>
-              <span>MANUAL CUT ALIGNMENT</span>
-              <strong>
-                X {signedMm(settings.manualCutCorrectionX)} · Y{' '}
-                {signedMm(settings.manualCutCorrectionY)}
-              </strong>
-              <small>Saved physical cut correction</small>
-            </article>
-          </div>
-          <div className="app-settings-actions defaults-settings-actions">
-            <button className="primary compact" onClick={saveDefaults}>
-              <Save size={14} /> Save current project as defaults
-            </button>
-            <button className="secondary compact" onClick={applyDefaults}>
-              <RotateCcw size={14} /> Apply defaults to current project
-            </button>
-            <button className="text-button compact" onClick={restoreFactoryDefaults}>
-              Restore factory defaults
-            </button>
-          </div>
-        </section>
-
-        <section className="app-settings-section">
-          <div className="app-settings-heading">
-            <span>
-              <Ruler size={17} />
-            </span>
-            <div>
-              <h3>Manual cut guide defaults</h3>
-              <p>
-                Choose the guides for new manual cutting projects. Save guide changes here without
-                replacing your machine, paper, or other project defaults.
-              </p>
-            </div>
-          </div>
-          <ManualGuideControls
-            mode="defaults"
-            settings={guideSettings}
-            change={(patch) =>
-              setGuideDraft((current) =>
-                manualGuideDefaultsFrom({ ...settings, ...current, ...patch }),
-              )
-            }
-            savedDefaults={settings}
-            saveDefaults={saveGuideDefaults}
-          />
-        </section>
-
-        <section className="app-settings-section">
-          <div className="app-settings-heading">
-            <span>
-              <FolderCog size={17} />
-            </span>
-            <div>
-              <h3>Project library</h3>
-              <p>Choose where saved project folders and their uploaded artwork are stored.</p>
-            </div>
-          </div>
-          <div className="settings-library-location">
-            <div>
-              <strong>{snapshot?.isDefault ? 'CriProx projects' : 'Custom projects folder'}</strong>
-              <span title={snapshot?.root}>
-                {snapshot?.root || 'Finding your projects folder…'}
-              </span>
-            </div>
-            <button className="secondary compact" disabled={busy || !snapshot} onClick={reveal}>
-              <ExternalLink size={14} /> Open in {fileExplorerName}
-            </button>
-          </div>
-          <div className="app-settings-actions">
-            <button className="secondary compact" disabled={busy} onClick={changeDirectory}>
-              <FolderCog size={14} /> Change folder
-            </button>
-            {snapshot?.canImportDocumentsLibrary && (
-              <button className="secondary compact" disabled={busy} onClick={importDocuments}>
-                <Upload size={14} /> Import old library
-              </button>
-            )}
-          </div>
-        </section>
-      </div>
-      <div className="modal-footer app-settings-footer">
-        <span>Settings are stored locally on this device.</span>
-        <button className="primary compact" onClick={close}>
-          Done
         </button>
       </div>
     </Modal>
@@ -2318,26 +2074,6 @@ export default function App() {
   function settings(patch: Partial<Settings>) {
     setProject((p) => ({ ...p, settings: { ...p.settings, ...patch } }));
   }
-  async function saveCurrentSetupAsDefaults() {
-    const next = projectDefaultsFrom(project);
-    try {
-      await set(PROJECT_DEFAULTS_KEY, next);
-      setProjectDefaults(next);
-      setToast('Current setup will be used for new projects.');
-    } catch {
-      setToast('Could not save project defaults on this device.');
-    }
-  }
-  async function saveManualGuideSettingsAsDefaults(source: Settings) {
-    const next = withManualGuideDefaults(projectDefaults, source);
-    try {
-      await set(PROJECT_DEFAULTS_KEY, next);
-      setProjectDefaults(next);
-      setToast('Manual cut guide defaults saved for new projects.');
-    } catch {
-      setToast('Could not save manual cut guide defaults on this device.');
-    }
-  }
   async function saveSheetSettingsAsDefaults() {
     const next = withSheetSettingsDefaults(projectDefaults, project.settings);
     setSavingSheetDefaults(true);
@@ -2351,30 +2087,29 @@ export default function App() {
       setSavingSheetDefaults(false);
     }
   }
+  async function saveEditedProjectDefaults(source: ProjectDefaults, apply: boolean) {
+    const next = validateProjectDefaults(source);
+    await set(PROJECT_DEFAULTS_KEY, next);
+    setProjectDefaults(next);
+    if (apply) {
+      const fresh = projectFromDefaults(next);
+      setProject((current) => ({
+        ...current,
+        settings: fresh.settings,
+        backArtwork: fresh.backArtwork,
+      }));
+      setPage(0);
+    }
+    setToast(
+      apply
+        ? 'Defaults saved and applied to the current project.'
+        : 'Defaults saved for new projects.',
+    );
+  }
   function loadSheetSettingsDefaults() {
     settings(projectDefaults.settings);
     setPage(0);
     setToast('Saved sheet setup applied to the current project.');
-  }
-  async function restoreFactoryProjectDefaults() {
-    const next = projectDefaultsFrom(projectFromDefaults(FACTORY_PROJECT_DEFAULTS));
-    try {
-      await set(PROJECT_DEFAULTS_KEY, next);
-      setProjectDefaults(next);
-      setToast('New projects will use the factory setup.');
-    } catch {
-      setToast('Could not restore factory project defaults.');
-    }
-  }
-  function applyProjectDefaults() {
-    const defaults = projectFromDefaults(projectDefaults);
-    setProject((current) => ({
-      ...current,
-      settings: defaults.settings,
-      backArtwork: defaults.backArtwork,
-    }));
-    setPage(0);
-    setToast('Project defaults applied to the current project.');
   }
   function startFreshProject() {
     setProject(projectFromDefaults(projectDefaults));
@@ -3495,15 +3230,14 @@ export default function App() {
       {modal === 'settings' && window.criprox?.projects && (
         <SettingsModal
           defaults={projectDefaults}
+          project={project}
           snapshot={projectLibrary}
           busy={libraryBusy}
           colorTheme={colorTheme}
           close={() => setModal(null)}
           changeTheme={setColorTheme}
-          saveDefaults={() => void saveCurrentSetupAsDefaults()}
-          saveGuideDefaults={saveManualGuideSettingsAsDefaults}
-          applyDefaults={applyProjectDefaults}
-          restoreFactoryDefaults={() => void restoreFactoryProjectDefaults()}
+          saveDefaults={saveEditedProjectDefaults}
+          readArtwork={async (file) => (await cardFromArtwork(file)).faces[0]}
           changeDirectory={() => void changeProjectsDirectory()}
           importDocuments={() => void importDocumentsProjectLibrary()}
           reveal={() => void revealProjectsDirectory()}

@@ -57,7 +57,7 @@ newly announced products may not have decklists or artwork yet.
 
 The selected DPI controls export density; it cannot add detail absent from the source image. The 900 and 1200 DPI modes are intended for high-resolution MPC Autofill or custom artwork and use substantially more memory.
 
-The print PDF dialog also offers **Upscale Scryfall card images (high detail)**. It is off by default and applies only when preparing card sheets, including matching reverse faces. You can choose the built-in 4× ESRGAN Thick engine, which downloads a ~28 MB model from a package CDN, or an installed [Upscayl desktop app](https://upscayl.org/download). The Upscayl option uses **Ultramix (Non-Commercial)** at 4× and appears when CriProx finds its bundled command line engine and Ultramix model in a common installation location. The Ultramix model is marked for non-commercial use by Upscayl. CriProx passes temporary PNG files to the engine and deletes them after processing; the work remains local. Enhanced images are cached separately by engine and model version. Choose 600 DPI or higher in Sheet setup to retain the extra detail in the PDF. MPC Autofill and uploaded artwork keep their original pixels. The original Scryfall image remains available by turning the option off. Upscaling can take much longer than a standard export and may change fine text or illustrated detail, so inspect the PDF before printing. Upscayl requires a compatible GPU. Size-check and alignment pages do not run either engine.
+The print PDF dialog also offers **Upscale Scryfall card images (high detail)**. It is off in the factory defaults and applies only when preparing card sheets, including matching reverse faces. You can choose the built-in 4× ESRGAN Thick engine, which downloads a ~28 MB model from a package CDN, or an installed [Upscayl desktop app](https://upscayl.org/download). The Upscayl option uses **Ultramix (Non-Commercial)** at 4× and appears when CriProx finds its bundled command line engine and Ultramix model in a common installation location. The Ultramix model is marked for non-commercial use by Upscayl. CriProx passes temporary PNG files to the engine and deletes them after processing; the work remains local. Enhanced images are cached separately by engine and model version. Choose 600 DPI or higher in Sheet setup to retain the extra detail in the PDF. MPC Autofill and uploaded artwork keep their original pixels. The original Scryfall image remains available by turning the option off. Upscaling can take much longer than a standard export and may change fine text or illustrated detail, so inspect the PDF before printing. Upscayl requires a compatible GPU. Size-check and alignment pages do not run either engine.
 
 ## Export packages
 
@@ -140,7 +140,7 @@ sources, so this mode requires a measured plain-paper test.
 
 ## Card backs and duplex output
 
-Card backs are optional and disabled by default. Selecting a double-sided card shows a warning while
+Card backs are optional and disabled in the factory defaults. Selecting a double-sided card shows a warning while
 backs are disabled. When backs are enabled, each double-sided card automatically uses the face opposite
 its selected front in the matching mirrored back position. A shared back is used only for single-sided
 cards, including on a mixed sheet. Back pages can be exported as:
@@ -155,12 +155,24 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 ## Local projects and caching
 
 - One autosaved workspace stored in IndexedDB.
-- A dedicated Settings area for appearance, the project library location, and user-defined new-project
-  defaults. Defaults include every sheet, print, back-side, and alignment setting plus optional shared
-  card-back artwork.
-- Manual cut guide options can be edited in Settings and saved as defaults. The sheet editor also has
-  a guide-only Save as defaults button below Page cut guides; it is disabled when guides already match
-  the saved defaults.
+- Settings opens directly to **New project defaults**, with editable **Sheet**, **Print**,
+  **Card backs**, **Cut guides**, and **Alignment** groups. Configure paper, machine, layout,
+  display units, DPI, bleed, labels, upscaling, shared artwork, refeed or duplex
+  options, manual guides, and measured alignment corrections without changing the open deck.
+  Card dimensions, corner radius, and spacing are managed by the selected layout and cannot be
+  edited in Settings. Incompatible machine or paper changes select an available layout automatically.
+- One draft keeps edits across Settings pages and groups. **Save defaults** saves all groups at
+  once for future projects. Select **Also apply to current project** to save and apply the setup
+  to the open deck while keeping its name and card list. The footer stays visible while scrolling.
+- **Use current project** copies its setup into the draft; **Reset to factory** prepares factory
+  defaults for review. Neither changes saved defaults until you save. **Undo changes** restores the
+  saved setup. Closing with unsaved edits offers **Keep editing** or **Discard changes**.
+- The **Card backs** group lets you upload, preview, replace, remove, or browse shared artwork and
+  review source-bleed trimming. Disabling backs retains the artwork and print options. Upscaling
+  choices persist with each project and stay selected when reopening the print dialog; an
+  unavailable saved Upscayl engine is flagged so you can choose another engine.
+- **Appearance** and **Project library** have their own Settings pages. Theme and folder changes
+  apply immediately and do not discard an unfinished defaults draft.
 - A desktop project explorer backed by the app's private Application Support directory by default.
 - A one-time macOS importer for projects created in the earlier `Documents/CriProx` library.
 - A configurable projects folder, with one subfolder per saved project.
@@ -175,6 +187,8 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
   unavailable or full, previews still load and use the session cache.
 - Export artwork cached for reuse.
 - No account, telemetry service, hosted backend, or cloud project sync.
+
+![Settings with editable new-project defaults and one save action](assets/criprox-settings.png)
 
 Remote URLs in a project backup are references, not embedded copies of the remote files. Browser or application storage can be cleared or reach its quota, so a downloaded project backup is the durable copy.
 

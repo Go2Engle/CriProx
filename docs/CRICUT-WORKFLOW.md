@@ -179,6 +179,24 @@ The earlier 0.1 mm-gap sample capture had a 7.63 × 10.63 in marked footprint an
 
 ## Exact SVG template
 
+Save repeatable preferences in **Settings → New project defaults**. Use **Sheet** for machine,
+output paper, layout, and units; **Print** for DPI, front bleed, labels, and upscaling;
+**Card backs** for shared artwork, back bleed, refeed or duplex, flip, and orientation; **Cut guides**
+for manual guides; and **Alignment** for measured printer and cut corrections. Card dimensions, corner radius,
+and spacing are fixed by the selected layout and cannot be edited in Settings. Changing machine or paper keeps layout choices
+compatible.
+
+Edits stay in one draft as you switch groups. **Save defaults** saves everything for future projects.
+Select **Also apply to current project** to use the setup on the open deck as well; its name and
+card list are preserved. **Use current project** copies that deck's setup into the draft, and
+**Reset to factory** prepares factory choices. Review either before saving. **Undo changes** returns
+to the saved defaults; closing with unsaved changes offers a choice to keep editing or discard.
+
+In **Card backs**, review the artwork preview and source-bleed toggle. You can replace or remove
+artwork; disabling backs keeps it saved for later. Upscaling choices stay with each project when
+you close and reopen **Create print PDF**. If saved Upscayl is unavailable, choose Built-in ESRGAN
+or turn upscaling off before preparing card sheets.
+
 Front and back bleed controls are independent on/off toggles. Front bleed and the bleed between card backs are fixed at 0.5 mm for the six-card and eight-card profiles and 0.05 mm for the tightly spaced seven-card profile. Because back pages do not contain registration marks, enabled back bleed extends 1.5 mm past exposed outside edges to cover small front-to-back alignment shifts without changing card positions or cut geometry.
 
 When a selected Scryfall card has two faces, CriProx warns that card-back printing is required. With

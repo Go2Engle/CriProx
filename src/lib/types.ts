@@ -53,6 +53,8 @@ export type Settings = {
   manualGuideLengthMm: number;
   manualGuidePageStyle: 'none' | 'edge' | 'full';
   dpi: PrintDpi;
+  upscaleScryfall: boolean;
+  upscaleBackend: 'built-in' | 'upscayl';
   proxyLabel: boolean;
 };
 export const isTightRegisteredProfile = (profile: Settings['profile']) => profile === 'seven';
@@ -101,6 +103,8 @@ export const DEFAULT_SETTINGS: Settings = {
   manualGuideLengthMm: 7.5,
   manualGuidePageStyle: 'edge',
   dpi: 300,
+  upscaleScryfall: false,
+  upscaleBackend: 'built-in',
   proxyLabel: false,
 };
 export const EMPTY_PROJECT: Project = {
