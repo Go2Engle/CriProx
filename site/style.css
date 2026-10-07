@@ -210,7 +210,7 @@ figcaption {
   border-bottom: 1px solid var(--border);
 }
 .section:nth-of-type(odd) {
-  --section-bg: #f1edfc;
+  --section-bg: #f3f3f3;
 }
 .section::before {
   content: '';
