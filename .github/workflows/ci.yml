@@ -33,7 +33,7 @@ jobs:
           cache-dependency-path: site/package-lock.json
       - name: Install website dependencies
         run: npm ci --prefix site
-      - name: Check documentation freshness
+      - name: Check website release policy and documentation freshness
         run: npm run check:docs --prefix site
 
   test:

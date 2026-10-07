@@ -15,3 +15,9 @@ build. Use `npm run build --prefix site -- --offline` when release API access is
 Use human-readable Conventional Commit subjects and PR titles. Release Please manages version
 files and `CHANGELOG.md`; do not edit them by hand. Describe the actual user-visible result in
 feature and fix subjects because those subjects become the public release notes.
+
+Website changes must never trigger an application release or appear in application release notes.
+Use non-breaking `chore(site):`, `docs(site):`, or `style(site):` commits and PR titles for website
+work, including screenshots and website workflows. Never use `feat(site):`, `fix(site):`, `perf(site):`,
+`!`, or breaking-change footers. Keep app behavior changes in a separate PR. Release Please excludes
+commits confined to `site/` and `docs/assets/`, and CI checks website PR titles as an additional guard.
