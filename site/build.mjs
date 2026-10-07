@@ -11,6 +11,7 @@ import {
   section,
   featureCards,
   cleanReleaseNotes,
+  releaseHeading,
   stableReleases,
   changelogReleases,
   fetchReleases,
@@ -48,8 +49,8 @@ const date = (value) =>
   });
 const releaseId = (release) => release.tag_name.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
 const releaseHtml = (release, index) => `<article class="release" id="${esc(releaseId(release))}">
-  <div class="release-meta"><h2 class="version"><a href="#${esc(releaseId(release))}">${esc(release.tag_name)}</a></h2>${index === 0 ? '<span class="badge">Latest</span>' : ''}<time datetime="${esc(release.published_at.slice(0, 10))}">${date(release.published_at)}</time></div>
-  <div class="release-body prose">${release.name && release.name !== release.tag_name && release.name !== release.tag_name.replace(/^v/, '') ? `<h2>${esc(release.name)}</h2>` : ''}${markdown(cleanReleaseNotes(release.body || '') || 'Release notes are available on GitHub.', { base, headingPrefix: `${releaseId(release)}-` })}<a class="text-link" href="${esc(release.html_url)}">Release & downloads <span aria-hidden="true">↗</span></a></div>
+  <div class="release-meta"><a class="version" href="#${esc(releaseId(release))}" aria-label="Version ${esc(release.tag_name)}${index === 0 ? ', latest release' : ''}">${esc(release.tag_name.replace(/^v/, ''))}</a><a class="release-date" href="#${esc(releaseId(release))}" aria-label="${date(release.published_at)}, version ${esc(release.tag_name)}"><time datetime="${esc(release.published_at.slice(0, 10))}">${date(release.published_at)}</time></a></div>
+  <div class="release-body prose"><h2>${esc(releaseHeading(release))}</h2>${markdown(cleanReleaseNotes(release.body || '') || 'Release notes are available on GitHub.', { base, headingPrefix: `${releaseId(release)}-` })}<a class="text-link" href="${esc(release.html_url)}">Release & downloads <span aria-hidden="true">↗</span></a></div>
 </article>`;
 
 // Match the coin artwork and animation used by DonationLink in the app.
@@ -65,20 +66,35 @@ const donationLink = `<a class="donation-link" href="https://ko-fi.com/go2engle"
 <path d="M18.5 34.5h11" stroke="#fff0b0" stroke-width="1.2" stroke-linecap="round" opacity="0.75"/>
 </svg></span><span class="donation-tooltip" aria-hidden="true">Donate on Ko-fi</span></a>`;
 
+const githubIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.72 2.64 1.22 3.28.94.1-.73.4-1.22.71-1.5-2.5-.29-5.13-1.25-5.13-5.56 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.16a10.8 10.8 0 0 1 5.64 0c2.15-1.46 3.1-1.16 3.1-1.16.61 1.55.23 2.7.11 2.98.72.79 1.16 1.8 1.16 3.02 0 4.33-2.64 5.27-5.15 5.55.4.35.76 1.03.76 2.08v3.1c0 .3.2.65.77.54A11.25 11.25 0 0 0 12 .75Z"/></svg>`;
+
 function shell({ title, description, route, active, content }) {
   const nav = [
-    ['', 'Overview', 'home'],
-    ['docs/', 'Docs', 'docs'],
     ['changelog/', 'Changelog', 'changelog'],
+    ['docs/', 'Docs', 'docs'],
   ];
+  const brand = `<a class="brand" href="${url('')}" aria-label="CriProx home"><img src="${url('assets/favicon.svg?v=layers')}" alt="" width="33" height="36">Cri<span>Prox</span></a>`;
+  const links = nav
+    .map(
+      ([route, title, key]) =>
+        `<a href="${url(route)}"${active === key ? ' aria-current="page"' : ''}>${title}</a>`,
+    )
+    .join('');
+  const mobileDonation = donationLink
+    .replaceAll('donation-coin-face', 'donation-coin-face-mobile')
+    .replace(
+      '<span class="donation-tooltip" aria-hidden="true">Donate on Ko-fi</span>',
+      '<span class="donation-label">Support the project</span>',
+    );
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)} · CriProx</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f7f9">
 <link rel="canonical" href="${esc(origin + url(route))}"><link rel="icon" href="${url('assets/favicon.svg?v=layers')}" type="image/svg+xml">
 <meta property="og:title" content="${esc(title)} · CriProx"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${esc(origin + url(route))}"><meta property="og:image" content="${esc(origin + url('docs/assets/criprox-studio.png'))}">
-<link rel="stylesheet" href="${url('assets/style.css')}"><link rel="alternate" type="application/atom+xml" title="CriProx releases" href="${url('feed.xml')}"></head>
-<body><a class="skip-link" href="#main">Skip to content</a><header class="header"><a class="brand" href="${url('')}"><img src="${url('assets/favicon.svg?v=layers')}" alt="" width="33" height="36">Cri<span>Prox</span></a>
-<nav aria-label="Main navigation">${nav.map(([route, title, key]) => `<a href="${url(route)}"${active === key ? ' aria-current="page"' : ''}>${title}</a>`).join('')}<a href="${github}" class="github-link">GitHub <span aria-hidden="true">↗</span></a>${donationLink}</nav></header>
+<link rel="stylesheet" href="${url('assets/style.css')}"><link rel="alternate" type="application/atom+xml" title="CriProx releases" href="${url('feed.xml')}"><script src="${url('assets/nav.js')}" defer></script></head>
+<body${active === 'changelog' ? ' class="changelog-page"' : ''}><a class="skip-link" href="#main">Skip to content</a><header class="header">${brand}
+<nav class="desktop-navigation" aria-label="Main navigation">${links}<a href="${github}" class="github-link" aria-label="GitHub">${githubIcon}</a>${donationLink}</nav>
+<details class="mobile-navigation"><summary class="menu-toggle" aria-label="Navigation menu" aria-controls="mobile-menu"><svg class="menu-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><svg class="close-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></summary><div class="mobile-menu" id="mobile-menu"><div class="mobile-menu-heading">${brand}</div><nav aria-label="Mobile navigation">${links}<a href="${github}" class="github-link">${githubIcon}<span>GitHub</span></a>${mobileDonation}</nav></div></details></header>
 <main id="main">${content}</main><footer class="footer"><div><a class="brand" href="${url('')}">Cri<span>Prox</span></a><p>Made for playtesting. Built to stay local.</p></div><div class="footer-links"><a href="${github}">Source code</a><a href="${github}/issues">Feedback</a><a href="https://ko-fi.com/go2engle">Support the project</a><a href="${github}/blob/main/LICENSE">GPL-3.0</a></div><p class="credits">An independent, open-source project. Unaffiliated with Cricut or Wizards of the Coast.<br>Card artwork belongs to its respective owners. <a href="${url('docs/references/')}">References & credits</a>.</p></footer></body></html>`;
 }
 
@@ -104,6 +120,7 @@ const home = `<section class="hero"><p class="eyebrow">THE LOCAL CARD SHEET STUD
 await rm(output, { recursive: true, force: true });
 await mkdir(path.join(output, 'assets'), { recursive: true });
 await cp(path.join(here, 'style.css'), path.join(output, 'assets/style.css'));
+await cp(path.join(here, 'nav.js'), path.join(output, 'assets/nav.js'));
 await cp(path.join(root, 'public/favicon.svg'), path.join(output, 'assets/favicon.svg'));
 await cp(path.join(root, 'docs/assets'), path.join(output, 'docs/assets'), { recursive: true });
 const routes = [];
@@ -127,7 +144,7 @@ await page(
   'Changelog',
   'What’s new in CriProx: additions, improvements, and fixes in every stable release.',
   'changelog',
-  `<div class="page-intro"><p class="eyebrow">THE RELEASE TIMELINE</p><h1>Changelog<span>.</span></h1><p>Small improvements. New possibilities. A record of what’s changed.</p><a class="text-link" href="${url('feed.xml')}">Subscribe via Atom <span aria-hidden="true">↗</span></a>${offline ? '<p class="note">Local preview from CHANGELOG.md. Published pages use GitHub’s stable releases.</p>' : ''}</div><div class="timeline">${releases.length ? releases.map(releaseHtml).join('') : '<p>No stable releases have been published yet.</p>'}</div>`,
+  `<div class="changelog-intro"><h1>Changelog</h1><a class="atom-link" href="${url('feed.xml')}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1" fill="currentColor"/></svg>Atom Feed</a>${offline ? '<p class="note">Local preview from CHANGELOG.md. Published pages use GitHub’s stable releases.</p>' : ''}</div><div class="timeline">${releases.length ? releases.map(releaseHtml).join('') : '<p>No stable releases have been published yet.</p>'}</div>`,
 );
 await page(
   'docs/',

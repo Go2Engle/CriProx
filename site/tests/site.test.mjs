@@ -5,6 +5,7 @@ import {
   rewriteLink,
   featureCards,
   cleanReleaseNotes,
+  releaseHeading,
   stableReleases,
   changelogReleases,
   fetchReleases,
@@ -87,7 +88,7 @@ test('release notes keep issue links and meaning while removing commit noise and
     `## [0.11.2](https://example.com) (2026-10-05)\n\n### Bug Fixes\n${bullet}\n${bullet}`,
   );
   assert.match(cleaned, /### Fixes/);
-  assert.match(cleaned, /\*\*print\*\* — Correct A4 layouts/);
+  assert.match(cleaned, /\*\*Print\*\*: Correct A4 layouts/);
   assert.match(cleaned, /issues\/83/);
   assert.doesNotMatch(cleaned, /acc0e4f|0\.11\.2/);
   assert.equal(cleaned.split('\n').filter((line) => line.startsWith('* ')).length, 1);
@@ -156,5 +157,36 @@ test('feature documentation gate requires a guide update and permits explicit ma
   assert.equal(
     needsDocumentation({ title: 'feat(site): add website', files: ['site/build.mjs'] }),
     false,
+  );
+});
+
+test('release headings use custom names or existing feature subjects before fixes', () => {
+  const release = {
+    tag_name: 'v1.2.3',
+    name: 'v1.2.3',
+    body: '### Bug Fixes\n* **print:** correct A4 layouts\n\n### Features\n* **cards:** browse & sort sets ([#88](https://github.com/Go2Engle/CriProx/pull/88))',
+  };
+  assert.equal(releaseHeading(release), 'Browse & sort sets');
+  assert.equal(releaseHeading({ ...release, name: 'A new way to browse' }), 'A new way to browse');
+  assert.equal(
+    releaseHeading({
+      ...release,
+      name: '1.2.3',
+      body: '### Bug Fixes\n* **print:** correct A4 layouts',
+    }),
+    'Correct A4 layouts',
+  );
+  assert.equal(releaseHeading({ ...release, body: '' }), 'CriProx 1.2.3');
+});
+
+test('derived release headings strip Markdown markup and executable content', () => {
+  const release = {
+    tag_name: 'v1.2.3',
+    body: '### Features\n* **artwork:** add `PNG` &amp; **JPEG** <script>alert(1)</script>',
+  };
+  assert.equal(releaseHeading(release), 'Add PNG & JPEG');
+  assert.equal(
+    releaseHeading({ ...release, body: '### Features\n* ' + 'x'.repeat(160) }).length,
+    138,
   );
 });

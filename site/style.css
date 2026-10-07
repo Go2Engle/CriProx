@@ -66,10 +66,11 @@ main,
   margin-inline: auto;
 }
 .header {
+  width: min(1440px, calc(100% - 64px));
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-block: 28px;
+  padding-block: 16px;
   gap: 24px;
 }
 .brand {
@@ -92,11 +93,18 @@ main,
 .brand span {
   color: var(--purple);
 }
+.header .brand {
+  font-size: 28px;
+}
+.header .brand img {
+  width: 38px;
+  height: 41px;
+}
 .header nav {
   display: flex;
   align-items: center;
-  gap: 28px;
-  font-size: 14px;
+  gap: 24px;
+  font-size: 16px;
 }
 .header nav a {
   color: var(--muted);
@@ -106,6 +114,85 @@ main,
 }
 .header nav .github-link {
   color: #292c3b;
+}
+.github-link {
+  display: inline-flex;
+  align-items: center;
+}
+.mobile-navigation {
+  display: none;
+}
+.menu-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 6px;
+}
+.menu-toggle::-webkit-details-marker {
+  display: none;
+}
+.menu-toggle:focus-visible {
+  outline: 3px solid var(--purple);
+  outline-offset: 3px;
+}
+.close-icon {
+  display: none;
+}
+.mobile-navigation[open] .menu-toggle {
+  position: fixed;
+  top: 28px;
+  right: 28px;
+  z-index: 51;
+  background: #f3f3f3;
+}
+.mobile-navigation[open] .menu-icon {
+  display: none;
+}
+.mobile-navigation[open] .close-icon {
+  display: block;
+}
+.mobile-menu {
+  position: fixed;
+  inset: 8px 8px auto;
+  z-index: 50;
+  padding: 20px;
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 3px 12px #292c3b12;
+}
+.mobile-menu-heading {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-right: 52px;
+  margin-bottom: 8px;
+}
+.header .mobile-menu nav {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+.mobile-menu nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding-block: 12px;
+}
+.mobile-menu .donation-link {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.mobile-menu .donation-coin {
+  width: 28px;
+  height: 28px;
 }
 .donation-link {
   position: relative;
@@ -189,7 +276,7 @@ main,
   position: absolute;
   top: -100px;
   left: 16px;
-  z-index: 2;
+  z-index: 52;
   background: #fff;
   padding: 12px;
 }
@@ -440,66 +527,119 @@ figcaption {
 .page-intro .docs-note {
   font-size: 13px;
 }
+.changelog-page {
+  background: #fff;
+}
+.changelog-intro {
+  text-align: center;
+  margin-block: 56px 88px;
+}
+.changelog-intro h1 {
+  font-size: clamp(44px, 6vw, 72px);
+  font-weight: 750;
+  letter-spacing: -0.055em;
+  margin-bottom: 22px;
+}
+.atom-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.atom-link svg {
+  color: #f58a00;
+}
+.changelog-intro .note {
+  margin-top: 28px;
+  text-align: left;
+}
 .timeline {
   margin-bottom: 80px;
 }
 .release {
+  position: relative;
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
-  gap: 40px;
-  border-top: 1px solid var(--border);
-  padding-block: 38px;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 72px;
+  padding-bottom: 64px;
+}
+.release::before {
+  content: '';
+  position: absolute;
+  left: 216px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.release::after {
+  content: '';
+  position: absolute;
+  left: 212px;
+  top: 10px;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border: 2px solid #cdd0dc;
+  border-radius: 50%;
 }
 .release-meta {
   display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  text-align: right;
 }
 .version {
-  font-size: 22px;
-  font-weight: 600;
-  color: #292c3b;
+  font-size: 20px;
+  font-weight: 500;
+  background: #f7f4ff;
+  border: 1px solid #d9cffb;
+  border-radius: 5px;
+  padding: 4px 8px;
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
-.version a {
-  color: inherit;
-}
-.section .version {
-  font-size: 22px;
-}
-.badge {
-  background: #f1edfc;
-  border-radius: 5px;
-  color: var(--purple-dark);
-  font-size: 10px;
-  padding: 2px 7px;
-  font-weight: 600;
-}
-.release-meta time {
-  flex-basis: 100%;
-  font-size: 12px;
+.release-date {
+  font-size: 14px;
   color: var(--muted);
 }
 .release-body.prose h2 {
-  font-size: 23px;
-  margin-top: 0;
+  font-size: 30px;
+  font-weight: 720;
+  line-height: 1.25;
+  margin-block: 0 28px;
 }
 .release-body.prose h3 {
-  font-size: 16px;
-  margin-top: 22px;
+  font-size: 18px;
+  font-weight: 650;
+  margin-block: 32px 18px;
+}
+.release-body h3[id$='-new']::before {
+  content: '✨ ';
+}
+.release-body h3[id$='-improvements']::before {
+  content: '💎 ';
+}
+.release-body h3[id$='-fixes']::before {
+  content: '🐞 ';
 }
 .release-body > :first-child {
   margin-top: 0;
 }
 .release-body ul {
-  padding-left: 18px;
+  padding-left: 26px;
 }
 .release-body li {
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.85;
   color: #514b60;
+}
+.release-body li::marker {
+  color: #cdd0dc;
+}
+.release-body strong {
+  color: #292c3b;
 }
 .release-body .text-link {
   margin-top: 12px;
@@ -682,23 +822,20 @@ figcaption {
   font-size: 11px;
   line-height: 1.8;
 }
-@media (max-width: 700px) {
+@media (max-width: 767px) {
   .header,
   main,
   .footer {
     width: calc(100% - 36px);
   }
   .header {
-    flex-wrap: wrap;
-    justify-content: center;
-    padding-top: 22px;
-    gap: 18px;
+    width: calc(100% - 32px);
   }
-  .header nav {
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 20px;
-    font-size: 13px;
+  .header .desktop-navigation {
+    display: none;
+  }
+  .mobile-navigation {
+    display: block;
   }
   .hero {
     margin-top: 46px;
@@ -741,15 +878,24 @@ figcaption {
   }
   .release {
     grid-template-columns: 1fr;
-    gap: 20px;
-    padding-block: 28px;
+    gap: 22px;
+    padding: 0 0 56px 28px;
+  }
+  .release::before {
+    left: 0;
+  }
+  .release::after {
+    left: -4px;
   }
   .release-meta {
-    align-items: center;
+    align-items: flex-start;
+    text-align: left;
   }
-  .release-meta time {
-    flex-basis: auto;
-    margin-left: auto;
+  .release-body.prose h2 {
+    font-size: 28px;
+  }
+  .changelog-intro {
+    margin-block: 40px 60px;
   }
   .page-intro {
     margin-top: 40px;

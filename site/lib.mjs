@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { Marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
+import { Parser } from 'htmlparser2';
 
 export const repository = 'Go2Engle/CriProx';
 export const github = `https://github.com/${repository}`;
@@ -196,15 +197,43 @@ export function cleanReleaseNotes(body) {
       /^### (?:Performance Improvements|Miscellaneous Chores|Code Refactoring)\s*$/gm,
       '### Improvements',
     )
-    .replace(/^(\s*[-*] )\*\*([^*]+):\*\*\s*/gm, '$1**$2** — ')
     .replace(
-      /^(\s*[-*] (?:\*\*[^*]+\*\* — )?)([a-z])/gm,
+      /^(\s*[-*] )\*\*([^*]+):\*\*\s*/gm,
+      (_, prefix, scope) => `${prefix}**${scope.charAt(0).toUpperCase()}${scope.slice(1)}**: `,
+    )
+    .replace(
+      /^(\s*[-*] (?:\*\*[^*]+\*\*: )?)([a-z])/gm,
       (_, prefix, letter) => prefix + letter.toUpperCase(),
     )
     .split('\n')
     .filter((line, index, lines) => !/^[-*] /.test(line) || lines.indexOf(line) === index)
     .join('\n')
     .trim();
+}
+
+export function releaseHeading(release) {
+  const version = release.tag_name.replace(/^v/, '');
+  const name = release.name?.trim();
+  if (name && name !== release.tag_name && name !== version) return name;
+  const tokens = new Marked().lexer(cleanReleaseNotes(release.body || ''));
+  const newSection = tokens.findIndex((token) => token.type === 'heading' && token.text === 'New');
+  const list = (newSection >= 0 ? tokens.slice(newSection + 1) : tokens).find(
+    (token) => token.type === 'list',
+  );
+  const subject = list?.items[0]?.text.replace(/^\*\*[^*]+\*\*:\s*/, '') || '';
+  let text = '';
+  new Parser({
+    ontext(value) {
+      text += value;
+    },
+  }).end(markdown(subject));
+  text = text.replace(/\s+/g, ' ').trim();
+  // Drop an issue suffix from the headline; its link remains in the release notes.
+  const issue = text.lastIndexOf(' (#');
+  if (issue >= 0 && /^\d+\)$/.test(text.slice(issue + 3))) text = text.slice(0, issue);
+  if (!text) return `CriProx ${version}`;
+  if (text.length > 140) text = text.slice(0, 137).trimEnd() + '…';
+  return text;
 }
 
 export function stableReleases(releases) {
