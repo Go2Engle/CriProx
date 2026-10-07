@@ -36,7 +36,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                                     |
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
-| 🃏 **Flexible artwork**      | Search cards, browse sets or commander precons, choose Scryfall printings or MPC Autofill community art, or use local images.      |
+| 🃏 **Flexible artwork**      | Search cards, browse sets, commander precons, or tokens, choose Scryfall printings or MPC Autofill community art, or use local images. |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
 | ✂️ **Reusable cuts**         | Capture a Design Space template once, print CriProx PDFs from a PDF application, and cut with the same saved project.             |
 | ✅ **Compact print workflow** | Completed setup and settings collapse into summaries with green checks. Reopen any section whenever you need it.                 |
@@ -49,7 +49,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 
 ## From card list to cut
 
-1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse a set or commander precon, or add local artwork.
+1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse sets, commander precons, or tokens, or add local artwork.
 2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs. Edit your preferred setup directly in Settings and save it for future projects, or also apply it to the current deck.
 3. **Set up the cut template once.** In Create print PDF, download the setup PNG. Upload it to Design Space as a flat Print Then Cut image, preserve the supplied dimensions, and save the project and mat arrangement.
 4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks. The setup sections collapse with green checks; choose Done for reviewed settings, and reopen any section from its header.

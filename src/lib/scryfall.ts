@@ -271,6 +271,42 @@ export const SET_CARD_SORTS = [
 export type SetCardSort = (typeof SET_CARD_SORTS)[number]['value'];
 export type SetCardDirection = 'asc' | 'desc';
 
+export const TOKEN_CARD_SORTS = [
+  { value: 'released', label: 'Release date' },
+  { value: 'name', label: 'Name' },
+  { value: 'set', label: 'Set / collector number' },
+  { value: 'color', label: 'Color' },
+  { value: 'artist', label: 'Artist' },
+] as const;
+export type TokenCardSort = (typeof TOKEN_CARD_SORTS)[number]['value'];
+
+export function scryfallTokenSearchPath(
+  name = '',
+  code = '',
+  order: TokenCardSort = 'released',
+  direction: SetCardDirection = 'desc',
+) {
+  const normalized = code.trim().toLowerCase();
+  if (normalized && !/^[a-z0-9]+$/.test(normalized))
+    throw new Error('Enter a valid token set code, such as TMH2.');
+  const escapedName = name.trim().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const query = `is:token game:paper${escapedName ? ` name:"${escapedName}"` : ''}${normalized ? ` set:${normalized}` : ''}`;
+  return `/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=${order}&dir=${direction}&include_extras=true&include_variations=true`;
+}
+
+export async function searchTokens(
+  name = '',
+  code = '',
+  order: TokenCardSort = 'released',
+  direction: SetCardDirection = 'desc',
+  next?: string,
+) {
+  const path = next
+    ? new URL(next).pathname + new URL(next).search
+    : scryfallTokenSearchPath(name, code, order, direction);
+  return searchPrintings(path, 'token-cards:v1', !!next);
+}
+
 export async function listSets(): Promise<ScryfallSet[]> {
   const key = 'scryfall-sets:v1';
   const cached = await Promise.resolve()
@@ -303,7 +339,15 @@ export async function searchSetCards(
   const path = next
     ? new URL(next).pathname + new URL(next).search
     : scryfallSetSearchPath(code, order, direction);
-  const key = `set-cards:v1:${path}`;
+  return searchPrintings(path, 'set-cards:v1', !!next);
+}
+
+async function searchPrintings(
+  path: string,
+  cachePrefix: string,
+  isNextPage: boolean,
+): Promise<{ cards: Card[]; total: number; next?: string }> {
+  const key = `${cachePrefix}:${path}`;
   const cached = await Promise.resolve()
     .then(() => get<{ time: number; data: Collection }>(key))
     .catch(() => undefined);
@@ -312,8 +356,8 @@ export async function searchSetCards(
     result =
       cached && Date.now() - cached.time < 86400000 ? cached.data : await request<Collection>(path);
   } catch (error) {
-    // Announced sets can exist in the catalog before any paper cards are searchable.
-    if (!next && error instanceof ScryfallRequestError && error.status === 404)
+    // Scryfall returns 404 for searches without matches, including announced sets.
+    if (!isNextPage && error instanceof ScryfallRequestError && error.status === 404)
       return { cards: [], total: 0 };
     throw error;
   }

@@ -46,6 +46,23 @@ day. Availability follows the source catalog rather than a fixed bundled list.
 
 ![Find a card showing commander precon contents and quantities](assets/criprox-precon-browser.png)
 
+## Add tokens to a sheet
+
+1. Open **Find a card → Tokens** to browse paper token printings, starting with the newest.
+2. Enter a token name such as `Treasure` or `Goblin`, optionally enter a token set code such as
+   `TMH2`, and choose **Search tokens**. Leave both filters empty to browse all tokens.
+   Token set codes can differ from the main set code; **Browse sets** lists their names and codes.
+3. Choose **Sort tokens** and **Direction** to sort by release date, name, set/collector number,
+   color, or artist. **Load more tokens** continues through the matching printings in that order.
+4. Choose **Add card** under the artwork you want. Repeated additions increase that printing's
+   quantity; double-faced tokens retain their matching reverse artwork. Choose **Done** to review
+   your sheet and prepare the print PDF. Tokens share the 500-card project limit with other cards.
+
+Token browsing needs an internet connection on first use. Successful searches are cached for one
+day, and previews use the same image cache as card and set searches.
+
+![Find a card showing the Tokens category, name and set filters, and token artwork](assets/criprox-token-browser.png)
+
 ## Understand the integration boundary
 
 CriProx does **not** generate or reproduce Cricut registration marks, create native Design Space project files, or control the machine. Design Space creates the sensor marks and owns the actual Print Then Cut job. CriProx's registered-print workflow preserves marks from a PDF that Design Space produced for the exact saved job.
