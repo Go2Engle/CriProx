@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.0](https://github.com/Go2Engle/CriProx/compare/v0.12.0...v0.13.0) (2026-10-07)
+
+
+### Features
+
+* **card-search:** add a dedicated tokens category ([#98](https://github.com/Go2Engle/CriProx/issues/98)) ([72a3a52](https://github.com/Go2Engle/CriProx/commit/72a3a5281252b1d9805241b68db6551f63525117))
+* **print:** collapse completed PDF workflow sections ([#95](https://github.com/Go2Engle/CriProx/issues/95)) ([7e8a2ca](https://github.com/Go2Engle/CriProx/commit/7e8a2ca2c5c06513f8856999365fb7f383ffda62))
+* **settings:** add editable print and card back defaults ([#97](https://github.com/Go2Engle/CriProx/issues/97)) ([ecde965](https://github.com/Go2Engle/CriProx/commit/ecde96508eae8c5df86bea88824c37b19d4bf016))
+
 ## [0.12.0](https://github.com/Go2Engle/CriProx/compare/v0.11.2...v0.12.0) (2026-10-07)
 
 
