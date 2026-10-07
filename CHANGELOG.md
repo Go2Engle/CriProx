@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/Go2Engle/CriProx/compare/v0.11.2...v0.12.0) (2026-10-07)
+
+
+### Features
+
+* **cards:** browse and sort sets with cached previews ([#88](https://github.com/Go2Engle/CriProx/issues/88)) ([0680027](https://github.com/Go2Engle/CriProx/commit/0680027daf9afaeac8673e321c613005a9a58df0))
+* **cards:** browse commander precon decks with original quantities ([#91](https://github.com/Go2Engle/CriProx/issues/91)) ([cd3f98a](https://github.com/Go2Engle/CriProx/commit/cd3f98acd591f75182be13c1785a81d8b83758cd))
+
+
+### Bug Fixes
+
+* **search:** focus the card search box when opening the dialog ([#93](https://github.com/Go2Engle/CriProx/issues/93)) ([06ac37a](https://github.com/Go2Engle/CriProx/commit/06ac37a80522fca8d01b5943bfedc19ff1e5ba09))
+
 ## [0.11.2](https://github.com/Go2Engle/CriProx/compare/v0.11.1...v0.11.2) (2026-10-05)
 
 
