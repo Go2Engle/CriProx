@@ -39,6 +39,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | 🃏 **Flexible artwork**      | Search cards, browse sets or commander precons, choose Scryfall printings or MPC Autofill community art, or use local images.      |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
 | ✂️ **Reusable cuts**         | Capture a Design Space template once, print CriProx PDFs from a PDF application, and cut with the same saved project.             |
+| ✅ **Compact print workflow** | Completed setup and settings collapse into summaries with green checks. Reopen any section whenever you need it.                 |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
 | 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
 | 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.                   |
@@ -51,8 +52,8 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse a set or commander precon, or add local artwork.
 2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs.
 3. **Set up the cut template once.** In Create print PDF, download the setup PNG. Upload it to Design Space as a flat Print Then Cut image, preserve the supplied dimensions, and save the project and mat arrangement.
-4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks.
-5. **Print the PDF.** Save the finished card-sheet PDF from CriProx. Open it in a dedicated PDF application and print at 100% / Actual size, with fit or shrink scaling disabled.
+4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks. The setup sections collapse with green checks; choose Done for reviewed settings, and reopen any section from its header.
+5. **Print the PDF.** Use the visible prepare controls, review the pages, and save the finished card-sheet PDF from CriProx. Open it in a dedicated PDF application and print at 100% / Actual size, with fit or shrink scaling disabled.
 6. **Cut with the saved project.** Reopen the matching Design Space project and mat, choose Already Printed / Skip printing when available, and cut the printed sheet.
 
 Reuse the captured template for later decks with the same cut geometry. Changing paper, spacing, machine, layout, or the saved cut job requires a matching new capture. The [workflow guide](docs/CRICUT-WORKFLOW.md) covers the paper settings and a measured test print and cut before a full deck.
