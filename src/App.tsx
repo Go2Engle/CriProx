@@ -4,6 +4,8 @@ import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
 import ManualGuideControls from './components/ManualGuideControls';
+import CardSearchResults from './components/CardSearchResults';
+import SetBrowser from './components/SetBrowser';
 import {
   useCallback,
   useEffect,
@@ -114,6 +116,7 @@ import {
   type ColorTheme,
 } from './lib/theme';
 import {
+  addCardToEntries,
   doubleSidedCardCount,
   editEntryCopy,
   isDoubleSidedCard,
@@ -918,6 +921,7 @@ function CardSearchModal({
   remaining: number;
   close: () => void;
 }) {
+  const [mode, setMode] = useState<'search' | 'sets'>('search');
   const [query, setQuery] = useState(''),
     [cards, setCards] = useState<Card[]>([]),
     [next, setNext] = useState<string>(),
@@ -971,7 +975,7 @@ function CardSearchModal({
   function addCard(card: Card) {
     if (remaining <= 0) return;
     add(card);
-    const key = card.oracleId || card.id;
+    const key = card.id;
     setAdded((current) => ({ ...current, [key]: (current[key] || 0) + 1 }));
   }
 
@@ -980,93 +984,95 @@ function CardSearchModal({
       wide
       className="card-search-modal"
       title="Find a card"
-      subtitle="Search Scryfall for cards and tokens to add to your project."
+      subtitle="Search cards and tokens, or browse a set to add its printings to your project."
       close={() => {
         if (!busy) close();
       }}
     >
       <div className="card-search-content">
-        <form className="card-search-form" onSubmit={search}>
-          <div className="search-field">
-            <Search size={17} />
-            <input
-              autoFocus
-              aria-label="Search Scryfall cards and tokens"
-              placeholder="Search by card or token name…"
-              value={query}
-              disabled={!!busy}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-          <button className="primary" disabled={!!busy || !query.trim()} type="submit">
-            {busy && !cards.length ? (
-              <LoaderCircle className="spin" size={16} />
-            ) : (
-              <Search size={16} />
-            )}
-            Search
+        <div className="card-catalog-toggle" role="group" aria-label="Find cards by">
+          <button
+            className={mode === 'search' ? 'primary compact' : 'secondary compact'}
+            aria-pressed={mode === 'search'}
+            disabled={!!busy}
+            onClick={() => setMode('search')}
+          >
+            <Search size={15} /> Search cards
           </button>
-        </form>
-        <div className="card-search-summary" aria-live="polite">
-          {searched && !error && (
-            <span>
-              {cards.length} {cards.length === 1 ? 'result' : 'results'} for “{searched}”
-            </span>
-          )}
-          {Object.values(added).reduce((sum, count) => sum + count, 0) > 0 && (
+          <button
+            className={mode === 'sets' ? 'primary compact' : 'secondary compact'}
+            aria-pressed={mode === 'sets'}
+            disabled={!!busy}
+            onClick={() => setMode('sets')}
+          >
+            <Layers3 size={15} /> Browse sets
+          </button>
+        </div>
+        {Object.values(added).reduce((sum, count) => sum + count, 0) > 0 && (
+          <div className="card-search-summary" aria-live="polite">
             <span>
               {Object.values(added).reduce((sum, count) => sum + count, 0)} added this session
             </span>
-          )}
-        </div>
-        {error && (
-          <div className="error-box" role="alert">
-            {error}
           </div>
         )}
-        {!searched && !busy && (
-          <div className="card-search-empty">
-            <Search size={31} strokeWidth={1.3} />
-            <strong>Search the card catalog</strong>
-            <span>Try “Sol Ring”, “Goblin”, or “Goblin token” to see only tokens.</span>
-          </div>
-        )}
-        {!!cards.length && (
-          <div className="card-search-results">
-            {cards.map((card) => {
-              const addedCount = added[card.oracleId || card.id] || 0;
-              return (
-                <article className="card-search-result" key={card.id}>
-                  <img src={card.faces[0].preview} alt="" loading="lazy" />
-                  <div className="card-search-result-copy">
-                    <strong>{card.name}</strong>
-                    <span>
-                      {card.setName} · {card.set.toUpperCase()}
-                      {card.collector && ` #${card.collector}`}
-                    </span>
-                  </div>
-                  <button
-                    className={addedCount ? 'secondary compact added-card' : 'secondary compact'}
-                    disabled={remaining <= 0}
-                    onClick={() => addCard(card)}
-                  >
-                    {addedCount ? <Check size={14} /> : <Plus size={14} />}
-                    {addedCount ? `Added ${addedCount}` : 'Add card'}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        )}
-        {busy && !!cards.length && (
-          <div className="loading">
-            <LoaderCircle className="spin" size={18} /> {busy}
-          </div>
-        )}
-        {next && !busy && (
-          <button className="secondary load-more" onClick={() => void loadMore()}>
-            Load more results
-          </button>
+        {mode === 'sets' ? (
+          <SetBrowser add={addCard} added={added} remaining={remaining} />
+        ) : (
+          <>
+            <form className="card-search-form" onSubmit={search}>
+              <div className="search-field">
+                <Search size={17} />
+                <input
+                  autoFocus
+                  aria-label="Search Scryfall cards and tokens"
+                  placeholder="Search by card or token name…"
+                  value={query}
+                  disabled={!!busy}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </div>
+              <button className="primary" disabled={!!busy || !query.trim()} type="submit">
+                {busy && !cards.length ? (
+                  <LoaderCircle className="spin" size={16} />
+                ) : (
+                  <Search size={16} />
+                )}
+                Search
+              </button>
+            </form>
+            <div className="card-search-summary" aria-live="polite">
+              {searched && !error && (
+                <span>
+                  {cards.length} {cards.length === 1 ? 'result' : 'results'} for “{searched}”
+                </span>
+              )}
+            </div>
+            {error && (
+              <div className="error-box" role="alert">
+                {error}
+              </div>
+            )}
+            {!searched && !busy && (
+              <div className="card-search-empty">
+                <Search size={31} strokeWidth={1.3} />
+                <strong>Search the card catalog</strong>
+                <span>Try “Sol Ring”, “Goblin”, or “Goblin token” to see only tokens.</span>
+              </div>
+            )}
+            {!!cards.length && (
+              <CardSearchResults cards={cards} added={added} remaining={remaining} add={addCard} />
+            )}
+            {busy && (
+              <div className="loading">
+                <LoaderCircle className="spin" size={18} /> {busy}
+              </div>
+            )}
+            {next && !busy && (
+              <button className="secondary load-more" onClick={() => void loadMore()}>
+                Load more results
+              </button>
+            )}
+          </>
         )}
       </div>
       <div className="modal-footer">
@@ -2412,24 +2418,8 @@ export default function App() {
   }
   function addCard(card: Card) {
     setProject((current) => {
-      const total = current.entries.reduce((sum, entry) => sum + entry.quantity, 0);
-      if (total >= 500) return current;
-      const matching = current.entries.find(
-        (entry) =>
-          entry.quantity < 100 &&
-          (card.oracleId ? entry.card.oracleId === card.oracleId : entry.card.id === card.id),
-      );
-      if (matching)
-        return {
-          ...current,
-          entries: current.entries.map((entry) =>
-            entry.id === matching.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
-          ),
-        };
-      return {
-        ...current,
-        entries: [...current.entries, { id: crypto.randomUUID(), card, quantity: 1, face: 0 }],
-      };
+      const entries = addCardToEntries(current.entries, card, crypto.randomUUID());
+      return entries === current.entries ? current : { ...current, entries };
     });
   }
   function quantity(entry: Entry, delta: number) {

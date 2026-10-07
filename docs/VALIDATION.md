@@ -7,6 +7,12 @@
 - Live Scryfall collection import with valid and invalid card names. Successfully imported entries are removed from the retry list; missing entries stay editable.
 - Live Archidekt import of a 100-card public deck, preserving all 94 selected printings, plus a live Moxfield response through Electron's constrained deck-source bridge.
 - Single-card Scryfall search with partial names and repeated additions.
+- Find Card preview caching was checked on October 6, 2026 with the browser HTTP cache disabled:
+  all 21 previews in a token set downloaded once, then sorting and a full page reload displayed
+  them without another image request. Repeat downloads were blocked during the reload check.
+  A 175-result set gallery initially requested only 12 nearby previews. Automated cache tests cover
+  shared downloads, persistence, eviction limits, unavailable storage, failed-image retries, and
+  download concurrency; the full application suite passes 132 tests.
 - Live variant lookup (136 Sol Ring printings), printing selection, and restoration after reload.
 - Double-faced card import and selection of Insectile Aberration.
 - Multi-sheet ZIP download, exact PNG pixel dimensions, opaque card interiors, transparent gaps/corners, and SVG shape counts/dimensions.

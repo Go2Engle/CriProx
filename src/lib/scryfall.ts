@@ -14,18 +14,37 @@ type RawCard = {
 };
 type Collection = {
   data: RawCard[];
+  total_cards?: number;
   not_found?: { name?: string; set?: string; collector_number?: string }[];
   has_more?: boolean;
   next_page?: string;
 };
 let queue = Promise.resolve();
 let lastRequest = 0;
+let lastSearchRequest = 0;
+class ScryfallRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const run = queue.then(async () => {
+    const isSearch = path.startsWith('/cards/search?');
     await new Promise((resolve) =>
-      setTimeout(resolve, Math.max(0, 120 - (Date.now() - lastRequest))),
+      setTimeout(
+        resolve,
+        Math.max(
+          0,
+          120 - (Date.now() - lastRequest),
+          isSearch ? 500 - (Date.now() - lastSearchRequest) : 0,
+        ),
+      ),
     );
     lastRequest = Date.now();
+    if (isSearch) lastSearchRequest = lastRequest;
     let response: Response;
     try {
       response = await fetch(`https://api.scryfall.com${path}`, {
@@ -43,7 +62,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       throw new Error('Scryfall is rate limiting requests. Please wait before trying again.');
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.details || `Scryfall returned ${response.status}. Try again later.`);
+      throw new ScryfallRequestError(
+        error.details || `Scryfall returned ${response.status}. Try again later.`,
+        response.status,
+      );
     }
     return response.json() as Promise<T>;
   });
@@ -192,6 +214,84 @@ export async function searchCards(
     await set(key, { time: Date.now(), data: result }).catch(() => {});
   return {
     cards: result.data.map(normalizeScryfallCard).filter((card) => card.faces.length),
+    next: result.has_more ? result.next_page : undefined,
+  };
+}
+
+export type ScryfallSet = {
+  id: string;
+  code: string;
+  name: string;
+  released_at?: string;
+  card_count: number;
+  set_type: string;
+  digital: boolean;
+};
+
+export const SET_CARD_SORTS = [
+  { value: 'set', label: 'Collector number' },
+  { value: 'name', label: 'Name' },
+  { value: 'color', label: 'Color' },
+  { value: 'rarity', label: 'Rarity' },
+  { value: 'cmc', label: 'Mana value' },
+  { value: 'artist', label: 'Artist' },
+] as const;
+export type SetCardSort = (typeof SET_CARD_SORTS)[number]['value'];
+export type SetCardDirection = 'asc' | 'desc';
+
+export async function listSets(): Promise<ScryfallSet[]> {
+  const key = 'scryfall-sets:v1';
+  const cached = await Promise.resolve()
+    .then(() => get<{ time: number; data: ScryfallSet[] }>(key))
+    .catch(() => undefined);
+  if (cached && Date.now() - cached.time < 86400000) return cached.data;
+  const result = await request<{ data: ScryfallSet[] }>('/sets');
+  await Promise.resolve()
+    .then(() => set(key, { time: Date.now(), data: result.data }))
+    .catch(() => {});
+  return result.data;
+}
+
+export function scryfallSetSearchPath(
+  code: string,
+  order: SetCardSort = 'set',
+  direction: SetCardDirection = 'asc',
+) {
+  const normalized = code.trim().toLowerCase();
+  if (!/^[a-z0-9]+$/.test(normalized)) throw new Error('Choose a valid set.');
+  return `/cards/search?q=${encodeURIComponent(`set:${normalized} game:paper`)}&unique=prints&order=${order}&dir=${direction}&include_extras=true&include_variations=true`;
+}
+
+export async function searchSetCards(
+  code: string,
+  order: SetCardSort = 'set',
+  direction: SetCardDirection = 'asc',
+  next?: string,
+): Promise<{ cards: Card[]; total: number; next?: string }> {
+  const path = next
+    ? new URL(next).pathname + new URL(next).search
+    : scryfallSetSearchPath(code, order, direction);
+  const key = `set-cards:v1:${path}`;
+  const cached = await Promise.resolve()
+    .then(() => get<{ time: number; data: Collection }>(key))
+    .catch(() => undefined);
+  let result: Collection;
+  try {
+    result =
+      cached && Date.now() - cached.time < 86400000 ? cached.data : await request<Collection>(path);
+  } catch (error) {
+    // Announced sets can exist in the catalog before any paper cards are searchable.
+    if (!next && error instanceof ScryfallRequestError && error.status === 404)
+      return { cards: [], total: 0 };
+    throw error;
+  }
+  if (!cached || Date.now() - cached.time >= 86400000)
+    await Promise.resolve()
+      .then(() => set(key, { time: Date.now(), data: result }))
+      .catch(() => {});
+  return {
+    cards: result.data.map(normalizeScryfallCard).filter((card) => card.faces.length),
+    total: result.total_cards ?? result.data.length,
     next: result.has_more ? result.next_page : undefined,
   };
 }

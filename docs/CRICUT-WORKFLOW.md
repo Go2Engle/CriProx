@@ -1,5 +1,25 @@
 # Cricut workflow and physical validation
 
+## Build a sheet from a set
+
+1. Open **Find a card** and choose **Browse sets**. Filter by a set name or code, such as `MH2`.
+   Paper sets include separate token and supplemental collections; digital-only sets are omitted.
+2. Click a set to browse its printings. **Sort cards** offers collector number, name, color, rarity,
+   mana value, and artist. Choose ascending or descending order; sorting covers the whole set.
+3. Use **Load more cards** to continue browsing, and **Add card** under the artwork you want.
+   Repeated additions increase that printing's quantity. Other printings of the same card keep their
+   own artwork. Use **All sets** to select another set or **Search cards** to return to name search.
+4. Choose **Done**, review the sheet and its quantities, then set paper, layout, bleed, and card backs
+   before preparing the print PDF. The project limit remains 500 cards.
+
+Set browsing needs an internet connection on first use. Successful catalog and card responses are
+cached for one day. Viewed previews are cached separately by image URL and reused when you change
+sort order, reopen Find Card, or restart the app. Newly encountered images still need a download;
+older previews are evicted when the preview cache reaches 1,024 images or 128 MiB. Announced sets
+can appear before searchable card artwork is available.
+
+![Find a card showing a set's printings and sorting controls](assets/criprox-set-browser.png)
+
 ## Understand the integration boundary
 
 CriProx does **not** generate or reproduce Cricut registration marks, create native Design Space project files, or control the machine. Design Space creates the sensor marks and owns the actual Print Then Cut job. CriProx's registered-print workflow preserves marks from a PDF that Design Space produced for the exact saved job.

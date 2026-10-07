@@ -26,7 +26,7 @@
 
 ![CriProx desktop studio showing an eight-card print sheet and sheet settings](docs/assets/criprox-studio.png)
 
-<p align="center"><em>Six-card artwork preview · Demo card imagery loaded through Scryfall.</em></p>
+<p align="center"><em>Eight-card print-sheet preview · Card imagery loaded through Scryfall.</em></p>
 
 ## Why CriProx?
 
@@ -36,7 +36,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                                     |
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
-| 🃏 **Flexible artwork**      | Search Scryfall printings, browse MPC Autofill community art, or use local PNG, JPEG, and WebP files.                            |
+| 🃏 **Flexible artwork**      | Search cards, browse entire sets with sorting, choose Scryfall printings or MPC Autofill community art, or use local images.      |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
 | ✂️ **Reusable cuts**         | Capture a Design Space print PDF once, then place future artwork inside its verified registration marks.                         |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
@@ -48,7 +48,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 
 ## From card list to cut
 
-1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search card printings, or add local artwork.
+1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse and sort a set's printings, or add local artwork.
 2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs.
 3. **Export from CriProx.** Download transparent artwork, matched vector geometry, dimensions, and the Design Space handoff guide.
 4. **Print and cut in Design Space.** Preserve the supplied dimensions, print at 100% / Actual size, and complete the cut from the same saved job.
