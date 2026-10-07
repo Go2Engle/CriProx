@@ -15,7 +15,7 @@
   </p>
 
   <p>
-    <a href="https://go2engle.github.io/CriProx/"><strong>Website</strong></a>
+    <a href="https://criprox.themanamarket.com/"><strong>Website</strong></a>
     ·
     <a href="https://github.com/Go2Engle/CriProx/releases/latest"><strong>Download</strong></a>
     · <a href="docs/CRICUT-WORKFLOW.md">Print guide</a>

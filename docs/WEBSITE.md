@@ -1,22 +1,35 @@
 # Website and living documentation
 
-The CriProx website is a small static site built for [GitHub Pages](https://go2engle.github.io/CriProx/).
+The CriProx website is a small static site hosted on GitHub Pages at
+[criprox.themanamarket.com](https://criprox.themanamarket.com/).
 Its source lives in `site/` beside the application on `main`. The website has its own dependency
 lockfile and output directory, and is never included in the Electron installer. GitHub Actions
 publishes a build artifact directly to Pages; no separate website or `gh-pages` branch is needed.
 Keeping the sources together lets a feature and its documentation ship in the same pull request.
 
-## First deployment
+## Deployment and custom domain
 
-1. Merge the website pull request into `main`.
+1. Merge website changes into `main`.
 2. Under **Settings → Pages → Build and deployment → Source**, select **GitHub Actions**.
-3. Open **Actions → Website → Run workflow**, leaving the branch on `main`.
-4. After the deployment completes, visit `https://go2engle.github.io/CriProx/`.
+3. Set **Custom domain** to `criprox.themanamarket.com` and enable **Enforce HTTPS**. These settings
+   are already configured for this repository.
+4. At the DNS provider, the `criprox` CNAME points to `go2engle.github.io`, without a repository path.
+5. Open **Actions → Website → Run workflow**, leaving the branch on `main`, if a manual deployment
+   is needed. Website changes deploy automatically after merge.
+6. After the deployment completes, visit `https://criprox.themanamarket.com/`.
 
 If Pages is enabled before the merge, the merge triggers the initial deployment automatically.
-The repository currently uses a public project site with the `/CriProx/` path. The generator also
-accepts `SITE_BASE_PATH=/` and `SITE_ORIGIN=https://example.com` for a future custom domain; set those
-values on the build step and configure the domain in Pages settings together.
+The generator and local preview use `/` as the base path. Production builds default to
+`SITE_ORIGIN=https://criprox.themanamarket.com`, so canonical links, social previews, the Atom feed,
+the sitemap, and robots metadata all use the custom domain. The Website workflow uses these same
+defaults. Navigation, scripts, styles, screenshots, and guide links are rooted at `/`, with no
+repository prefix.
+
+The domain binding lives in GitHub Pages settings. With this custom Actions publishing workflow,
+a `CNAME` file is not required and would be ignored by Pages; see the
+[GitHub custom-domain guide](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
+For another host or a project-path preview, override `SITE_ORIGIN` and `SITE_BASE_PATH` together
+when building, and use the same `SITE_BASE_PATH` when previewing.
 
 ## Sources of truth
 
@@ -100,7 +113,7 @@ npm run build --prefix site
 npm run preview --prefix site
 ```
 
-Open `http://127.0.0.1:4174/CriProx/`. The build uses public GitHub release data; set `GITHUB_TOKEN`
+Open `http://127.0.0.1:4174/`. The build uses public GitHub release data; set `GITHUB_TOKEN`
 locally if needed to avoid the unauthenticated API rate limit. Never commit the token.
 The preview serves a snapshot of the generated files. After making changes, rebuild the site and
 restart the preview server to see the new output.

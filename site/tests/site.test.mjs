@@ -27,6 +27,11 @@ test('Markdown renders GFM, rebases documentation links, and removes executable 
 });
 
 test('relative links resolve from both root and nested guides for Pages or custom domains', () => {
+  assert.equal(normalizeBase(), '/');
+  assert.match(
+    markdown('[Guide](FEATURES.md)', { source: 'docs/INSTALLATION.md' }),
+    /href="\/docs\/features\/"/,
+  );
   assert.equal(rewriteLink('../CONTRIBUTING.md', 'docs/FEATURES.md', '/'), '/docs/contributing/');
   assert.equal(
     rewriteLink('docs/assets/criprox-studio.png', 'README.md', '/CriProx/'),

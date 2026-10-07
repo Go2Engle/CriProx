@@ -23,9 +23,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const output = path.join(here, '_site');
 const base = normalizeBase(process.env.SITE_BASE_PATH);
-const origin = process.env.SITE_ORIGIN || 'https://go2engle.github.io';
+const origin = process.env.SITE_ORIGIN || 'https://criprox.themanamarket.com';
 if (!/^https?:\/\/[^/]+$/.test(origin))
-  throw new Error('SITE_ORIGIN must be an origin such as https://go2engle.github.io.');
+  throw new Error('SITE_ORIGIN must be an origin such as https://criprox.themanamarket.com.');
 const url = (route) => `${base}${route}`;
 const render = (text, source = 'README.md') => markdown(text, { source, base });
 const readme = await readFile(path.join(root, 'README.md'), 'utf8');
