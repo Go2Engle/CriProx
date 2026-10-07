@@ -1,5 +1,13 @@
 import { validateProject } from './project';
-import { DEFAULT_SETTINGS, type CardFace, type Project, type Settings } from './types';
+import { availableSheetProfiles } from './paper-workflow';
+import {
+  DEFAULT_SETTINGS,
+  fixedBleedMm,
+  STANDARD_CARD_RADIUS_MM,
+  type CardFace,
+  type Project,
+  type Settings,
+} from './types';
 
 export type ProjectDefaults = {
   version: 1;
@@ -16,6 +24,55 @@ export function sheetSettingsMatch(a: Settings, b: Settings): boolean {
   return (Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).every(
     (field) => a[field] === b[field],
   );
+}
+
+export function projectDefaultsMatch(a: ProjectDefaults, b: ProjectDefaults): boolean {
+  return (
+    sheetSettingsMatch(a.settings, b.settings) &&
+    a.backArtwork?.name === b.backArtwork?.name &&
+    a.backArtwork?.image === b.backArtwork?.image &&
+    a.backArtwork?.preview === b.backArtwork?.preview &&
+    a.backArtwork?.trim === b.backArtwork?.trim
+  );
+}
+
+export type DefaultSettingsGroup = 'Sheet' | 'Print' | 'Card backs' | 'Cut guides' | 'Alignment';
+
+export function defaultSettingsIssue(
+  settings: Settings,
+): { group: DefaultSettingsGroup; message: string } | undefined {
+  const fields: [keyof Settings, string, number, number, DefaultSettingsGroup][] = [
+    ['backOffsetX', 'Back alignment X', -5, 5, 'Alignment'],
+    ['backOffsetY', 'Back alignment Y', -5, 5, 'Alignment'],
+    ['manualCutCorrectionX', 'Manual cut correction X', -5, 5, 'Alignment'],
+    ['manualCutCorrectionY', 'Manual cut correction Y', -5, 5, 'Alignment'],
+  ];
+  for (const [field, label, min, max, group] of fields) {
+    const value = settings[field];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max)
+      return { group, message: `${label} must be between ${min} and ${max} mm.` };
+  }
+}
+
+/** Keep dependent layout choices valid while editing defaults. */
+export function updateDefaultSettings(settings: Settings, patch: Partial<Settings>): Settings {
+  const next = { ...settings, ...patch };
+  if (patch.machine || patch.paper || patch.profile) {
+    if (!availableSheetProfiles(next).includes(next.profile))
+      next.profile = next.machine === 'manual' ? 'nine' : 'expanded';
+    if (next.profile !== 'expanded') {
+      next.width = 63;
+      next.height = 88;
+      next.gap = next.profile === 'seven' ? 0.1 : 1;
+      next.radius = STANDARD_CARD_RADIUS_MM;
+    } else {
+      next.gap = Math.max(1, next.gap);
+    }
+  }
+  next.bleed = next.bleed > 0 ? fixedBleedMm(next) : 0;
+  if (patch.backPrintMode && patch.backRotation === undefined)
+    next.backRotation = patch.backPrintMode === 'manual' ? 180 : 0;
+  return next;
 }
 
 export function withSheetSettingsDefaults(

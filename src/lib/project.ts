@@ -54,12 +54,16 @@ export function validateProject(value: unknown): Project {
   s.manualGuideCornerStyle ??= 'square';
   s.manualGuideLengthMm ??= 7.5;
   s.manualGuidePageStyle ??= 'edge';
+  s.upscaleScryfall ??= false;
+  s.upscaleBackend ??= 'built-in';
   if (
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
     !['maker', 'explore', 'joy-xtra', 'manual'].includes(s.machine) ||
     !['expanded', 'seven', 'eight', 'nine'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
+    typeof s.upscaleScryfall !== 'boolean' ||
+    !['built-in', 'upscayl'].includes(s.upscaleBackend) ||
     typeof s.backBleedEnabled !== 'boolean' ||
     typeof s.backsEnabled !== 'boolean' ||
     !['manual', 'duplex'].includes(s.backPrintMode) ||

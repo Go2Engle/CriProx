@@ -33,6 +33,7 @@ import { download } from '../lib/export';
 import { exportFilename, templateFilename, templateFilenameStem } from '../lib/filenames';
 import MpcArtworkSearch from './MpcArtworkSearch';
 import FrontBleedControl from './FrontBleedControl';
+import UpscalingControls from './UpscalingControls';
 import ArtworkTrimControl from './ArtworkTrimControl';
 import PdfPagePreview from './PdfPagePreview';
 import PrintSection from './PrintSection';
@@ -72,8 +73,6 @@ export default function RegisteredPrint({
   const [profile, setProfile] = useState<RegistrationProfile>(),
     [busy, setBusy] = useState('Loading template…'),
     [error, setError] = useState(''),
-    [upscaleScryfall, setUpscaleScryfall] = useState(false),
-    [upscaleBackend, setUpscaleBackend] = useState<'built-in' | 'upscayl'>('built-in'),
     [upscaylCacheKey, setUpscaylCacheKey] = useState(''),
     [pdfJobRunning, setPdfJobRunning] = useState(false);
   const [pdf, setPdf] = useState<Uint8Array>(),
@@ -92,6 +91,8 @@ export default function RegisteredPrint({
     [manualVerticalSquares, setManualVerticalSquares] = useState(0),
     [manualVerticalDirection, setManualVerticalDirection] = useState<'up' | 'down'>('up');
   const manualNine = project.settings.profile === 'nine',
+    upscaleScryfall = project.settings.upscaleScryfall,
+    upscaleBackend = project.settings.upscaleBackend,
     handCut = project.settings.machine === 'manual',
     key = registrationKey(project.settings),
     hasCapturedTemplate = profile?.key === key,
@@ -237,6 +238,10 @@ export default function RegisteredPrint({
   }
   async function prepare(calibration: boolean) {
     if (!profile) return;
+    if (!calibration && upscaleScryfall && upscaleBackend === 'upscayl' && !upscaylCacheKey) {
+      setError('Upscayl is not detected. Choose Built-in ESRGAN or turn off upscaling.');
+      return;
+    }
     const controller = new AbortController();
     pdfAbort.current = controller;
     setPdfJobRunning(true);
@@ -272,6 +277,10 @@ export default function RegisteredPrint({
     }
   }
   async function prepareManualCut() {
+    if (upscaleScryfall && upscaleBackend === 'upscayl' && !upscaylCacheKey) {
+      setError('Upscayl is not detected. Choose Built-in ESRGAN or turn off upscaling.');
+      return;
+    }
     const controller = new AbortController();
     pdfAbort.current = controller;
     setPdfJobRunning(true);
@@ -539,48 +548,12 @@ export default function RegisteredPrint({
             </div>
             <FrontBleedControl settings={project.settings} change={changePrintSettings} />
           </div>
-          <label className="switch-row upscale-toggle">
-            <span>
-              Upscale Scryfall card images (high detail)
-              <small>
-                Optional · off by default. Choose 600+ DPI in Sheet setup to retain extra detail;
-                exports can take much longer. Review card text before printing.
-              </small>
-            </span>
-            <input
-              type="checkbox"
-              checked={upscaleScryfall}
-              disabled={!!busy}
-              onChange={(event) => {
-                setUpscaleScryfall(event.target.checked);
-                setPdf(undefined);
-                setBackPdf(undefined);
-                setCutPng(undefined);
-              }}
-            />
-            <span className="switch" />
-          </label>
-          {upscaleScryfall && (
-            <label className="upscale-backend">
-              Upscaling engine
-              <select
-                value={upscaleBackend}
-                disabled={!!busy}
-                onChange={(event) => {
-                  setUpscaleBackend(event.target.value as 'built-in' | 'upscayl');
-                  setPdf(undefined);
-                  setBackPdf(undefined);
-                  setCutPng(undefined);
-                }}
-              >
-                <option value="built-in">Built-in ESRGAN · downloads a ~28 MB model</option>
-                <option value="upscayl" disabled={!upscaylCacheKey}>
-                  Upscayl · Ultramix (Non-Commercial), 4×
-                  {upscaylCacheKey ? '' : ' · not detected'}
-                </option>
-              </select>
-            </label>
-          )}
+          <UpscalingControls
+            settings={project.settings}
+            change={changePrintSettings}
+            upscaylAvailable={!!upscaylCacheKey}
+            disabled={!!busy}
+          />
         </PrintSection>
         <PrintSection
           key={`${key}:backs`}
@@ -616,7 +589,7 @@ export default function RegisteredPrint({
             <label className="switch-row back-toggle">
               <span>
                 Print card backs
-                <small>Optional · off by default</small>
+                <small>Use Settings to save this choice for new projects</small>
               </span>
               <input
                 type="checkbox"

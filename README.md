@@ -42,7 +42,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | ✅ **Compact print workflow** | Completed setup and settings collapse into summaries with green checks. Reopen any section whenever you need it.                 |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
 | 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
-| 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and configure reusable new-project defaults.                   |
+| 💾 **Local project library** | Browse saved projects, keep uploaded artwork beside each project, and edit reusable sheet, print, artwork, and alignment defaults directly in Settings.                   |
 
 > [!IMPORTANT]
 > CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. The manual nine-card profile deliberately bypasses sensor registration and requires repeatable physical mat placement. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
@@ -50,7 +50,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 ## From card list to cut
 
 1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse a set or commander precon, or add local artwork.
-2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs.
+2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs. Edit your preferred setup directly in Settings and save it for future projects, or also apply it to the current deck.
 3. **Set up the cut template once.** In Create print PDF, download the setup PNG. Upload it to Design Space as a flat Print Then Cut image, preserve the supplied dimensions, and save the project and mat arrangement.
 4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks. The setup sections collapse with green checks; choose Done for reviewed settings, and reopen any section from its header.
 5. **Print the PDF.** Use the visible prepare controls, review the pages, and save the finished card-sheet PDF from CriProx. Open it in a dedicated PDF application and print at 100% / Actual size, with fit or shrink scaling disabled.

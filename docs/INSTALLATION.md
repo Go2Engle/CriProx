@@ -80,6 +80,13 @@ Scryfall and MPC Autofill searches require an internet connection, as does the d
 
 CriProx has no user account, hosted project service, or cloud sync. Browser-mode data is stored in the browser profile. Desktop mode keeps the active workspace and default managed-project library in the application's local profile, or uses the folder selected in Settings. On macOS, upgrades from v0.6.0 or earlier can copy the old `Documents/CriProx` library from **Settings → Project library → Import old library**. The old files remain in Documents as a backup. Export a JSON backup before clearing site/application data or switching environments.
 
+## Configure your defaults
+
+Open **Settings → New project defaults** to edit the starting setup for future decks. The Sheet,
+Print, Card backs, Cut guides, and Alignment groups share one draft and one **Save defaults**
+button. Select **Also apply to current project** if the open deck should use those choices too.
+Theme and project-folder changes on the Appearance and Project library pages apply immediately.
+
 ## Next step
 
 Before printing, continue with the [Cricut workflow and physical validation guide](CRICUT-WORKFLOW.md).
