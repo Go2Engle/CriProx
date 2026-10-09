@@ -43,6 +43,19 @@ contextBridge.exposeInMainWorld(
     releases: Object.freeze({
       check: () => ipcRenderer.invoke('release-check'),
       open: (releaseUrl) => ipcRenderer.invoke('open-release-page', releaseUrl),
+      openLink: (url) => ipcRenderer.invoke('open-release-notes-link', url),
+      state: () => ipcRenderer.invoke('update-state'),
+      checkNow: () => ipcRenderer.invoke('update-check'),
+      download: () => ipcRenderer.invoke('update-download'),
+      cancel: () => ipcRenderer.invoke('update-cancel'),
+      openInstaller: () => ipcRenderer.invoke('update-open'),
+      copyMacCommand: () => ipcRenderer.invoke('update-copy-mac-command'),
+      openTerminal: () => ipcRenderer.invoke('update-open-terminal'),
+      onState: (callback) => {
+        const listener = (_event, state) => callback(state);
+        ipcRenderer.on('update-state', listener);
+        return () => ipcRenderer.removeListener('update-state', listener);
+      },
     }),
     windowControls: Object.freeze({
       minimize: () => ipcRenderer.invoke('window-control', 'minimize'),

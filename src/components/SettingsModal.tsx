@@ -13,8 +13,14 @@ import {
 import type { CardFace, Project } from '../lib/types';
 import type { ColorTheme } from '../lib/theme';
 import ProjectDefaultsEditor from './ProjectDefaultsEditor';
+import UpdatesPanel from './UpdatesPanel';
 
 export default function SettingsModal({
+  initialPage,
+  updateState,
+  updateAction,
+  openInstaller,
+  installBusy,
   defaults,
   project,
   snapshot,
@@ -28,6 +34,11 @@ export default function SettingsModal({
   importDocuments,
   reveal,
 }: {
+  initialPage: string;
+  updateState: UpdateState;
+  updateAction: (action: 'checkNow' | 'download' | 'cancel' | 'viewRelease') => void;
+  openInstaller: () => void;
+  installBusy: boolean;
   defaults: ProjectDefaults;
   project: Project;
   snapshot: ProjectLibrarySnapshot | null;
@@ -43,7 +54,7 @@ export default function SettingsModal({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const keepEditing = useRef<HTMLButtonElement>(null);
-  const [page, setPage] = useState('New project defaults'),
+  const [page, setPage] = useState(initialPage),
     [group, setGroup] = useState<DefaultSettingsGroup>('Sheet'),
     [draft, setDraft] = useState<ProjectDefaults>(() =>
       projectDefaultsFrom(projectFromDefaults(defaults)),
@@ -134,7 +145,7 @@ export default function SettingsModal({
         </button>
       </div>
       <nav className="settings-page-nav" aria-label="Settings pages">
-        {['New project defaults', 'Appearance', 'Project library'].map((item) => (
+        {['New project defaults', 'Appearance', 'Project library', 'Updates'].map((item) => (
           <button
             key={item}
             type="button"
@@ -242,6 +253,18 @@ export default function SettingsModal({
               </button>
             )}
           </div>
+        </section>
+        <section hidden={page !== 'Updates'} aria-label="Updates">
+          <UpdatesPanel
+            state={updateState}
+            action={updateAction}
+            openInstaller={openInstaller}
+            installBusy={installBusy}
+            installDisabled={working || changed}
+          />
+          {changed && page === 'Updates' && (
+            <p className="hint">Save or undo your default changes before installing the update.</p>
+          )}
         </section>
       </div>
       <div className="settings-save-footer">

@@ -7,6 +7,33 @@ declare global {
     currentVersion: string;
     latestVersion: string;
     releaseUrl: string;
+    releaseNotes: string;
+    releaseHeading: string;
+    releaseNotesHtml: string;
+    publishedAt: string | null;
+    installerName: string | null;
+    downloadSize: number | null;
+    canDownload: boolean;
+  };
+
+  type UpdateState = {
+    simulation?: string | null;
+    currentVersion: string;
+    status:
+      | 'idle'
+      | 'checking'
+      | 'available'
+      | 'up-to-date'
+      | 'downloading'
+      | 'verifying'
+      | 'ready'
+      | 'cancelled'
+      | 'error';
+    update: ReleaseUpdate | null;
+    lastChecked: string | null;
+    transferred: number;
+    total: number;
+    error: string;
   };
 
   type ProjectSummary = {
@@ -71,8 +98,17 @@ declare global {
         ) => Promise<{ name: string; capturedAt: string }>;
       };
       releases?: {
-        check: () => Promise<ReleaseUpdate | null>;
+        check: () => Promise<UpdateState>;
+        state: () => Promise<UpdateState>;
+        checkNow: () => Promise<UpdateState>;
+        download: () => Promise<UpdateState>;
+        cancel: () => Promise<UpdateState>;
+        openInstaller: () => Promise<UpdateState>;
+        copyMacCommand: () => Promise<void>;
+        openTerminal: () => Promise<void>;
+        onState: (callback: (state: UpdateState) => void) => () => void;
         open: (releaseUrl: string) => Promise<void>;
+        openLink: (url: string) => Promise<void>;
       };
       windowControls?: {
         minimize: () => Promise<boolean>;

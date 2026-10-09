@@ -55,7 +55,61 @@ function isTrustedReleaseUrl(value) {
   }
 }
 
-async function findAvailableRelease(currentVersion, fetchRelease = fetch) {
+function releaseAsset(asset, version) {
+  if (
+    !asset ||
+    typeof asset.name !== 'string' ||
+    !Number.isSafeInteger(asset.size) ||
+    asset.size <= 0
+  )
+    return null;
+  try {
+    const url = new URL(asset.browser_download_url);
+    if (
+      url.protocol !== 'https:' ||
+      url.hostname !== 'github.com' ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      url.pathname !== `/Go2Engle/CriProx/releases/download/v${version}/${asset.name}`
+    )
+      return null;
+    return { name: asset.name, size: asset.size, url: url.href };
+  } catch {
+    return null;
+  }
+}
+
+function selectReleaseAssets(release, platform, arch) {
+  const version = release.tag_name.replace(/^v/, '');
+  // Only select architectures we actually publish. Never offer an incompatible installer.
+  const suffix =
+    platform === 'darwin' && ['arm64', 'x64'].includes(arch)
+      ? 'mac-universal.dmg'
+      : platform === 'win32' && arch === 'x64'
+        ? 'win-x64.exe'
+        : platform === 'linux' && arch === 'x64'
+          ? 'linux-x64.AppImage'
+          : null;
+  const assets = Array.isArray(release.assets) ? release.assets : [];
+  const find = (name) => {
+    const matches = assets.filter((asset) => asset?.name === name);
+    return matches.length === 1 ? releaseAsset(matches[0], version) : null;
+  };
+  const installer = suffix ? find(`CriProx-${version}-${suffix}`) : null;
+  const checksums = find('SHA256SUMS.txt');
+  return installer && installer.size <= 1024 ** 3 && checksums && checksums.size <= 1024 ** 2
+    ? { installer, checksums }
+    : null;
+}
+
+async function findAvailableRelease(
+  currentVersion,
+  fetchRelease = fetch,
+  platform = process.platform,
+  arch = process.arch,
+) {
   const response = await fetchRelease(RELEASE_API, {
     headers: {
       Accept: 'application/vnd.github+json',
@@ -64,7 +118,8 @@ async function findAvailableRelease(currentVersion, fetchRelease = fetch) {
     },
     signal: AbortSignal.timeout(8000),
   });
-  if (!response.ok) return null;
+  if (!response.ok)
+    throw new Error('Could not check for updates. Check your connection and try again.');
   const release = await response.json();
   if (
     release.draft ||
@@ -78,7 +133,11 @@ async function findAvailableRelease(currentVersion, fetchRelease = fetch) {
     currentVersion,
     latestVersion: release.tag_name.replace(/^v/, ''),
     releaseUrl: release.html_url,
+    releaseName: typeof release.name === 'string' ? release.name : '',
+    releaseNotes: typeof release.body === 'string' ? release.body.slice(0, 50000) : '',
+    publishedAt: typeof release.published_at === 'string' ? release.published_at : null,
+    ...selectReleaseAssets(release, platform, arch),
   };
 }
 
-module.exports = { findAvailableRelease, isNewerVersion, isTrustedReleaseUrl };
+module.exports = { findAvailableRelease, isNewerVersion, isTrustedReleaseUrl, selectReleaseAssets };

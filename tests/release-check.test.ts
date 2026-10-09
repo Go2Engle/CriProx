@@ -8,7 +8,7 @@ const { findAvailableRelease, isNewerVersion, isTrustedReleaseUrl } =
     findAvailableRelease: (
       currentVersion: string,
       fetchRelease?: (url: string, init: RequestInit) => Promise<Response>,
-    ) => Promise<ReleaseUpdate | null>;
+    ) => Promise<Record<string, unknown> | null>;
     isNewerVersion: (candidate: string, current: string) => boolean;
     isTrustedReleaseUrl: (value: string) => boolean;
   };
@@ -56,5 +56,8 @@ test('release checks return a newer stable GitHub release', async () => {
     currentVersion: '0.1.0',
     latestVersion: '0.2.0',
     releaseUrl: 'https://github.com/Go2Engle/CriProx/releases/tag/v0.2.0',
+    releaseName: '',
+    releaseNotes: '',
+    publishedAt: null,
   });
 });
