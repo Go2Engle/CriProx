@@ -10,6 +10,7 @@ import CardSearchResults from './components/CardSearchResults';
 import SetBrowser from './components/SetBrowser';
 import PreconBrowser from './components/PreconBrowser';
 import TokenBrowser from './components/TokenBrowser';
+import { useDialogBackdropDismiss } from './lib/dialog-backdrop';
 import type { PreconEntry } from './lib/precons';
 import {
   useCallback,
@@ -265,6 +266,7 @@ function Modal({
   initialFocus?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const backdropDismiss = useDialogBackdropDismiss(close);
   useEffect(() => {
     ref.current?.showModal();
     initialFocus?.current?.focus();
@@ -274,9 +276,7 @@ function Modal({
       ref={ref}
       className={`modal${wide ? ' wide' : ''}${className ? ` ${className}` : ''}`}
       onCancel={close}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
+      {...backdropDismiss}
       aria-labelledby="dialog-title"
     >
       <div className="modal-heading">

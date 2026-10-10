@@ -6,6 +6,8 @@ PDF, a dedicated PDF application prints it, and Design Space runs the matching s
 
 To add cards by name, open **Find a card** and start typing. The search box receives keyboard
 focus automatically when the dialog opens.
+Selecting text or dragging from inside the dialog and releasing outside keeps it open.
+Click outside the dialog or choose **Done** to close it.
 
 ## Build a sheet from a set
 
