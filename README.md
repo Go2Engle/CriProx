@@ -51,7 +51,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 ## From card list to cut
 
 1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse sets, commander precons, or tokens, or add local artwork.
-2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs. Edit your preferred setup directly in Settings and save it for future projects, or also apply it to the current deck.
+2. **Dial in the output.** Choose the machine, paper, layout, resolution, bleed, and optional card backs. Scroll over the preview to zoom; drag empty space or right-drag anywhere to pan. Edit your preferred setup directly in Settings and save it for future projects, or also apply it to the current deck.
 3. **Set up the cut template once.** In Create print PDF, download the setup PNG. Upload it to Design Space as a flat Print Then Cut image, preserve the supplied dimensions, and save the project and mat arrangement.
 4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks. The setup sections collapse with green checks; choose Done for reviewed settings, and reopen any section from its header.
 5. **Print the PDF.** Use the visible prepare controls, review the pages, and save the finished card-sheet PDF from CriProx. Open it in a dedicated PDF application and print at 100% / Actual size, with fit or shrink scaling disabled.
