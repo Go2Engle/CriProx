@@ -9,6 +9,10 @@ focus automatically when the dialog opens.
 Selecting text or dragging from inside the dialog and releasing outside keeps it open.
 Click outside the dialog or choose **Done** to close it.
 
+Click a card on the sheet to open its artwork preview. Placed cards stay on the sheet when you
+click and drag, so they cannot be accidentally added again. To add local artwork, drop image files
+from your file manager onto the sheet or use **Add artwork**.
+
 While reviewing the sheet, scroll the mouse wheel to zoom in or out. To move around the preview,
 left-click and drag empty space on or around the paper, or hold the right mouse button and drag
 anywhere, including over a selected card. Release the button to stop panning. This changes only
