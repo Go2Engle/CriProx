@@ -14,6 +14,7 @@ import type { CardFace, Project } from '../lib/types';
 import type { ColorTheme } from '../lib/theme';
 import ProjectDefaultsEditor from './ProjectDefaultsEditor';
 import UpdatesPanel from './UpdatesPanel';
+import { useDialogBackdropDismiss } from '../lib/dialog-backdrop';
 
 export default function SettingsModal({
   initialPage,
@@ -77,6 +78,7 @@ export default function SettingsModal({
     if (changed) setDiscard(true);
     else close();
   };
+  const backdropDismiss = useDialogBackdropDismiss(requestClose);
   const update = (value: ProjectDefaults) => {
     setDraft(value);
     setError('');
@@ -126,9 +128,7 @@ export default function SettingsModal({
         event.preventDefault();
         requestClose();
       }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) requestClose();
-      }}
+      {...backdropDismiss}
     >
       <div className="modal-heading">
         <div>
