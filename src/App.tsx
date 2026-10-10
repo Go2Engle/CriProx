@@ -1,4 +1,5 @@
 import { templateFilenameStem } from './lib/filenames';
+import { enableArtboardPanning } from './lib/artboard-pan';
 import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
@@ -1951,6 +1952,12 @@ export default function App() {
     const viewport = paperViewport.current;
     if (!viewport) return;
 
+    return enableArtboardPanning(viewport);
+  }, []);
+  useEffect(() => {
+    const viewport = paperViewport.current;
+    if (!viewport) return;
+
     const handleWheel = (event: WheelEvent) => {
       if (!event.deltaY) return;
       event.preventDefault();
@@ -2840,7 +2847,11 @@ export default function App() {
                     : 'Your canvas is ready'}
                   <span className="view-label">PREVIEW ONLY</span>
                 </div>
-                <div className="paper-viewport" ref={paperViewport}>
+                <div
+                  className="paper-viewport"
+                  ref={paperViewport}
+                  title="Scroll to zoom · Drag empty space or right-drag anywhere to pan"
+                >
                   <SheetPreview
                     sheet={sheet}
                     settings={project.settings}
