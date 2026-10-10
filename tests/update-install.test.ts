@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -57,15 +57,19 @@ test('Linux saves an executable AppImage, launches the saved path, and supports 
     },
   });
   assert.equal(await handoff(installer), null);
-  await assert.rejects(stat(destination));
   assert.deepEqual(launched, []);
   canceled = false;
-  // Replacing an existing file must leave complete bytes and no temporary file behind.
-  await writeFile(destination, 'previous app');
+  // Exclusive creation also proves cancellation did not leave a destination behind.
+  await writeFile(destination, 'previous app', { flag: 'wx' });
   assert.equal(await handoff(installer), '');
-  assert.equal(await readFile(destination, 'utf8'), 'verified app');
-  // Windows does not implement POSIX execute bits; the Linux/macOS runners check them.
-  if (process.platform !== 'win32') assert.equal((await stat(destination)).mode & 0o777, 0o700);
+  const saved = await open(destination, 'r');
+  try {
+    assert.equal(await saved.readFile('utf8'), 'verified app');
+    // Windows does not implement POSIX execute bits; the Linux/macOS runners check them.
+    if (process.platform !== 'win32') assert.equal((await saved.stat()).mode & 0o777, 0o700);
+  } finally {
+    await saved.close();
+  }
   assert.deepEqual(launched, [destination]);
   assert.deepEqual((await readdir(root)).sort(), ['cache', 'new.AppImage']);
   fail = true;

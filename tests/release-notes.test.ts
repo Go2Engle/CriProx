@@ -45,6 +45,30 @@ test('release notes render category headings, lists, emphasis, code, and issue l
   assert.match(html, /href="https:\/\/github.com\/Go2Engle\/CriProx\/issues\/98"/);
 });
 
+test('custom release announcements keep their formatting and issue link on desktop and website', async () => {
+  const site = await import(new URL('../site/lib.mjs', import.meta.url).href);
+  const body = `### In-app updates are here
+
+CriProx now lets you review release notes, download updates, and launch the installer from **Settings → Updates**.
+
+Please install this release manually once to enable the new updater. If you encounter any problems with in-app updates, please [open a GitHub issue](https://github.com/Go2Engle/CriProx/issues/new/choose) and include your operating system, CriProx version, and what happened.
+
+### Features
+
+* **updates:** add verified downloads and installer handoff`;
+  const desktop = formatReleaseNotes({ version: '0.14.0', body });
+  const website = site.markdown(site.cleanReleaseNotes(body), { headingPrefix: 'release-0.14.0-' });
+  for (const html of [desktop.releaseNotesHtml, website]) {
+    assert.match(html, /<h[1-6][^>]*>In-app updates are here<\/h[1-6]>/);
+    assert.match(html, /<strong>Settings → Updates<\/strong>/);
+    assert.match(html, /<p>Please install this release manually once/);
+    assert.match(html, /href="https:\/\/github.com\/Go2Engle\/CriProx\/issues\/new\/choose"/);
+    assert.match(html, />open a GitHub issue<\/a>/);
+    assert.doesNotMatch(html, /\*\*Settings|\[open a GitHub issue\]/);
+  }
+  assert.equal(desktop.releaseHeading, 'Add verified downloads and installer handoff');
+});
+
 test('rendered release notes remove executable content and unsafe links', () => {
   const body =
     '### Features\n\n* new **art** <script>alert(1)</script>\n\n<img src="https://evil.example/tracker" onerror="alert(1)">\n<iframe src="https://evil.example"></iframe>\n<a href="javascript:alert(1)" onclick="alert(1)">Bad</a>\n\n[Unsafe](file:///tmp/installer)\n\n[Other repo](https://github.com/other/repo)\n\n[Guide](docs/INSTALLATION.md)';
