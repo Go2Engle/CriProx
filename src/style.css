@@ -830,6 +830,12 @@ h1 > span {
   overflow: auto;
   container-type: size;
   scrollbar-width: thin;
+  cursor: grab;
+}
+.paper-viewport.panning,
+.paper-viewport.panning * {
+  cursor: grabbing !important;
+  user-select: none;
 }
 .sheet-label {
   font-size: 9px;

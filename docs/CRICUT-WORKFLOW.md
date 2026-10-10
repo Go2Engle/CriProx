@@ -9,6 +9,11 @@ focus automatically when the dialog opens.
 Selecting text or dragging from inside the dialog and releasing outside keeps it open.
 Click outside the dialog or choose **Done** to close it.
 
+While reviewing the sheet, scroll the mouse wheel to zoom in or out. To move around the preview,
+left-click and drag empty space on or around the paper, or hold the right mouse button and drag
+anywhere, including over a selected card. Release the button to stop panning. This changes only
+your view; card positions and print output stay the same.
+
 ## Build a sheet from a set
 
 1. Open **Find a card** and choose **Browse sets**. Filter by a set name or code, such as `MH2`.

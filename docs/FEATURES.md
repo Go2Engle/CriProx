@@ -52,6 +52,9 @@ newly announced products may not have decklists or artwork yet.
 - Millimeter-based placement and vector geometry shared by preview and export.
 - Print-sheet preview with captured Cricut registration marks when available, sheet pagination,
   and zoom controls.
+- Scroll the mouse wheel over the sheet to zoom. Drag empty space on or around the sheet to pan,
+  or hold the right mouse button and drag anywhere, including over a selected card. Panning moves
+  only the preview; normal left-clicks on cards still select them or open their artwork preview.
 - 300, 600, 900, and 1200 DPI output.
 - Optional playtest label along the bottom edge.
 - Size-check card with a 5 mm measurement grid.
