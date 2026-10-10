@@ -913,6 +913,7 @@ h1 > span {
 }
 .placed-card {
   position: absolute;
+  user-select: none;
   padding: 0;
   overflow: hidden;
   background: #111;

@@ -52,6 +52,8 @@ newly announced products may not have decklists or artwork yet.
 - Millimeter-based placement and vector geometry shared by preview and export.
 - Print-sheet preview with captured Cricut registration marks when available, sheet pagination,
   and zoom controls.
+- Click a card on the sheet to open its artwork preview. Placed cards cannot be dragged or
+  dropped back onto the sheet as new artwork; external image files can still be dropped to add them.
 - 300, 600, 900, and 1200 DPI output.
 - Optional playtest label along the bottom edge.
 - Size-check card with a 5 mm measurement grid.

@@ -9,6 +9,10 @@ focus automatically when the dialog opens.
 Selecting text or dragging from inside the dialog and releasing outside keeps it open.
 Click outside the dialog or choose **Done** to close it.
 
+Click a card on the sheet to open its artwork preview. Placed cards stay on the sheet when you
+click and drag, so they cannot be accidentally added again. To add local artwork, drop image files
+from your file manager onto the sheet or use **Add artwork**.
+
 ## Build a sheet from a set
 
 1. Open **Find a card** and choose **Browse sets**. Filter by a set name or code, such as `MH2`.

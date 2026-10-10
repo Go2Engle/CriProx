@@ -1643,6 +1643,7 @@ function SheetPreview({
                 aria-label={`Select ${p.entry.card.name}, copy ${p.copy + 1}`}
                 title={cutOnly ? 'Select card' : 'Open artwork preview'}
                 className={`placed-card ${cutOnly ? 'cut-only' : ''}`}
+                onDragStart={(event) => event.preventDefault()}
                 style={{
                   left: `${(p.x / sheet.width) * 100}%`,
                   top: `${(p.y / sheet.height) * 100}%`,
