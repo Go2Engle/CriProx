@@ -16,6 +16,13 @@ Use human-readable Conventional Commit subjects and PR titles. Release Please ma
 files and `CHANGELOG.md`; do not edit them by hand. Describe the actual user-visible result in
 feature and fix subjects because those subjects become the public release notes.
 
+Write release titles, release notes, and feature/fix subjects for people who are not developers.
+Lead with what users can do or what improves for them, and use familiar language instead of
+implementation terms. For example, prefer "make updates easier from inside CriProx" over
+"add verified downloads and installer handoff". Keep Conventional Commit prefixes for automation,
+but make the subject itself suitable for public release notes. Apply this preference when preparing
+future commits, PR titles, and releases so the wording does not need to be rewritten afterward.
+
 Website changes must never trigger an application release or appear in application release notes.
 Use non-breaking `chore(site):`, `docs(site):`, or `style(site):` commits and PR titles for website
 work, including screenshots and website workflows. Never use `feat(site):`, `fix(site):`, `perf(site):`,
