@@ -16,7 +16,9 @@ Use human-readable Conventional Commit subjects and PR titles. Release Please ma
 files and `CHANGELOG.md`; do not edit them by hand. Describe the actual user-visible result in
 feature and fix subjects because those subjects become the public release notes.
 
-Write release titles, release notes, and feature/fix subjects for people who are not developers.
+Keep the main GitHub release title as the version tag (for example, `v0.14.0`). Use descriptive
+titles in release-note headings, website summaries, and other places that introduce the release.
+Write those titles, release notes, and feature/fix subjects for people who are not developers.
 Lead with what users can do or what improves for them, and use familiar language instead of
 implementation terms. For example, prefer "make updates easier from inside CriProx" over
 "add verified downloads and installer handoff". Keep Conventional Commit prefixes for automation,
