@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/Go2Engle/CriProx/compare/v0.13.0...v0.14.0) (2026-10-10)
+
+
+### Features
+
+* **updates:** add verified downloads and installer handoff ([#99](https://github.com/Go2Engle/CriProx/issues/99)) ([876b23e](https://github.com/Go2Engle/CriProx/commit/876b23e05d2c5952c84407bc38cd43fb8ca4bcce))
+
 ## [0.13.0](https://github.com/Go2Engle/CriProx/compare/v0.12.0...v0.13.0) (2026-10-07)
 
 
