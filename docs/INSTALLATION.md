@@ -12,7 +12,43 @@ Download the newest stable build from [GitHub Releases](https://github.com/Go2En
 
 Windows and Linux installers are built on their respective GitHub-hosted runners. Runtime behavior can still vary by distribution, graphics stack, printer driver, and security settings, so issue reports should include the CriProx version and operating-system details.
 
-CriProx checks the repository for a newer stable release when the desktop app starts. The notice is informational: downloads and installation remain under your control, and automatic update installation is not configured.
+CriProx checks for a newer stable release when the desktop app starts. Choose **Review update**
+from the notice or open **Settings → Updates** to check again, view formatted release notes, and download
+the package for your device without leaving CriProx. **Remind me later** hides that version’s
+notice for 24 hours. A small **Update available** button beside the donation button in the bottom
+bar opens the Updates page while the notice is snoozed. Once the download is verified, it reads
+**Update ready**. The main notice returns after 24 hours; a newer release gets its own notice.
+
+Downloads show progress and can be cancelled or retried. CriProx checks the downloaded bytes
+against the official release’s `SHA256SUMS.txt` and verifies the file again before opening it.
+A checksum checks file integrity; it does not authenticate the publisher like code signing.
+Incomplete, oversized, or mismatched downloads are removed. If the release has no matching
+package or checksum file, use **View release on GitHub** for manual installation.
+
+After the download is verified:
+
+- **macOS:** Choose **Install update**. CriProx opens the DMG and closes automatically. Drag the new app into
+  **Applications**, choose **Replace**, and reopen it. The unsigned-app instructions below
+  still apply if macOS blocks the new version. Below the download controls and above the release
+  notes, the Updates screen has **Copy command** and **Open Terminal** buttons; copy the command
+  before installing, then paste and run it after replacing the app. **Open Terminal** opens
+  Apple’s Terminal without executing the command.
+- **Windows:** Choose **Install update**. CriProx launches the installer and closes automatically.
+  Complete setup and reopen the app.
+  Windows may still show a warning for the unsigned installer.
+- **Linux:** Choose **Install update**, then choose a permanent location for the verified AppImage.
+  CriProx saves it, makes it executable, launches it, and closes the current copy. A canceled
+  location picker or launch failure keeps the current app open. Your desktop launcher may need
+  to be pointed at the new AppImage if you save it under a different name or location.
+
+CriProx saves the autosaved workspace before launching the download and closing. Finish exports
+and save any managed-project changes first; unsaved default changes disable installation until
+saved or undone. A workspace-save or installer-launch failure keeps CriProx open. macOS app
+replacement and Windows setup remain interactive. Updates keep your project library.
+Downloads continue while Settings is closed, but closing CriProx interrupts them. Download
+progress and readiness are remembered for the current app session; a later download clears
+previous files in the private `update-downloads` cache. Existing users need to install the
+release introducing this flow manually once.
 
 ## Test installers from a branch
 
@@ -57,12 +93,46 @@ npm run dev
 
 Vite serves the app at `http://127.0.0.1:5173` and reloads renderer changes during development.
 
+## Simulate an update locally
+
+From a development checkout with dependencies installed, run:
+
+```sh
+npm run desktop:updates
+```
+
+Choose **Review update** or **Settings → Updates**. The default simulation advertises a newer
+version, shows the formatted changelog, and downloads an 8 MB test file over roughly eight
+seconds. Try **Cancel download**, **Retry download**, and **Test installer handoff**. The last
+action runs verification again and shows a confirmation dialog; it keeps CriProx open and does not
+launch an installer. The macOS copy and Terminal buttons are real desktop actions in this mode.
+
+To exercise a specific failure or an up-to-date app:
+
+```sh
+npm run desktop:updates -- --scenario=checksum-failure
+npm run desktop:updates -- --scenario=network-failure
+npm run desktop:updates -- --scenario=up-to-date
+```
+
+The checksum scenario fails the first completed download, then **Retry download** succeeds.
+The network scenario fails the first update check, then **Check now** succeeds. Each launch uses
+a new temporary profile, separate from your normal workspace, project library, settings, and
+update reminders. Its path appears in the terminal and is removed on a normal exit. The fixture
+makes no update-network requests and uses the same platform selection, streaming, cancellation,
+checksum verification, and progress events as real updates. Simulation is available only in
+unpackaged development runs and is excluded from installers.
+
+This exercises CriProx’s update flow. Actual unsigned installer prompts and replacement of the
+installed app still need separate testing on each operating system.
+
 ## Available commands
 
 | Command                   | Purpose                                                      |
 | ------------------------- | ------------------------------------------------------------ |
 | `npm run dev`             | Start the Vite browser preview on localhost                  |
 | `npm run desktop`         | Build the renderer and launch it in Electron                 |
+| `npm run desktop:updates` | Launch an isolated local update simulation |
 | `npm test`                | Run the Node test suite                                      |
 | `npm run build`           | Type-check the project and build the production renderer     |
 | `npm run preview`         | Serve the completed renderer build locally                   |

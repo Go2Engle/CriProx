@@ -38,6 +38,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
 | 🃏 **Flexible artwork**      | Search cards, browse sets, commander precons, or tokens, choose Scryfall printings or MPC Autofill community art, or use local images. |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
+| ⬇️ **Guided updates**       | Review release notes, download the right desktop package in CriProx, and verify it before guided installation.                     |
 | ✂️ **Reusable cuts**         | Capture a Design Space template once, print CriProx PDFs from a PDF application, and cut with the same saved project.             |
 | ✅ **Compact print workflow** | Completed setup and settings collapse into summaries with green checks. Reopen any section whenever you need it.                 |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
@@ -107,13 +108,21 @@ Installers for the latest stable release are available on the [GitHub Releases p
 
 ### Update CriProx
 
-CriProx checks GitHub for newer stable releases when the desktop app starts and displays a notice, but it does not install updates automatically.
+CriProx checks for newer stable releases when the desktop app starts. Choose **Review update**
+or open **Settings → Updates** to see release notes, check again, and download the right package
+with progress, cancellation, retries, and SHA-256 verification. **Remind me later** snoozes the
+notice for 24 hours and leaves an **Update available** reminder beside the donation button in
+the bottom bar. Click it to return to Updates; it reads **Update ready** after verification.
 
-1. Close CriProx. Export a JSON backup first if you want an additional copy of an important project.
-2. Download the package for your operating system from the notice or the [latest release](https://github.com/Go2Engle/CriProx/releases/latest).
-3. On macOS, open the new DMG, drag **CriProx** into **Applications**, and choose **Replace**. Run the quarantine command above again if macOS blocks the new version.
-4. On Windows, run the new `.exe` installer and complete the setup wizard.
-5. Reopen CriProx. Application updates do not replace the managed project library, which is stored in the app's Application Support folder by default or in the folder selected in Settings. When upgrading from v0.6.0 or earlier on macOS, use **Settings → Project library → Import old library** once to copy projects from `Documents/CriProx` without changing the new default.
+1. Choose **Download update** and wait for verification.
+2. Finish exports and save project or default changes. **Install update** saves the active workspace and closes CriProx after launching the update.
+3. On macOS, choose **Install update**, drag **CriProx** from the new DMG into **Applications**, and choose **Replace**. If macOS blocks the new version, use **Copy command** and **Open Terminal** on the Updates screen before installing, then run the copied quarantine command after replacing the app.
+4. On Windows, choose **Install update** and complete setup.
+5. On Linux, choose **Install update** and a permanent location for the AppImage. CriProx saves and launches it, then closes the current copy.
+6. Reopen CriProx. Application updates keep the managed project library. When upgrading from v0.6.0 or earlier on macOS, use **Settings → Project library → Import old library** once to copy projects from `Documents/CriProx`.
+
+macOS app replacement and Windows setup remain interactive. Use **View release on GitHub** if a verified package
+is unavailable. Existing users need one manual installation to receive the guided updater.
 
 New releases include a `SHA256SUMS.txt` file for installer verification. See the [installation guide](docs/INSTALLATION.md) for Linux notes, troubleshooting, and local-development setup.
 

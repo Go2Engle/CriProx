@@ -38,6 +38,31 @@
 
 Browser checks caught a local-image bug: fetching a data URL was blocked by the renderer CSP. The final export code directly decodes embedded artwork without making a fetch request. The fixed browser export was validated at pixel level.
 
+## Local update validation
+
+Use `npm run desktop:updates` to test the real desktop update bridge with an isolated profile
+and an 8 MB fixture download. See [the simulation instructions](INSTALLATION.md#simulate-an-update-locally)
+for all scenarios. No GitHub release needs to be published.
+
+1. Open **Review update** and check the website-style changelog, category icons, lists, and links.
+2. Start a download, close Settings, reopen **Settings → Updates**, and confirm progress continues.
+3. Cancel and retry. A complete download should become **Download verified and ready to install**.
+4. Choose **Test installer handoff**. Expect a confirmation dialog, no real installation, and
+   CriProx to remain open. On macOS, check **Copy command** and **Open Terminal**; these are real
+   desktop actions, but the command runs only when you paste and execute it yourself.
+5. Run the checksum-failure and network-failure scenarios. Confirm the first attempt fails and
+   the retry succeeds; run the up-to-date scenario to check the no-update state.
+6. Choose **Remind me later** and confirm the notice disappears and a small **Update available**
+   button appears beside the donation button in the bottom bar. Click it to reopen Updates;
+   after a verified download it should read **Update ready**. The temporary profile resets on
+   the next simulation launch.
+
+Automated checks compare desktop note cleanup and release headlines with the website for every
+existing changelog release, check Markdown sanitization and allowed links, and exercise each
+simulation through the production update manager. Handoff tests cover cancellation, launch
+failures, the quit callback, executable AppImage copies, and macOS-only help actions. This does not certify operating-system
+installer behavior, signing, or notarization.
+
 ## Still requires external validation
 
 - Actual Cricut sensor acquisition, Design Space contour tracing, physical scale, alignment, and repeatability.

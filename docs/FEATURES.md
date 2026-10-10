@@ -198,6 +198,41 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 
 Remote URLs in a project backup are references, not embedded copies of the remote files. Browser or application storage can be cleared or reach its quota, so a downloaded project backup is the durable copy.
 
+## Desktop updates
+
+- Checks for newer stable GitHub releases on startup, with **Review update** opening
+  **Settings → Updates**. **Check now** runs a fresh check and shows the last successful check.
+  Connection failures offer a retry rather than reporting that the app is up to date.
+- Release notes use the website’s changelog presentation: version and date beside a readable
+  headline, **New**, **Improvements**, and **Fixes** categories with icons, formatted lists,
+  emphasis, inline code, and working issue and guide links. Commit hashes and duplicate entries
+  are removed. Markdown is sanitized before display; remote images and executable content are
+  excluded. A GitHub link opens the full release.
+- Downloads the published package for the running platform and architecture, with progress,
+  cancellation, retries, and SHA-256 verification using the release’s checksum file. Failed or
+  incomplete downloads are removed; the file is verified again before opening it.
+- **Install update** saves the active workspace, opens the macOS DMG or Windows installer,
+  and closes CriProx automatically. On Linux, choose a permanent location for the AppImage;
+  CriProx saves it, makes it executable, launches it, and closes the current copy. Canceling the
+  location picker or failing to launch keeps CriProx open.
+- macOS has a short unblock-command section directly below the download controls and above the
+  release notes, with **Copy command** and **Open Terminal** buttons.
+  Paste and run the command after replacing the app in Applications if macOS blocks it.
+- **Remind me later** snoozes that version’s notice for 24 hours and leaves a small **Update
+  available** button beside the donation button in the bottom bar. It opens **Settings → Updates**
+  and changes to **Update ready** after the download is verified. A newer release gets its own
+  notice, and the main notice returns when the snooze expires.
+- Downloads continue when Settings closes. Download state lasts for the current app session;
+  macOS still requires dragging the app into Applications, and Windows setup remains interactive.
+  Unsigned-app warnings may still apply.
+
+![Website-style release notes in the local update simulation](assets/criprox-updates.png)
+
+![Small update reminder beside the donation button after snoozing](assets/criprox-update-reminder.png)
+
+See [Installation](INSTALLATION.md) for the complete guided update flow, manual fallback, and
+local simulation commands.
+
 ## Experimental layouts
 
 ### Six-card candidate area

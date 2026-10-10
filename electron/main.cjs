@@ -1,10 +1,18 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, net, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, net, shell } = require('electron');
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { deckSourceUrl } = require('./deck-source.cjs');
 const { contextMenuTemplate } = require('./context-menu.cjs');
-const { findAvailableRelease, isTrustedReleaseUrl } = require('./release-check.cjs');
+const { isTrustedReleaseUrl } = require('./release-check.cjs');
+const { createUpdateManager } = require('./update-manager.cjs');
+const { isReleaseNotesUrl } = require('./release-notes.cjs');
+const { createInstallerHandoff, createMacUpdateHelp } = require('./update-install.cjs');
+// A developer-only fixture; packaged builds ignore the flag and exclude its module.
+const updateDemo =
+  !app.isPackaged && process.argv.includes('--simulate-updates')
+    ? require('./update-demo.cjs').startUpdateDemo(app, dialog)
+    : null;
 const {
   abortProjectSave,
   assertProjectId,
@@ -143,14 +151,53 @@ ipcMain.handle('window-control', (event, action) => {
 
 ipcMain.handle('window-is-maximized', (event) => senderWindow(event).isMaximized());
 
-let releaseCheck;
-ipcMain.handle('release-check', () => {
-  releaseCheck ??= findAvailableRelease(app.getVersion()).catch(() => null);
-  return releaseCheck;
+let updates;
+function updateManager() {
+  updates ??= createUpdateManager({
+    currentVersion: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    directory: path.join(app.getPath('userData'), 'update-downloads'),
+    openInstaller: createInstallerHandoff({
+      platform: process.platform,
+      downloads: app.getPath('downloads'),
+      openPath: (file) => shell.openPath(file),
+      chooseDestination: (options) => dialog.showSaveDialog(options),
+    }),
+    // Give IPC its response before closing the renderer. Its workspace save has completed.
+    onInstallerOpened: () => setImmediate(() => app.quit()),
+    ...updateDemo?.managerOptions,
+    notify: (state) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send('update-state', state);
+      }
+    },
+  });
+  return updates;
+}
+ipcMain.handle('release-check', () => updateManager().check());
+ipcMain.handle('update-state', () => updateManager().snapshot());
+ipcMain.handle('update-check', () => updateManager().check(true));
+ipcMain.handle('update-download', () => updateManager().download());
+ipcMain.handle('update-cancel', () => updateManager().cancel());
+ipcMain.handle('update-open', () => updateManager().open());
+
+const macUpdateHelp = createMacUpdateHelp({
+  platform: process.platform,
+  clipboard,
+  openPath: (file) => shell.openPath(file),
+});
+ipcMain.handle('update-copy-mac-command', () => macUpdateHelp.copyCommand());
+ipcMain.handle('update-open-terminal', () => macUpdateHelp.openTerminal());
+
+ipcMain.handle('open-release-notes-link', (_event, url) => {
+  if (!isReleaseNotesUrl(url)) throw new Error('Unsupported release notes link.');
+  return shell.openExternal(url);
 });
 
 ipcMain.handle('open-release-page', (_event, releaseUrl) => {
   if (!isTrustedReleaseUrl(releaseUrl)) throw new Error('Unsupported release URL.');
+  if (updateDemo) return updateDemo.showRelease();
   return shell.openExternal(releaseUrl);
 });
 

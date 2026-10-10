@@ -5,6 +5,7 @@ import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
 import ManualGuideControls from './components/ManualGuideControls';
 import SettingsModal from './components/SettingsModal';
+import { INITIAL_UPDATE_STATE } from './components/UpdatesPanel';
 import CardSearchResults from './components/CardSearchResults';
 import SetBrowser from './components/SetBrowser';
 import PreconBrowser from './components/PreconBrowser';
@@ -1859,7 +1860,20 @@ export default function App() {
     [zoom, setZoom] = useState(100),
     [registrationRefresh, setRegistrationRefresh] = useState(0),
     [toast, setToast] = useState(''),
-    [releaseUpdate, setReleaseUpdate] = useState<ReleaseUpdate | null>(null),
+    [updateState, setUpdateState] = useState<UpdateState>(INITIAL_UPDATE_STATE),
+    [updateOpening, setUpdateOpening] = useState(false),
+    [settingsPage, setSettingsPage] = useState('New project defaults'),
+    [reminder, setReminder] = useState(() => {
+      try {
+        return JSON.parse(localStorage.getItem('criprox-release-reminder') || 'null') as {
+          version: string;
+          until: number;
+        } | null;
+      } catch {
+        return null;
+      }
+    }),
+    [reminderClock, setReminderClock] = useState(Date.now()),
     [uploading, setUploading] = useState(false),
     [draggingArtwork, setDraggingArtwork] = useState(false),
     [projectLibrary, setProjectLibrary] = useState<ProjectLibrarySnapshot | null>(null),
@@ -2023,22 +2037,28 @@ export default function App() {
     const releases = window.criprox?.releases;
     if (!releases) return;
     let active = true;
+    const unsubscribe = releases.onState((state) => {
+      if (active) setUpdateState(state);
+    });
     releases
       .check()
-      .then((update) => {
-        if (
-          active &&
-          update &&
-          localStorage.getItem('criprox-dismissed-release') !== update.latestVersion
-        ) {
-          setReleaseUpdate(update);
-        }
+      .then((state) => {
+        if (active) setUpdateState(state);
       })
       .catch(() => {});
     return () => {
       active = false;
+      unsubscribe();
     };
   }, []);
+  useEffect(() => {
+    if (!reminder || reminder.until <= Date.now()) return;
+    const timer = setTimeout(
+      () => setReminderClock(Date.now()),
+      Math.min(reminder.until - Date.now(), 24 * 60 * 60 * 1000),
+    );
+    return () => clearTimeout(timer);
+  }, [reminder]);
   useEffect(() => {
     if (!loaded) return;
     setSaved('Saving…');
@@ -2423,12 +2443,49 @@ export default function App() {
       if (projectInput.current) projectInput.current.value = '';
     }
   }
-  function dismissRelease() {
-    if (releaseUpdate) {
-      localStorage.setItem('criprox-dismissed-release', releaseUpdate.latestVersion);
-    }
-    setReleaseUpdate(null);
+  const snoozedUpdate =
+    updateState.update &&
+    reminder?.version === updateState.update.latestVersion &&
+    reminder.until > reminderClock
+      ? updateState.update
+      : null;
+  const releaseUpdate = snoozedUpdate ? null : updateState.update;
+  function reviewUpdate() {
+    setSettingsPage('Updates');
+    setModal('settings');
   }
+  function dismissRelease() {
+    if (!releaseUpdate) return;
+    const next = { version: releaseUpdate.latestVersion, until: Date.now() + 24 * 60 * 60 * 1000 };
+    localStorage.setItem('criprox-release-reminder', JSON.stringify(next));
+    setReminder(next);
+  }
+  async function updateAction(action: 'checkNow' | 'download' | 'cancel' | 'viewRelease') {
+    const releases = window.criprox?.releases;
+    if (!releases) return;
+    try {
+      if (action === 'viewRelease') {
+        if (updateState.update) await releases.open(updateState.update.releaseUrl);
+      } else setUpdateState(await releases[action]());
+    } catch {
+      setToast('Could not complete the update action. Try again.');
+    }
+  }
+  async function openUpdateInstaller() {
+    if (updateOpening || libraryBusy || !loaded) return;
+    setUpdateOpening(true);
+    try {
+      // A previous autosave failure must not prevent retrying the current workspace save.
+      await saveQueue.current.catch(() => {});
+      await set('criprox-project', project);
+      await window.criprox?.releases?.openInstaller().then(setUpdateState);
+    } catch {
+      setToast('Could not save the workspace or open the installer. Save your work and try again.');
+    } finally {
+      setUpdateOpening(false);
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -2496,7 +2553,10 @@ export default function App() {
               title="Settings"
               aria-label="Settings"
               disabled={!loaded}
-              onClick={() => setModal('settings')}
+              onClick={() => {
+                setSettingsPage('New project defaults');
+                setModal('settings');
+              }}
             >
               <Settings2 size={18} />
             </button>
@@ -2537,24 +2597,19 @@ export default function App() {
           </span>
           <div>
             <strong>CriProx {releaseUpdate.latestVersion} is available</strong>
-            <span>You’re using {releaseUpdate.currentVersion}. Download the latest installer.</span>
+            <span>
+              {updateState.status === 'ready'
+                ? 'Your verified download is ready to install.'
+                : updateState.status === 'downloading' || updateState.status === 'verifying'
+                  ? 'Your update is downloading. You can keep working.'
+                  : `You’re using ${releaseUpdate.currentVersion}. Review and download the update.`}
+            </span>
           </div>
-          <button
-            className="primary compact"
-            onClick={() => {
-              void window.criprox?.releases
-                ?.open(releaseUpdate.releaseUrl)
-                .catch(() => setToast('Could not open the GitHub release.'));
-            }}
-          >
-            View release <ExternalLink size={13} />
+          <button className="primary compact" onClick={reviewUpdate}>
+            Review update <Download size={13} />
           </button>
-          <button
-            className="icon-button"
-            aria-label="Dismiss release notice"
-            onClick={dismissRelease}
-          >
-            <X size={16} />
+          <button className="text-button compact" onClick={dismissRelease}>
+            Remind me later
           </button>
         </aside>
       )}
@@ -3190,6 +3245,17 @@ export default function App() {
                 CriProx v{__APP_VERSION__} · Made for playtesting{' '}
               </span>
               <span className="little-spark">✧</span>
+              {snoozedUpdate && (
+                <button
+                  className="footer-update-reminder"
+                  aria-label={`Review CriProx ${snoozedUpdate.latestVersion} update`}
+                  title={`CriProx ${snoozedUpdate.latestVersion} is available. Review update.`}
+                  onClick={reviewUpdate}
+                >
+                  <Download size={13} />
+                  {updateState.status === 'ready' ? 'Update ready' : 'Update available'}
+                </button>
+              )}
               <DonationLink />
             </span>
           </div>
@@ -3240,6 +3306,11 @@ export default function App() {
       )}
       {modal === 'settings' && window.criprox?.projects && (
         <SettingsModal
+          initialPage={settingsPage}
+          updateState={updateState}
+          updateAction={(action) => void updateAction(action)}
+          openInstaller={() => void openUpdateInstaller()}
+          installBusy={updateOpening || libraryBusy || !loaded}
           defaults={projectDefaults}
           project={project}
           snapshot={projectLibrary}
