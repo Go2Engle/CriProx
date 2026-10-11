@@ -1,4 +1,5 @@
 const RELEASE_API = 'https://api.github.com/repos/Go2Engle/CriProx/releases/latest';
+const HISTORY_API = 'https://api.github.com/repos/Go2Engle/CriProx/releases?per_page=100';
 
 function parseVersion(value) {
   const match = String(value)
@@ -140,4 +141,39 @@ async function findAvailableRelease(
   };
 }
 
-module.exports = { findAvailableRelease, isNewerVersion, isTrustedReleaseUrl, selectReleaseAssets };
+async function findReleaseHistory(currentVersion, fetchRelease = fetch) {
+  const response = await fetchRelease(HISTORY_API, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': `CriProx/${currentVersion}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error('Could not load release history.');
+  const releases = await response.json();
+  if (!Array.isArray(releases)) throw new Error('Invalid release history.');
+  return releases
+    .filter(
+      (release) =>
+        release &&
+        !release.draft &&
+        !release.prerelease &&
+        parseVersion(release.tag_name)?.prerelease.length === 0 &&
+        isTrustedReleaseUrl(release.html_url),
+    )
+    .map((release) => ({
+      version: release.tag_name.replace(/^v/, ''),
+      name: typeof release.name === 'string' ? release.name : '',
+      body: typeof release.body === 'string' ? release.body.slice(0, 50000) : '',
+      publishedAt: typeof release.published_at === 'string' ? release.published_at : null,
+    }));
+}
+
+module.exports = {
+  findAvailableRelease,
+  findReleaseHistory,
+  isNewerVersion,
+  isTrustedReleaseUrl,
+  selectReleaseAssets,
+};

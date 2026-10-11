@@ -2,6 +2,7 @@ export {};
 
 declare global {
   const __APP_VERSION__: string;
+  const __APP_CHANGELOG__: UpdateState['changelog'];
 
   type ReleaseUpdate = {
     currentVersion: string;
@@ -30,6 +31,14 @@ declare global {
       | 'cancelled'
       | 'error';
     update: ReleaseUpdate | null;
+    changelog: {
+      version: string;
+      publishedAt: string | null;
+      releaseHeading: string;
+      releaseNotesHtml: string;
+      isNew: boolean;
+      isInstalled: boolean;
+    }[];
     lastChecked: string | null;
     transferred: number;
     total: number;

@@ -56,6 +56,11 @@ function createDemoRelease({
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    if (url === 'https://api.github.com/repos/Go2Engle/CriProx/releases?per_page=100') {
+      return new Response(JSON.stringify([release]), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     if (url === base + 'SHA256SUMS.txt') {
       checksumRequests++;
       const mismatch = scenario === 'checksum-failure' && checksumRequests === 1;

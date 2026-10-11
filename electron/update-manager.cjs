@@ -2,8 +2,9 @@ const fs = require('node:fs/promises');
 const { createReadStream } = require('node:fs');
 const crypto = require('node:crypto');
 const path = require('node:path');
-const { findAvailableRelease } = require('./release-check.cjs');
+const { findAvailableRelease, findReleaseHistory } = require('./release-check.cjs');
 const { formatReleaseNotes } = require('./release-notes.cjs');
+const { bundledReleaseHistory, mergeReleaseHistory } = require('./release-history.cjs');
 
 function checksumFor(text, name) {
   const matches = text.split(/\r?\n/).flatMap((line) => {
@@ -35,11 +36,15 @@ function createUpdateManager({
   notify = () => {},
   simulation = null,
 }) {
+  const history = new Map(
+    bundledReleaseHistory(currentVersion).map((release) => [release.version, release]),
+  );
   let state = {
     currentVersion,
     simulation,
     status: 'idle',
     update: null,
+    changelog: mergeReleaseHistory(currentVersion, [...history.values()]),
     lastChecked: null,
     transferred: 0,
     total: 0,
@@ -58,7 +63,11 @@ function createUpdateManager({
     notify(snapshot());
   }
   function snapshot() {
-    return { ...state, update: state.update ? { ...state.update } : null };
+    return {
+      ...state,
+      update: state.update ? { ...state.update } : null,
+      changelog: state.changelog.map((release) => ({ ...release })),
+    };
   }
   async function check(force = false) {
     if (downloadJob || openJob) return snapshot();
@@ -69,7 +78,23 @@ function createUpdateManager({
     publish({ status: 'checking', error: '' });
     checkJob = (async () => {
       try {
-        available = await findAvailableRelease(currentVersion, fetchRelease, platform, arch);
+        const [nextAvailable, releases] = await Promise.all([
+          findAvailableRelease(currentVersion, fetchRelease, platform, arch),
+          // A history failure must not prevent checking or downloading updates.
+          findReleaseHistory(currentVersion, fetchRelease).catch(() => []),
+        ]);
+        available = nextAvailable;
+        const latest = available
+          ? [
+              {
+                version: available.latestVersion,
+                name: available.releaseName,
+                body: available.releaseNotes,
+                publishedAt: available.publishedAt,
+              },
+            ]
+          : [];
+        for (const release of [...releases, ...latest]) history.set(release.version, release);
         checkedAt = Date.now();
         const update = available
           ? {
@@ -93,6 +118,7 @@ function createUpdateManager({
         publish({
           status: keepReady ? 'ready' : available ? 'available' : 'up-to-date',
           update,
+          changelog: mergeReleaseHistory(currentVersion, [...history.values()]),
           lastChecked: new Date(checkedAt).toISOString(),
           transferred: 0,
           total: 0,

@@ -5074,6 +5074,21 @@ html[data-theme='dark'] .print-section.completed .print-section-status {
   font-size: 12px;
   color: var(--text-secondary);
 }
+.update-release-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.update-release-badge.new {
+  background: var(--purple-light);
+  color: var(--purple);
+}
+.update-release-badge.installed {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
 .update-release-body .update-release-heading {
   font-size: 26px;
   font-weight: 720;

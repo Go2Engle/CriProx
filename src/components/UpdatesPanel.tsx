@@ -14,6 +14,7 @@ export const INITIAL_UPDATE_STATE: UpdateState = {
   currentVersion: __APP_VERSION__,
   status: 'idle',
   update: null,
+  changelog: __APP_CHANGELOG__,
   lastChecked: null,
   transferred: 0,
   total: 0,
@@ -34,11 +35,10 @@ export default function UpdatesPanel({
   installDisabled: boolean;
 }) {
   const update = state.update;
-  const [linkError, setLinkError] = useState('');
+  const [linkError, setLinkError] = useState<{ version: string; message: string } | null>(null);
   const [macAction, setMacAction] = useState<'copyMacCommand' | 'openTerminal' | null>(null);
   const [commandCopied, setCommandCopied] = useState(false);
   const [macError, setMacError] = useState('');
-  const published = update?.publishedAt ? new Date(update.publishedAt) : null;
   const downloading = state.status === 'downloading' || state.status === 'verifying';
   const busy = downloading || state.status === 'checking';
   const platform = window.criprox?.platform;
@@ -211,52 +211,71 @@ export default function UpdatesPanel({
               )}
             </section>
           )}
-          <article className="update-changelog" aria-label="What’s new">
-            <div className="update-release-meta">
-              <span className="update-version">{update.latestVersion}</span>
-              {published && Number.isFinite(published.getTime()) && (
-                <time dateTime={update.publishedAt || undefined}>
-                  {published.toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    timeZone: 'UTC',
-                  })}
-                </time>
-              )}
-            </div>
-            <div className="update-release-body">
-              <h4 className="update-release-heading">
-                {update.releaseHeading || `CriProx ${update.latestVersion}`}
-              </h4>
-              <div
-                onClick={(event) => {
-                  const anchor = (event.target as HTMLElement).closest('a');
-                  if (!anchor) return;
-                  event.preventDefault();
-                  setLinkError('');
-                  void window.criprox?.releases
-                    ?.openLink(anchor.href)
-                    .catch(() =>
-                      setLinkError(
-                        'Could not open the release notes link. Try viewing the release on GitHub.',
-                      ),
-                    );
-                }}
-                dangerouslySetInnerHTML={{
-                  __html:
-                    update.releaseNotesHtml || '<p>Release notes are available on GitHub.</p>',
-                }}
-              />
-              {linkError && (
-                <p className="error-box" role="alert">
-                  {linkError}
-                </p>
-              )}
-            </div>
-          </article>
         </>
       )}
+      <section className="update-history" aria-label="Changelog">
+        <h4>Changelog</h4>
+        {state.changelog.length === 0 && (
+          <p className="hint">Release notes are available after checking for updates.</p>
+        )}
+        {state.changelog.map((release) => {
+          const published = release.publishedAt ? new Date(release.publishedAt) : null;
+          return (
+            <article
+              key={release.version}
+              className="update-changelog"
+              aria-label={`CriProx ${release.version}`}
+            >
+              <div className="update-release-meta">
+                <span className="update-version">{release.version}</span>
+                {release.isNew && <span className="update-release-badge new">New</span>}
+                {release.isInstalled && (
+                  <span className="update-release-badge installed">Installed</span>
+                )}
+                {published && Number.isFinite(published.getTime()) && (
+                  <time dateTime={release.publishedAt || undefined}>
+                    {published.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'UTC',
+                    })}
+                  </time>
+                )}
+              </div>
+              <div className="update-release-body">
+                <h4 className="update-release-heading">
+                  {release.releaseHeading || `CriProx ${release.version}`}
+                </h4>
+                <div
+                  onClick={(event) => {
+                    const anchor = (event.target as HTMLElement).closest('a');
+                    if (!anchor) return;
+                    event.preventDefault();
+                    setLinkError(null);
+                    void window.criprox?.releases?.openLink(anchor.href).catch(() =>
+                      setLinkError({
+                        version: release.version,
+                        message:
+                          'Could not open the release notes link. Try viewing the release on GitHub.',
+                      }),
+                    );
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      release.releaseNotesHtml || '<p>Release notes are available on GitHub.</p>',
+                  }}
+                />
+                {linkError?.version === release.version && (
+                  <p className="error-box" role="alert">
+                    {linkError.message}
+                  </p>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </section>
     </div>
   );
 }

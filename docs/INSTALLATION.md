@@ -19,6 +19,13 @@ notice for 24 hours. A small **Update available** button beside the donation but
 bar opens the Updates page while the notice is snoozed. Once the download is verified, it reads
 **Update ready**. The main notice returns after 24 hours; a newer release gets its own notice.
 
+The **Changelog** is always available in **Settings → Updates**, even when you’re up to date
+or offline. Browse releases newest first: **New** marks versions newer than your installed app,
+and **Installed** marks your current version. CriProx includes its release history with the app
+and refreshes it with published stable releases during update checks. Connection failures keep
+the available notes visible. Downloading an update leaves it marked **New** until you install it
+and reopen CriProx.
+
 Downloads show progress and can be cancelled or retried. CriProx checks the downloaded bytes
 against the official release’s `SHA256SUMS.txt` and verifies the file again before opening it.
 A checksum checks file integrity; it does not authenticate the publisher like code signing.

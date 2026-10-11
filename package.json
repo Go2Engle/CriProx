@@ -61,6 +61,7 @@
       "dist/**/*",
       "electron/**/*",
       "package.json",
+      "CHANGELOG.md",
       "LICENSE",
       "NOTICE",
       "THIRD_PARTY_LICENSES.txt",
