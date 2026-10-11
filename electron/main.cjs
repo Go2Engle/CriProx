@@ -17,10 +17,13 @@ const {
   abortProjectSave,
   assertProjectId,
   beginProjectSave,
+  createFolder,
+  deleteFolder,
   deleteProject,
   finishProjectSave,
   importProjects,
-  listProjects,
+  listLibrary,
+  moveProject,
   openProjectManifest,
   readProjectAsset,
   saveProjectAsset,
@@ -80,7 +83,7 @@ async function projectLibrarySnapshot() {
     root,
     isDefault: root === defaultLibraryRoot(),
     canImportDocumentsLibrary,
-    projects: await listProjects(root),
+    ...(await listLibrary(root)),
   };
 }
 
@@ -337,6 +340,36 @@ ipcMain.handle('delete-managed-project', async (_event, projectId) => {
   const root = await getLibraryRoot();
   await deleteProject(root, assertProjectId(projectId), (directory) => shell.trashItem(directory));
   return projectLibrarySnapshot();
+});
+
+ipcMain.handle('create-project-folder', async (_event, request) => {
+  const root = await getLibraryRoot();
+  const folder = await createFolder(root, request?.parent, request?.name);
+  return { folder, snapshot: await projectLibrarySnapshot() };
+});
+
+ipcMain.handle('delete-project-folder', async (_event, folder) => {
+  const root = await getLibraryRoot();
+  if (typeof folder !== 'string') throw new Error('Invalid library folder.');
+  for (const { session } of managedProjectSaves.values()) {
+    if (!session.complete && session.directory === path.join(root, folder))
+      throw new Error('Wait for this project to finish saving before deleting its folder.');
+  }
+  await deleteFolder(root, folder);
+  return projectLibrarySnapshot();
+});
+
+ipcMain.handle('move-managed-project', async (_event, request) => {
+  const root = await getLibraryRoot();
+  for (const { session } of managedProjectSaves.values()) {
+    if (
+      !session.complete &&
+      session.directory === path.join(root, assertProjectId(request?.projectId))
+    )
+      throw new Error('Wait for this project to finish saving before moving it.');
+  }
+  const project = await moveProject(root, request?.projectId, request?.folder);
+  return { project, snapshot: await projectLibrarySnapshot() };
 });
 
 ipcMain.handle('reveal-project-library', async () => {

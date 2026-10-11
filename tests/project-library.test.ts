@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import test from 'node:test';
+import vm from 'node:vm';
 import { DEFAULT_SETTINGS } from '../src/lib/types';
 
 const require = createRequire(import.meta.url);
@@ -12,6 +13,10 @@ const {
   abortProjectSave,
   assertProjectId,
   beginProjectSave,
+  createFolder,
+  deleteFolder,
+  listLibrary,
+  moveProject,
   deleteProject,
   finishProjectSave,
   importProjects,
@@ -24,11 +29,18 @@ const {
   saveProjectAsset,
 } = require('../electron/project-library.cjs') as {
   PROJECT_FILE: string;
+  createFolder: (root: string, parent: string, name: string) => Promise<string>;
+  deleteFolder: (root: string, folder: string) => Promise<void>;
+  listLibrary: (root: string) => Promise<{
+    projects: ProjectSummary[];
+    folders: { id: string; name: string; parent: string; empty: boolean }[];
+  }>;
+  moveProject: (root: string, projectId: string, folder: string) => Promise<ProjectSummary>;
   abortProjectSave: (session: ProjectSaveSession) => Promise<void>;
   assertProjectId: (value: unknown) => string;
   beginProjectSave: (
     root: string,
-    request: { projectId: string | null; name: string },
+    request: { projectId: string | null; name: string; folder?: string },
   ) => Promise<ProjectSaveSession>;
   deleteProject: (
     root: string,
@@ -44,7 +56,7 @@ const {
   readProjectAsset: (root: string, projectId: string, relativePath: string) => Promise<string>;
   saveProject: (
     root: string,
-    request: { projectId: string | null; data: string },
+    request: { projectId: string | null; data: string; folder?: string },
   ) => Promise<ProjectSummary>;
   saveProjectAsset: (session: ProjectSaveSession, dataUrl: string) => Promise<string>;
 };
@@ -85,7 +97,18 @@ test('project folder names and identifiers are portable and path-safe', () => {
   assert.equal(projectDirectoryName('Crème brûlée'), 'creme-brulee');
   assert.equal(projectDirectoryName('...'), 'untitled-project');
   assert.equal(assertProjectId('safe-project-2'), 'safe-project-2');
-  for (const unsafe of ['../escape', '/absolute', 'two words', '', 'UPPER'])
+  for (const unsafe of [
+    '../escape',
+    '/absolute',
+    'two words',
+    '',
+    'UPPER',
+    'a//deck',
+    'a/../deck',
+    'a/./deck',
+    'a\\deck',
+    'a/deck/',
+  ])
     assert.throws(() => assertProjectId(unsafe));
 });
 
@@ -237,4 +260,242 @@ test('project deletion delegates the validated project folder to a recoverable t
 
   assert.equal(deletedDirectory, expectedDirectory);
   assert.deepEqual(await listProjects(root), []);
+});
+
+test('nested library folders save, discover, move, reopen and delete projects with artwork', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-folders-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await createFolder(root, '', 'Commander');
+  const folder = await createFolder(root, 'Commander', 'Budget decks');
+  const saved = await saveProject(root, { projectId: null, folder, data: JSON.stringify(project) });
+  assert.equal(saved.id, 'Commander/Budget decks/my-commander-deck-2026');
+  assert.equal(assertProjectId(saved.id), saved.id);
+  const library = await listLibrary(root);
+  assert.deepEqual(
+    library.folders.map((item) => item.id),
+    ['Commander', 'Commander/Budget decks'],
+  );
+  assert.equal(library.projects[0].id, saved.id);
+  assert.equal(
+    ((await openProject(root, saved.id)) as typeof project).entries[0].card.faces[0].image,
+    tinyPng,
+  );
+  // Existing IDs determine where subsequent saves go, regardless of the browsing folder.
+  await saveProject(root, { projectId: saved.id, folder: '', data: JSON.stringify(project) });
+  const existing = await saveProject(root, { projectId: null, data: JSON.stringify(project) });
+  const moved = await moveProject(root, saved.id, '');
+  assert.equal(moved.id, `${existing.id}-2`);
+  assert.equal(
+    moved.updatedAt,
+    (await listProjects(root)).find((item) => item.id === moved.id)?.updatedAt,
+  );
+  await assert.rejects(openProject(root, saved.id));
+  assert.equal(
+    ((await openProject(root, moved.id)) as typeof project).entries[0].card.faces[0].image,
+    tinyPng,
+  );
+  assert.equal((await listProjects(root)).length, 2);
+  await deleteProject(root, moved.id, async (directory) => fs.rm(directory, { recursive: true }));
+  assert.equal((await listProjects(root)).length, 1);
+});
+
+test('empty library folders can be deleted, one level at a time, while the root is protected', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-empty-folders-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await createFolder(root, '', 'Commander');
+  await createFolder(root, 'Commander', 'Budget decks');
+  assert.deepEqual((await listLibrary(root)).folders, [
+    { id: 'Commander', name: 'Commander', parent: '', empty: false },
+    { id: 'Commander/Budget decks', name: 'Budget decks', parent: 'Commander', empty: true },
+  ]);
+  await assert.rejects(deleteFolder(root, ''), /library itself cannot be deleted/);
+  await assert.rejects(deleteFolder(root, 'Commander'), /Only empty folders/);
+  await deleteFolder(root, 'Commander/Budget decks');
+  assert.equal((await listLibrary(root)).folders[0].empty, true);
+  await deleteFolder(root, 'Commander');
+  assert.deepEqual(await fs.readdir(root), []);
+  assert.deepEqual((await listLibrary(root)).folders, []);
+});
+
+test('folder deletion preserves projects, hidden files and contents added after a refresh', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-folder-contents-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await createFolder(root, '', 'Hidden files');
+  await fs.writeFile(path.join(root, 'Hidden files', '.keep'), 'keep me');
+  await createFolder(root, '', 'Decks');
+  const saved = await saveProject(root, {
+    projectId: null,
+    folder: 'Decks',
+    data: JSON.stringify(project),
+  });
+  await createFolder(root, '', 'Initially empty');
+  const snapshot = await listLibrary(root);
+  assert.equal(snapshot.folders.find((item) => item.id === 'Hidden files')?.empty, false);
+  assert.equal(snapshot.folders.find((item) => item.id === 'Decks')?.empty, false);
+  assert.equal(snapshot.folders.find((item) => item.id === 'Initially empty')?.empty, true);
+  await fs.writeFile(path.join(root, 'Initially empty', 'added.txt'), 'new contents');
+  for (const folder of ['Hidden files', 'Decks', 'Initially empty'])
+    await assert.rejects(deleteFolder(root, folder), /Only empty folders/);
+  await assert.rejects(deleteFolder(root, saved.id), /saved project/);
+  await assert.rejects(deleteFolder(root, `${saved.id}/assets`), /saved project/);
+  for (const folder of ['../outside', '/absolute', '.', 'Decks/../Hidden files'])
+    await assert.rejects(deleteFolder(root, folder));
+  assert.equal(await fs.readFile(path.join(root, 'Hidden files', '.keep'), 'utf8'), 'keep me');
+  assert.equal(
+    await fs.readFile(path.join(root, 'Initially empty', 'added.txt'), 'utf8'),
+    'new contents',
+  );
+  assert.equal(
+    ((await openProject(root, saved.id)) as typeof project).entries[0].card.faces[0].image,
+    tinyPng,
+  );
+});
+
+test('folder validation rejects traversal, project interiors, excessive depth and duplicate names', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-folder-validation-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  for (const name of [
+    '../escape',
+    '/absolute',
+    'a/b',
+    'a\\b',
+    '.',
+    '..',
+    '.hidden',
+    'CON',
+    'nul.txt',
+    'trailing.',
+    ' space',
+    '',
+  ])
+    await assert.rejects(createFolder(root, '', name));
+  await createFolder(root, '', 'Commander');
+  await assert.rejects(createFolder(root, '', 'Commander'), /already exists/);
+  const saved = await saveProject(root, { projectId: null, data: JSON.stringify(project) });
+  await assert.rejects(createFolder(root, saved.id, 'Artwork'), /saved project/);
+  await assert.rejects(moveProject(root, saved.id, `${saved.id}/assets`), /saved project/);
+  await assert.rejects(moveProject(root, saved.id, '../outside'));
+  let parent = '';
+  for (let index = 0; index < 8; index++) parent = await createFolder(root, parent, 'nested');
+  await assert.rejects(createFolder(root, parent, 'too-deep'), /eight levels/);
+  const deep = await saveProject(root, {
+    projectId: null,
+    folder: parent,
+    data: JSON.stringify(project),
+  });
+  assert.equal(
+    (await listProjects(root)).some((item) => item.id === deep.id),
+    true,
+  );
+});
+
+test(
+  'library traversal and nested operations skip symlinked ancestors and damaged projects',
+  { skip: process.platform === 'win32' },
+  async (t) => {
+    const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-folder-links-'));
+    const outside = await fs.mkdtemp(path.join(tmpdir(), 'criprox-outside-library-'));
+    t.after(() =>
+      Promise.all([
+        fs.rm(root, { recursive: true, force: true }),
+        fs.rm(outside, { recursive: true, force: true }),
+      ]),
+    );
+    const saved = await saveProject(outside, { projectId: null, data: JSON.stringify(project) });
+    await fs.symlink(outside, path.join(root, 'linked'));
+    await fs.mkdir(path.join(outside, 'Empty'));
+    await assert.rejects(deleteFolder(root, 'linked'), /unavailable/);
+    await assert.rejects(deleteFolder(root, 'linked/Empty'), /unavailable/);
+    assert.equal((await fs.stat(path.join(outside, 'Empty'))).isDirectory(), true);
+    await assert.rejects(openProject(root, `linked/${saved.id}`), /unavailable/);
+    await assert.rejects(createFolder(root, 'linked', 'escape'), /unavailable/);
+    await assert.rejects(
+      saveProject(root, { projectId: null, folder: 'linked', data: JSON.stringify(project) }),
+      /unavailable/,
+    );
+    await fs.mkdir(path.join(root, 'damaged', 'assets'), { recursive: true });
+    await fs.writeFile(path.join(root, 'damaged', PROJECT_FILE), 'invalid JSON');
+    assert.deepEqual(await listLibrary(root), { projects: [], folders: [] });
+  },
+);
+
+test('legacy import preserves nested folders and empty folders alongside their artwork', async (t) => {
+  const source = await fs.mkdtemp(path.join(tmpdir(), 'criprox-import-source-'));
+  const destination = await fs.mkdtemp(path.join(tmpdir(), 'criprox-import-dest-'));
+  t.after(() =>
+    Promise.all([
+      fs.rm(source, { recursive: true, force: true }),
+      fs.rm(destination, { recursive: true, force: true }),
+    ]),
+  );
+  await createFolder(source, '', 'Commander');
+  await createFolder(source, 'Commander', 'Budget');
+  await createFolder(source, '', 'Empty');
+  await createFolder(destination, '', 'Commander');
+  const saved = await saveProject(source, {
+    projectId: null,
+    folder: 'Commander/Budget',
+    data: JSON.stringify(project),
+  });
+  const imported = await importProjects(source, destination);
+  assert.equal(imported[0].id, saved.id);
+  assert.equal((await listLibrary(destination)).folders.length, 3);
+  assert.equal(
+    ((await openProject(destination, imported[0].id)) as typeof project).entries[0].card.faces[0]
+      .image,
+    tinyPng,
+  );
+  assert.equal((await listProjects(source)).length, 1);
+});
+
+test('Windows project moves preserve artwork and the saved date; failed moves retain the source', async (t) => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'criprox-windows-move-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await createFolder(root, '', 'Destination');
+  const source = await saveProject(root, { projectId: null, data: JSON.stringify(project) });
+  const code = await fs.readFile(
+    new URL('../electron/project-library.cjs', import.meta.url),
+    'utf8',
+  );
+  function windowsLibrary(failMove: boolean) {
+    const module = { exports: {} as { moveProject: typeof moveProject } };
+    vm.runInNewContext(code, {
+      module,
+      Buffer,
+      process: { platform: 'win32' },
+      require: (id: string) => {
+        if (id === 'node:fs/promises' && failMove)
+          return {
+            ...fs,
+            rename: async (_source: string, target: string) => {
+              await fs.mkdir(target);
+              await fs.writeFile(path.join(target, 'another-users-file.txt'), 'keep me');
+              throw new Error('project is in use');
+            },
+          };
+        return require(id);
+      },
+    });
+    return module.exports;
+  }
+  await assert.rejects(
+    windowsLibrary(true).moveProject(root, source.id, 'Destination'),
+    /project is in use/,
+  );
+  assert.equal(
+    await fs.readFile(path.join(root, 'Destination', source.id, 'another-users-file.txt'), 'utf8'),
+    'keep me',
+  );
+  assert.equal(
+    ((await openProject(root, source.id)) as typeof project).entries[0].card.faces[0].image,
+    tinyPng,
+  );
+  const moved = await windowsLibrary(false).moveProject(root, source.id, 'Destination');
+  assert.equal(moved.id, `Destination/${source.id}-2`);
+  assert.equal(moved.updatedAt, source.updatedAt);
+  assert.equal(
+    ((await openProject(root, moved.id)) as typeof project).entries[0].card.faces[0].image,
+    tinyPng,
+  );
+  await assert.rejects(openProject(root, source.id));
 });

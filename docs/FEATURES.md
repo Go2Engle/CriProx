@@ -188,7 +188,31 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
   apply immediately and do not discard an unfinished defaults draft.
 - A desktop project explorer backed by the app's private Application Support directory by default.
 - A one-time macOS importer for projects created in the earlier `Documents/CriProx` library.
-- A configurable projects folder, with one subfolder per saved project.
+- A configurable projects folder, with each saved project and its artwork kept together.
+- Nested library folders (up to eight levels), clickable breadcrumbs, and **Show current** to
+  jump to the open project's folder. Use **New folder** to organize decks by format or collection.
+- Saved decks use a card-stack icon, while library folders use a folder icon so they are easy
+  to distinguish at a glance.
+- Empty folders have a **Delete empty folder** action. Folders containing projects, subfolders,
+  or any files (including hidden files) cannot be deleted from the explorer.
+- While viewing an empty folder, **Delete folder** appears beside **Back to library**. Deleting
+  the folder returns you to its parent, so you can clean up without leaving the empty view first.
+- Search across the entire library by project or folder name, even while browsing a subfolder.
+  **All projects** shows every saved deck; sort by **Recently saved**, **Name A–Z**, or **Most cards**.
+  A single **Clear library search** button clears the filter and keeps focus in the search field.
+- **Move to folder** relocates a saved project and its artwork together. Same-named project folders
+  receive a unique suffix, and moving the open project updates where future saves go.
+- Choose **＋ New folder…** in the destination dropdown to name a folder inside the selected
+  destination, then **Create & move** to organize the project in one step.
+- Drag a saved project onto a folder row or a breadcrumb (including **Library**) to move it.
+  Available destinations highlight while dragging, with a stronger highlight over the drop target.
+  Projects can also be dragged from search results or **All projects**; the **Move to folder**
+  button remains available for keyboard and touch use.
+- Scroll with the wheel while dragging a deck, or hold it near the top or bottom of the list
+  for gentle automatic scrolling. Moving away from the edge, dropping, or pressing Escape stops
+  scrolling; on narrow windows the explorer's content scrolls to reveal more folders.
+- Unsaved projects can be saved into the folder being browsed. Existing projects keep their saved
+  location until moved explicitly.
 - Uploaded artwork materialized in the saved project’s `assets` folder.
 - Project deletion moves the complete project folder to the operating system Trash for recovery.
 - Portable JSON backups that include local artwork and selected remote URLs.
@@ -200,6 +224,12 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
   unavailable or full, previews still load and use the session cache.
 - Export artwork cached for reuse.
 - No account, telemetry service, hosted backend, or cloud project sync.
+
+![Project explorer with distinct card-stack and folder icons, a centered library icon, and empty-folder deletion](assets/criprox-project-explorer.png)
+
+![Empty folder view with Delete folder beside Back to library](assets/criprox-empty-folder.png)
+
+![Focused library search with one clear button and a single outer focus outline](assets/criprox-library-search.png)
 
 ![Settings with editable new-project defaults and one save action](assets/criprox-settings.png)
 

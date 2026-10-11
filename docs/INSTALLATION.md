@@ -150,6 +150,47 @@ Scryfall and MPC Autofill searches require an internet connection, as does the d
 
 CriProx has no user account, hosted project service, or cloud sync. Browser-mode data is stored in the browser profile. Desktop mode keeps the active workspace and default managed-project library in the application's local profile, or uses the folder selected in Settings. On macOS, upgrades from v0.6.0 or earlier can copy the old `Documents/CriProx` library from **Settings → Project library → Import old library**. The old files remain in Documents as a backup. Export a JSON backup before clearing site/application data or switching environments.
 
+## Organize your project library
+
+Open **Projects** to browse your saved decks. Card-stack icons identify saved decks; folder icons
+identify library folders. **New folder** creates a folder inside the location
+shown in the breadcrumbs; open that folder to create subfolders. Folder names can contain spaces,
+but cannot contain slashes or special filename characters. Libraries support up to eight folder
+levels. Click **Library** or any breadcrumb to go back, or **Show current** to find the open deck.
+An empty folder shows **Empty folder** and a trash icon. Click **Delete empty folder** to remove
+it. If you have already opened the empty folder, use **Delete folder** beside **Back to library**
+to delete it and return to its parent. Only completely empty folders can be removed: projects,
+subfolders, and hidden files all prevent deletion. Delete empty subfolders first to make their
+parent folder empty, then refresh after changes made outside CriProx.
+
+Search finds matching project and folder names across the entire library. Use the × in the search
+box to clear the filter and return to the folder you were browsing; focus stays in the search
+field so you can type another query. Turn on **All projects** for a library-wide list, and use
+the sort selector to order decks by recent save, name, or card count.
+
+Use a project's **Move to folder** button to choose its destination, including the library root.
+To create a destination as you go, select its parent in the dropdown, then choose **＋ New folder…**.
+Enter a name in the inline field and press **Create & move**. Changing the selected parent updates
+where the new folder will be created; the small × dismisses the name field. If moving fails after
+the folder is created, it stays selected so you can retry with **Move project**.
+
+You can also drag the project row by its grip or name onto a folder in the list. Drop onto a
+breadcrumb to move it to a parent folder, or onto **Library** to move it back to the root.
+Valid destinations highlight while you drag; releasing over the stronger highlight completes
+the move. If the destination is offscreen, use the scroll wheel while holding the deck, or hold
+it near the list's top or bottom edge to scroll slowly. Scrolling stops when you move away from
+the edge. Press Escape to cancel the drag without moving the project.
+Dragging works in search results and **All projects** too. To move to a folder that
+isn't visible, use **Move to folder** and select it from the list. That button also works with
+a keyboard or touch input. Dropping into the project's current folder leaves it where it is.
+The project's saved artwork moves with it, and an open deck's next save uses the new location.
+If another project already has the same folder name, CriProx adds a suffix instead of overwriting it.
+**Save new project here** places an unsaved deck in the folder you are browsing. Saving a deck
+that is already in the library keeps its existing location; use **Move to folder** to change it.
+These are ordinary folders on your device, accessible through **Open in Finder / File Explorer**.
+After making changes outside CriProx, use **Refresh projects**. Project deletion still moves the
+individual project and its artwork to Trash.
+
 ## Configure your defaults
 
 Open **Settings → New project defaults** to edit the starting setup for future decks. The Sheet,

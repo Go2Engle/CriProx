@@ -1546,11 +1546,19 @@ html[data-theme='dark'] .app-shell .guide-choice button.selected {
   display: flex;
   flex-direction: column;
 }
+.projects-modal > .modal-heading,
+.projects-modal > .modal-footer {
+  flex-shrink: 0;
+}
 .projects-content {
   padding: 22px 26px 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+.projects-content > * {
+  flex-shrink: 0;
 }
 .library-location {
   display: flex;
@@ -1581,7 +1589,7 @@ html[data-theme='dark'] .app-shell .guide-choice button.selected {
   white-space: nowrap;
 }
 .library-location strong,
-.library-location span {
+.library-location > div > span {
   display: block;
 }
 .library-location strong {
@@ -1737,6 +1745,302 @@ html[data-theme='dark'] .app-shell .guide-choice button.selected {
 }
 .empty-project-browser span {
   font-size: 9px;
+}
+.empty-project-browser-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Library navigation shares the existing project rows and theme colors. */
+.explorer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.explorer-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 190px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--purple);
+  background: var(--surface);
+}
+.explorer-search input {
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  width: 100%;
+  padding: 10px 0;
+}
+.explorer-search input:focus {
+  outline: none;
+}
+.explorer-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+.explorer-search:focus-within {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+.explorer-toolbar > select {
+  width: auto;
+  max-width: 160px;
+  font-size: 10px;
+}
+.explorer-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  font-size: 11px;
+}
+.explorer-breadcrumbs > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.explorer-breadcrumbs button {
+  background: transparent;
+  border: 0;
+  color: var(--purple);
+  padding: 4px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.explorer-breadcrumbs button[aria-current='page'] {
+  font-weight: 650;
+  color: inherit;
+}
+.explorer-inline-form {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--purple-light);
+  border-radius: 8px;
+}
+.explorer-inline-form label {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.explorer-inline-form > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.explorer-inline-form input,
+.explorer-inline-form select {
+  flex: 1;
+  min-width: 150px;
+  width: auto;
+}
+.explorer-inline-form input {
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--control-border);
+  border-radius: 7px;
+  background: var(--surface-raised);
+  font-size: 11px;
+}
+.explorer-inline-form .compact {
+  white-space: nowrap;
+}
+.explorer-move {
+  margin-top: 4px;
+}
+.explorer-move > .explorer-new-destination {
+  display: block;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.explorer-new-destination > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.explorer-new-destination > div > svg {
+  flex-shrink: 0;
+  color: var(--purple);
+}
+.explorer-new-destination input {
+  min-width: 0;
+}
+.explorer-error {
+  margin-top: 10px;
+  color: #b44b61;
+  font-size: 11px;
+}
+.projects-section-heading > .explorer-heading-actions {
+  align-items: center;
+  gap: 12px;
+}
+.explorer-all {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.explorer-all input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--purple);
+}
+.explorer-heading-actions .text-button {
+  font-size: 10px;
+}
+.explorer-folder {
+  width: 100%;
+  text-align: left;
+  color: inherit;
+}
+.explorer-folder-row {
+  position: relative;
+}
+.explorer-folder-row:has(.explorer-folder-delete) .explorer-folder {
+  padding-right: 48px;
+}
+.explorer-folder-delete {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.explorer-folder:not(:disabled):hover {
+  border-color: var(--purple);
+  background: var(--purple-light);
+}
+.explorer-drag-hint {
+  margin: 7px 4px 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-browser-item[draggable='true'] {
+  cursor: grab;
+  user-select: none;
+}
+.explorer-folder {
+  user-select: none;
+}
+.explorer-drag-handle {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.explorer-dragging {
+  opacity: 0.5;
+}
+.projects-content.project-drag-active,
+.projects-content.project-drag-active :is(button, .project-browser-item) {
+  cursor: grabbing;
+}
+.explorer-drag-preview {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 9px 12px;
+  border: 1px solid var(--purple);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--purple);
+  box-shadow: 0 4px 16px #0002;
+  pointer-events: none;
+  font-size: 11px;
+}
+.explorer-drag-preview span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.explorer-folder.explorer-drop-ready {
+  border-color: var(--purple);
+  border-style: dashed;
+}
+.explorer-breadcrumbs button.explorer-drop-ready {
+  outline: 1px dashed var(--purple);
+  outline-offset: -1px;
+  border-radius: 5px;
+}
+.explorer-folder.explorer-drop-over,
+.explorer-breadcrumbs button.explorer-drop-over {
+  outline: 2px solid var(--purple);
+  outline-offset: -2px;
+  background: var(--purple-light);
+  color: var(--purple);
+}
+html[data-theme='dark'] .app-shell .explorer-folder.explorer-drop-ready {
+  border-color: var(--purple);
+}
+html[data-theme='dark'] .app-shell .explorer-folder.explorer-drop-over {
+  background: var(--purple-light);
+  color: var(--purple);
+}
+.explorer-project-location.text-button {
+  font-size: 9px;
+  margin-top: 5px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+@media (max-width: 600px) {
+  .projects-content {
+    padding: 16px 14px 0;
+  }
+  .projects-content .library-location {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .projects-content .library-location-open {
+    grid-column: 1 / -1;
+  }
+  .projects-content .project-browser {
+    max-height: none;
+    overflow: visible;
+  }
+  .explorer-toolbar .explorer-search {
+    flex-basis: 100%;
+  }
+  .projects-section-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .explorer-heading-actions {
+    flex-wrap: wrap;
+  }
+  .explorer-breadcrumbs {
+    max-height: 90px;
+    overflow: auto;
+  }
+  .projects-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .projects-footer > div {
+    flex-wrap: wrap;
+  }
 }
 .projects-footer > div {
   display: flex;

@@ -16,8 +16,8 @@ contextBridge.exposeInMainWorld(
       list: () => ipcRenderer.invoke('list-projects'),
       chooseDirectory: () => ipcRenderer.invoke('choose-projects-directory'),
       importDocuments: () => ipcRenderer.invoke('import-documents-projects'),
-      beginSave: (projectId, name) =>
-        ipcRenderer.invoke('begin-managed-project-save', { projectId, name }),
+      beginSave: (projectId, name, folder) =>
+        ipcRenderer.invoke('begin-managed-project-save', { projectId, name, folder }),
       writeAsset: (saveId, dataUrl) =>
         ipcRenderer.invoke('write-managed-project-asset', { saveId, dataUrl }),
       finishSave: (saveId, data) =>
@@ -27,6 +27,10 @@ contextBridge.exposeInMainWorld(
       readAsset: (projectId, relativePath) =>
         ipcRenderer.invoke('read-managed-project-asset', { projectId, relativePath }),
       delete: (projectId) => ipcRenderer.invoke('delete-managed-project', projectId),
+      createFolder: (parent, name) => ipcRenderer.invoke('create-project-folder', { parent, name }),
+      deleteFolder: (folder) => ipcRenderer.invoke('delete-project-folder', folder),
+      move: (projectId, folder) =>
+        ipcRenderer.invoke('move-managed-project', { projectId, folder }),
       reveal: () => ipcRenderer.invoke('reveal-project-library'),
     }),
     registrationTemplates: Object.freeze({

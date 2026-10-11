@@ -49,6 +49,7 @@ declare global {
     isDefault: boolean;
     canImportDocumentsLibrary: boolean;
     projects: ProjectSummary[];
+    folders?: { id: string; name: string; parent: string; empty?: boolean }[];
   };
 
   interface Window {
@@ -72,6 +73,7 @@ declare global {
         beginSave: (
           projectId: string | null,
           name: string,
+          folder?: string,
         ) => Promise<{ saveId: string; projectId: string }>;
         writeAsset: (saveId: string, dataUrl: string) => Promise<string>;
         finishSave: (
@@ -82,6 +84,15 @@ declare global {
         open: (projectId: string) => Promise<string>;
         readAsset: (projectId: string, relativePath: string) => Promise<string>;
         delete: (projectId: string) => Promise<ProjectLibrarySnapshot>;
+        createFolder: (
+          parent: string,
+          name: string,
+        ) => Promise<{ folder: string; snapshot: ProjectLibrarySnapshot }>;
+        deleteFolder: (folder: string) => Promise<ProjectLibrarySnapshot>;
+        move: (
+          projectId: string,
+          folder: string,
+        ) => Promise<{ project: ProjectSummary; snapshot: ProjectLibrarySnapshot }>;
         reveal: () => Promise<void>;
       };
       registrationTemplates?: {

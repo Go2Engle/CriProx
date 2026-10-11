@@ -44,9 +44,89 @@ function projectDirectoryName(name) {
 }
 
 function assertProjectId(projectId) {
-  if (typeof projectId !== 'string' || !projectIdPattern.test(projectId))
-    throw new Error('Invalid project identifier.');
+  if (typeof projectId !== 'string') throw new Error('Invalid project identifier.');
+  const parts = projectId.split('/');
+  if (parts.some((part) => !part)) throw new Error('Invalid project identifier.');
+  if (!projectIdPattern.test(parts.pop())) throw new Error('Invalid project identifier.');
+  assertFolderPath(parts.join('/'));
   return projectId;
+}
+
+function assertFolderName(name) {
+  if (
+    typeof name !== 'string' ||
+    !name ||
+    name.length > 80 ||
+    name.trim() !== name ||
+    name.startsWith('.') ||
+    /[<>:"/\\|?*\x00-\x1f]/.test(name) ||
+    name.endsWith('.') ||
+    /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)
+  )
+    throw new Error(
+      'Use a folder name of 1–80 characters without slashes or special filename characters.',
+    );
+  return name;
+}
+
+function assertFolderPath(folder) {
+  if (typeof folder !== 'string') throw new Error('Invalid library folder.');
+  if (folder === '') return folder;
+  const parts = folder.split('/');
+  if (parts.length > 8) throw new Error('Library folders can be nested up to eight levels.');
+  parts.forEach(assertFolderName);
+  return folder;
+}
+
+// Validate every ancestor: an otherwise valid path must never follow a symlink
+// or descend into a project's private artwork directory.
+async function assertLibraryFolder(root, folder) {
+  assertFolderPath(folder);
+  let directory = root;
+  for (const part of folder ? folder.split('/') : []) {
+    directory = path.join(directory, part);
+    const stat = await fs.lstat(directory);
+    if (!stat.isDirectory() || stat.isSymbolicLink())
+      throw new Error('Library folder is unavailable.');
+    try {
+      await fs.lstat(path.join(directory, PROJECT_FILE));
+    } catch (error) {
+      if (error?.code === 'ENOENT') continue;
+      throw error;
+    }
+    throw new Error('A saved project cannot be used as a library folder.');
+  }
+  return directory;
+}
+
+async function createFolder(root, parent, name) {
+  await fs.mkdir(root, { recursive: true });
+  const folder = [assertFolderPath(parent), assertFolderName(name)].filter(Boolean).join('/');
+  assertFolderPath(folder);
+  const directory = await assertLibraryFolder(root, parent);
+  try {
+    await fs.mkdir(path.join(directory, name));
+  } catch (error) {
+    if (error?.code === 'EEXIST')
+      throw new Error('A folder or project with that name already exists.');
+    throw error;
+  }
+  return folder;
+}
+
+async function deleteFolder(root, folder) {
+  assertFolderPath(folder);
+  if (!folder) throw new Error('The project library itself cannot be deleted.');
+  const directory = await assertLibraryFolder(root, folder);
+  try {
+    // rmdir checks emptiness at removal time, including hidden and unlisted files.
+    // Never recursively remove library folders or their contents.
+    await fs.rmdir(directory);
+  } catch (error) {
+    if (error?.code === 'ENOTEMPTY' || error?.code === 'EEXIST')
+      throw new Error('Only empty folders can be deleted. Refresh projects to see its contents.');
+    throw error;
+  }
 }
 
 function parseProjectData(data) {
@@ -148,18 +228,23 @@ async function hydrateProjectAssets(project, projectDirectory) {
 }
 
 async function assertManagedProjectDirectory(root, projectId) {
-  const directory = path.join(root, assertProjectId(projectId));
+  const parts = assertProjectId(projectId).split('/');
+  const name = parts.pop();
+  const parent = await assertLibraryFolder(root, parts.join('/'));
+  const directory = path.join(parent, name);
   const stat = await fs.lstat(directory);
   if (!stat.isDirectory() || stat.isSymbolicLink())
     throw new Error('Project folder is unavailable.');
   return directory;
 }
 
-async function allocateProjectDirectory(root, name) {
+async function allocateProjectDirectory(root, name, folder = '') {
+  const parent = await assertLibraryFolder(root, folder);
   const base = projectDirectoryName(name);
   for (let suffix = 1; suffix <= 999; suffix += 1) {
-    const projectId = suffix === 1 ? base : `${base.slice(0, 75)}-${suffix}`;
-    const directory = path.join(root, projectId);
+    const leaf = suffix === 1 ? base : `${base.slice(0, 75)}-${suffix}`;
+    const projectId = [folder, leaf].filter(Boolean).join('/');
+    const directory = path.join(parent, leaf);
     try {
       await fs.mkdir(directory);
       return { projectId, directory };
@@ -193,7 +278,7 @@ async function beginProjectSave(root, request) {
         projectId: assertProjectId(existingId),
         directory: await assertManagedProjectDirectory(root, existingId),
       }
-    : await allocateProjectDirectory(root, name);
+    : await allocateProjectDirectory(root, name, request?.folder ?? '');
   return {
     ...allocated,
     isNew: !existingId,
@@ -310,20 +395,82 @@ async function readProjectFile(projectDirectory) {
   return { project: parseProjectData(contents), stat };
 }
 
-async function listProjects(root) {
+async function listLibrary(root) {
   await fs.mkdir(root, { recursive: true });
-  const entries = await fs.readdir(root, { withFileTypes: true });
   const projects = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory() || !projectIdPattern.test(entry.name)) continue;
-    try {
-      const { project, stat } = await readProjectFile(path.join(root, entry.name));
-      projects.push(projectSummary(entry.name, project, stat));
-    } catch {
-      // Ignore incomplete or unrelated directories in the selected library.
+  const folders = [];
+  async function visit(folder) {
+    const directory = await assertLibraryFolder(root, folder);
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      try {
+        assertFolderName(entry.name);
+      } catch {
+        continue;
+      }
+      const id = [folder, entry.name].filter(Boolean).join('/');
+      const child = path.join(directory, entry.name);
+      try {
+        const { project, stat } = await readProjectFile(child);
+        assertProjectId(id);
+        projects.push(projectSummary(id, project, stat));
+        continue;
+      } catch {
+        // Never browse assets inside incomplete or damaged project folders.
+        try {
+          await fs.lstat(path.join(child, PROJECT_FILE));
+          continue;
+        } catch (error) {
+          if (error?.code !== 'ENOENT') continue;
+        }
+      }
+      try {
+        assertFolderPath(id);
+        await assertLibraryFolder(root, id);
+        const empty = await visit(id);
+        folders.push({ id, name: entry.name, parent: folder, empty });
+      } catch {
+        // Ignore inaccessible folders and links in a user-selected library.
+      }
     }
+    return entries.length === 0;
   }
-  return projects.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  await visit('');
+  return {
+    projects: projects.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    folders: folders.sort((a, b) => a.id.localeCompare(b.id)),
+  };
+}
+
+async function listProjects(root) {
+  return (await listLibrary(root)).projects;
+}
+
+async function moveProject(root, projectId, folder) {
+  const source = await assertManagedProjectDirectory(root, projectId);
+  const { project, stat } = await readProjectFile(source);
+  await assertLibraryFolder(root, folder);
+  if (projectId.split('/').slice(0, -1).join('/') === folder)
+    return projectSummary(projectId, project, stat);
+  // Reserve the destination without overwriting a same-named project.
+  const target = await allocateProjectDirectory(root, path.basename(projectId), folder);
+  let reserved = true;
+  try {
+    if (process.platform === 'win32') {
+      // Windows refuses to replace even an empty directory. Release our empty
+      // reservation first; its rename also refuses any directory created in the
+      // meantime, so a collision leaves the original project intact.
+      await fs.rmdir(target.directory);
+      reserved = false;
+    }
+    await fs.rename(source, target.directory);
+  } catch (error) {
+    // Only remove our empty reservation, never another folder's contents.
+    if (reserved) await fs.rmdir(target.directory).catch(() => {});
+    throw error;
+  }
+  return projectSummary(target.projectId, project, stat);
 }
 
 async function saveProject(root, request) {
@@ -332,6 +479,7 @@ async function saveProject(root, request) {
   const session = await beginProjectSave(root, {
     projectId: request?.projectId,
     name: project.name,
+    folder: request?.folder,
   });
   try {
     for (const [relativePath, bytes] of assets)
@@ -376,11 +524,22 @@ async function openProject(root, projectId) {
 
 async function importProjects(sourceRoot, destinationRoot) {
   const imported = [];
-  for (const source of await listProjects(sourceRoot)) {
+  const library = await listLibrary(sourceRoot);
+  for (const folder of library.folders.sort(
+    (a, b) => a.id.split('/').length - b.id.split('/').length,
+  )) {
+    try {
+      await createFolder(destinationRoot, folder.parent, folder.name);
+    } catch (error) {
+      await assertLibraryFolder(destinationRoot, folder.id);
+    }
+  }
+  for (const source of library.projects) {
     const project = await openProject(sourceRoot, source.id);
     imported.push(
       await saveProject(destinationRoot, {
         projectId: null,
+        folder: source.id.split('/').slice(0, -1).join('/'),
         data: JSON.stringify(project),
       }),
     );
@@ -400,12 +559,16 @@ module.exports = {
   abortProjectSave,
   assertProjectId,
   beginProjectSave,
+  createFolder,
+  deleteFolder,
   deleteProject,
   externalizeProject,
   finishProjectSave,
   hydrateProjectAssets,
   importProjects,
   listProjects,
+  listLibrary,
+  moveProject,
   openProject,
   openProjectManifest,
   projectDirectoryName,
