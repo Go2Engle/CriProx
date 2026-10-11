@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.15.0](https://github.com/Go2Engle/CriProx/compare/v0.14.0...v0.15.0) (2026-10-11)
+
+
+### Features
+
+* **preview:** move around the sheet with mouse dragging ([#104](https://github.com/Go2Engle/CriProx/issues/104)) ([d94da36](https://github.com/Go2Engle/CriProx/commit/d94da3648f589478fae2c87ec3f3b335b7132fc7))
+* **projects:** organize decks with folders and library search ([#107](https://github.com/Go2Engle/CriProx/issues/107)) ([cbcfec9](https://github.com/Go2Engle/CriProx/commit/cbcfec993e33d12fc8eca553795bec80b9881850))
+
+
+### Bug Fixes
+
+* **artboard:** prevent accidental duplicates when dragging placed cards ([#105](https://github.com/Go2Engle/CriProx/issues/105)) ([3d0924b](https://github.com/Go2Engle/CriProx/commit/3d0924b5804b4954cf7677aa05a53cc8771973c2))
+* **dialogs:** keep pop-ups open when dragging outside ([#102](https://github.com/Go2Engle/CriProx/issues/102)) ([bf5a018](https://github.com/Go2Engle/CriProx/commit/bf5a0188695a3de7b9c6ca6898d1416b9d0d34e6))
+* **ui:** give dialogs more vertical room on larger screens ([#108](https://github.com/Go2Engle/CriProx/issues/108)) ([c2e078b](https://github.com/Go2Engle/CriProx/commit/c2e078bb42c8fe156963c195078fac80aaac23a6))
+
 ## [0.14.0](https://github.com/Go2Engle/CriProx/compare/v0.13.0...v0.14.0) (2026-10-10)
 
 
