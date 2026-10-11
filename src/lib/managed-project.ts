@@ -9,6 +9,7 @@ export type ManagedProjectBridge = {
   beginSave: (
     projectId: string | null,
     name: string,
+    folder?: string,
   ) => Promise<{ saveId: string; projectId: string }>;
   writeAsset: (saveId: string, dataUrl: string) => Promise<string>;
   finishSave: (saveId: string, data: string) => Promise<ManagedProjectSaveResult>;
@@ -36,8 +37,9 @@ export async function saveManagedProject(
   bridge: ManagedProjectBridge,
   projectId: string | null,
   project: Project,
+  folder = '',
 ): Promise<ManagedProjectSaveResult> {
-  const { saveId } = await bridge.beginSave(projectId, project.name);
+  const { saveId } = await bridge.beginSave(projectId, project.name, folder);
   try {
     const stored = cloneForManagedSave(project);
     const assets = new Map<string, Promise<string>>();

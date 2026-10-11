@@ -1,5 +1,13 @@
+import {
+  canMoveProjectToFolder,
+  explorerProjects,
+  PROJECT_DRAG_TYPE,
+  projectFolder,
+  type ProjectSort,
+} from './lib/project-explorer';
 import { templateFilenameStem } from './lib/filenames';
 import { enableArtboardPanning } from './lib/artboard-pan';
+import { enableProjectDragging, type ProjectDragCallbacks } from './lib/project-drag';
 import RegisteredPrint from './components/RegisteredPrint';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
@@ -40,7 +48,11 @@ import {
   ExternalLink,
   FilePlus2,
   FolderOpen,
+  FolderPlus,
+  FolderInput,
+  GalleryHorizontalEnd,
   Grid2X2,
+  GripVertical,
   ImagePlus,
   Layers3,
   Link2,
@@ -306,6 +318,9 @@ function ProjectsModal({
   importBackup,
   exportBackup,
   newProject,
+  createFolder,
+  deleteFolder,
+  move,
 }: {
   snapshot: ProjectLibrarySnapshot | null;
   activeProjectId: string | null;
@@ -315,12 +330,160 @@ function ProjectsModal({
   reveal: () => void;
   open: (projectId: string) => void;
   remove: (project: ProjectSummary) => void;
-  saveCurrent: () => void;
+  saveCurrent: (folder: string) => void;
   importBackup: () => void;
   exportBackup: () => void;
   newProject: () => void;
+  createFolder: (parent: string, name: string) => Promise<string>;
+  deleteFolder: (folder: string) => Promise<void>;
+  move: (projectId: string, folder: string) => Promise<void>;
 }) {
   const [deleteCandidate, setDeleteCandidate] = useState<ProjectSummary | null>(null);
+  const [folder, setFolder] = useState('');
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<ProjectSort>('updated');
+  const [allProjects, setAllProjects] = useState(false);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [folderName, setFolderName] = useState('');
+  const [moveCandidate, setMoveCandidate] = useState<ProjectSummary | null>(null);
+  const [destination, setDestination] = useState('');
+  const [creatingMoveFolder, setCreatingMoveFolder] = useState(false);
+  const [moveFolderName, setMoveFolderName] = useState('');
+  const [error, setError] = useState('');
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
+  const [dropFolder, setDropFolder] = useState<string | null>(null);
+  const dragProjectId = useRef<string | null>(null);
+  const dropPending = useRef(false);
+  const moveDestination = useRef<HTMLSelectElement | null>(null);
+  const librarySearch = useRef<HTMLInputElement | null>(null);
+  const projectContent = useRef<HTMLDivElement | null>(null);
+  const projectBrowser = useRef<HTMLDivElement | null>(null);
+  const pointerDragCallbacks = useRef<ProjectDragCallbacks | null>(null);
+  const folders = useMemo(() => snapshot?.folders ?? [], [snapshot]);
+  const currentFolder = folders.find((item) => item.id === folder);
+  const folderProjectCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of snapshot?.projects ?? []) {
+      const parts = projectFolder(item.id).split('/').filter(Boolean);
+      for (let depth = 1; depth <= parts.length; depth++) {
+        const path = parts.slice(0, depth).join('/');
+        counts.set(path, (counts.get(path) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [snapshot]);
+  const searching = Boolean(query.trim());
+  const visibleProjects = useMemo(
+    () => explorerProjects(snapshot?.projects ?? [], folder, query, allProjects, sort),
+    [snapshot, folder, query, allProjects, sort],
+  );
+  const visibleFolders = folders.filter((item) =>
+    searching
+      ? query
+          .trim()
+          .toLocaleLowerCase()
+          .split(/\s+/)
+          .every((word) => item.id.toLocaleLowerCase().includes(word))
+      : item.parent === folder,
+  );
+  const clearDrag = () => {
+    dragProjectId.current = null;
+    setDraggedProjectId(null);
+    setDropFolder(null);
+  };
+  const canDrop = (target: string) =>
+    !busy &&
+    !dropPending.current &&
+    canMoveProjectToFolder(snapshot, dragProjectId.current, target);
+  const dropClass = (target: string) =>
+    draggedProjectId && canDrop(target)
+      ? ` explorer-drop-ready${dropFolder === target ? ' explorer-drop-over' : ''}`
+      : '';
+  const moveDroppedProject = async (projectId: string, target: string) => {
+    if (busy || dropPending.current || !canMoveProjectToFolder(snapshot, projectId, target)) return;
+    dropPending.current = true;
+    setError('');
+    setMoveCandidate(null);
+    setDeleteCandidate(null);
+    try {
+      await move(projectId, target);
+    } catch (failure) {
+      setError(errorText(failure));
+    } finally {
+      dropPending.current = false;
+    }
+  };
+  const dropHandlers = (target: string) => ({
+    'data-project-folder': target,
+    onDragOver: (event: DragEvent<HTMLElement>) => {
+      if (!dragProjectId.current || !event.dataTransfer.types.includes(PROJECT_DRAG_TYPE)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const allowed = canDrop(target);
+      event.dataTransfer.dropEffect = allowed ? 'move' : 'none';
+      setDropFolder(allowed ? target : null);
+    },
+    onDragLeave: (event: DragEvent<HTMLElement>) => {
+      if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))
+        return;
+      setDropFolder((current) => (current === target ? null : current));
+    },
+    onDrop: async (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const projectId = dragProjectId.current;
+      const allowed =
+        canDrop(target) && event.dataTransfer.getData(PROJECT_DRAG_TYPE) === projectId;
+      clearDrag();
+      if (!allowed || !projectId) return;
+      await moveDroppedProject(projectId, target);
+    },
+  });
+  pointerDragCallbacks.current = {
+    canDrag: (id) =>
+      !busy && !dropPending.current && Boolean(snapshot?.projects.some((item) => item.id === id)),
+    canDrop: (id, target) =>
+      !busy && !dropPending.current && canMoveProjectToFolder(snapshot, id, target),
+    start: (id) => {
+      dragProjectId.current = id;
+      setDraggedProjectId(id);
+      setDropFolder(null);
+      setError('');
+    },
+    hover: setDropFolder,
+    finish: clearDrag,
+    drop: (id, target) => void moveDroppedProject(id, target),
+  };
+  useEffect(() => {
+    if (!projectContent.current || !projectBrowser.current) return;
+    return enableProjectDragging(projectContent.current, projectBrowser.current, {
+      canDrag: (id) => pointerDragCallbacks.current!.canDrag(id),
+      canDrop: (id, target) => pointerDragCallbacks.current!.canDrop(id, target),
+      start: (id) => pointerDragCallbacks.current!.start(id),
+      hover: (target) => pointerDragCallbacks.current!.hover(target),
+      finish: () => pointerDragCallbacks.current!.finish(),
+      drop: (id, target) => pointerDragCallbacks.current!.drop(id, target),
+    });
+  }, []);
+  const draggedProject = snapshot?.projects.find((item) => item.id === draggedProjectId);
+  const navigate = (next: string) => {
+    setFolder(next);
+    setQuery('');
+    setAllProjects(false);
+    setDeleteCandidate(null);
+    setMoveCandidate(null);
+    setCreatingFolder(false);
+    setError('');
+  };
+  useEffect(() => {
+    if (!snapshot) return;
+    setFolder((current) => {
+      let next = current;
+      while (next && !snapshot.folders?.some((item) => item.id === next))
+        next = projectFolder(next);
+      return next;
+    });
+  }, [snapshot]);
   const fileExplorerName =
     window.criprox?.platform === 'darwin'
       ? 'Finder'
@@ -334,12 +497,12 @@ function ProjectsModal({
   return (
     <Modal
       title="Projects"
-      subtitle="Save, browse, and reopen projects from your local CriProx library."
+      subtitle="Organize your decks into folders and find any saved project."
       close={close}
       wide
       className="projects-modal"
     >
-      <div className="projects-content">
+      <div className="projects-content" ref={projectContent}>
         <div className="library-location">
           <span className="library-location-icon">
             <FolderOpen size={18} />
@@ -356,36 +519,279 @@ function ProjectsModal({
             <ExternalLink size={14} /> Open in {fileExplorerName}
           </button>
         </div>
+        <div className="explorer-toolbar">
+          <div className="explorer-search">
+            <Search size={15} aria-hidden="true" />
+            <input
+              type="search"
+              ref={librarySearch}
+              aria-label="Search projects and folders"
+              placeholder="Search the entire library…"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            {query && (
+              <button
+                className="icon-button"
+                aria-label="Clear library search"
+                onClick={() => {
+                  setQuery('');
+                  librarySearch.current?.focus();
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <select
+            aria-label="Sort projects"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as ProjectSort)}
+          >
+            <option value="updated">Recently saved</option>
+            <option value="name">Name A–Z</option>
+            <option value="cards">Most cards</option>
+          </select>
+          <button
+            className="secondary compact"
+            disabled={busy || !snapshot || folder.split('/').filter(Boolean).length >= 8}
+            onClick={() => {
+              setCreatingFolder(!creatingFolder);
+              setFolderName('');
+              setError('');
+            }}
+          >
+            <FolderPlus size={14} /> New folder
+          </button>
+        </div>
+        <nav className="explorer-breadcrumbs" aria-label="Library folders">
+          <button
+            className={dropClass('')}
+            {...dropHandlers('')}
+            aria-current={folder === '' ? 'page' : undefined}
+            onClick={() => navigate('')}
+            disabled={busy}
+          >
+            Library
+          </button>
+          {folder
+            .split('/')
+            .filter(Boolean)
+            .map((part, index, parts) => (
+              <span key={index}>
+                <ChevronRight size={12} />
+                <button
+                  className={dropClass(parts.slice(0, index + 1).join('/'))}
+                  {...dropHandlers(parts.slice(0, index + 1).join('/'))}
+                  disabled={busy}
+                  aria-current={index === parts.length - 1 ? 'page' : undefined}
+                  onClick={() => navigate(parts.slice(0, index + 1).join('/'))}
+                >
+                  {part}
+                </button>
+              </span>
+            ))}
+        </nav>
+        <p className="explorer-drag-hint" role="status">
+          {draggedProject
+            ? dropFolder !== null
+              ? `Move “${draggedProject.name}” to ${dropFolder || 'Library'}`
+              : `Drop “${draggedProject.name}” onto a highlighted folder, or hold near the list’s edges to scroll.`
+            : 'Drag projects onto a folder or breadcrumb to move them. Hold near the list’s edges to scroll.'}
+        </p>
+        {creatingFolder && (
+          <form
+            className="explorer-inline-form"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setError('');
+              try {
+                const next = await createFolder(folder, folderName.trim());
+                navigate(next);
+              } catch (failure) {
+                setError(errorText(failure));
+              }
+            }}
+          >
+            <label htmlFor="library-folder-name">New folder in {folder || 'Library'}</label>
+            <div>
+              <input
+                id="library-folder-name"
+                autoFocus
+                maxLength={80}
+                required
+                value={folderName}
+                placeholder="e.g. Commander decks"
+                disabled={busy}
+                onChange={(event) => setFolderName(event.target.value)}
+              />
+              <button className="primary compact" disabled={busy || !folderName.trim()}>
+                Create folder
+              </button>
+              <button
+                type="button"
+                className="secondary compact"
+                disabled={busy}
+                onClick={() => {
+                  setCreatingFolder(false);
+                  setError('');
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+        {error && (
+          <p className="explorer-error" role="alert">
+            {error}
+          </p>
+        )}
         <div className="projects-section-heading">
           <div>
-            <h3>Saved projects</h3>
-            <span>
+            <h3>
+              {searching ? 'Search results' : allProjects ? 'All projects' : 'Saved projects'}
+            </h3>
+            <span role="status">
               {snapshot
-                ? `${snapshot.projects.length} project${snapshot.projects.length === 1 ? '' : 's'}`
+                ? `${visibleProjects.length} of ${snapshot.projects.length} projects`
                 : 'Loading…'}
             </span>
           </div>
-          <button
-            className="icon-button"
-            aria-label="Refresh projects"
-            title="Refresh projects"
-            disabled={busy}
-            onClick={refresh}
-          >
-            <RotateCcw className={busy ? 'spin' : ''} size={15} />
-          </button>
+          <div className="explorer-heading-actions">
+            {!searching && (
+              <label className="explorer-all">
+                <input
+                  type="checkbox"
+                  checked={allProjects}
+                  onChange={(event) => setAllProjects(event.target.checked)}
+                />{' '}
+                All projects
+              </label>
+            )}
+            {activeProjectId && (
+              <button
+                className="text-button"
+                disabled={busy}
+                onClick={() => navigate(projectFolder(activeProjectId))}
+              >
+                Show current
+              </button>
+            )}
+            <button
+              className="icon-button"
+              aria-label="Refresh projects"
+              title="Refresh projects"
+              disabled={busy}
+              onClick={refresh}
+            >
+              <RotateCcw className={busy ? 'spin' : ''} size={15} />
+            </button>
+          </div>
         </div>
-        <div className="project-browser" aria-busy={busy}>
-          {snapshot?.projects.map((item) => {
+        <div className="project-browser" aria-busy={busy} ref={projectBrowser}>
+          {visibleFolders.map((item) => {
+            const count = folderProjectCounts.get(item.id) ?? 0;
+            return (
+              <div className="project-browser-entry" key={`folder-${item.id}`}>
+                <div className="explorer-folder-row">
+                  <button
+                    className={`project-browser-item explorer-folder${dropClass(item.id)}`}
+                    {...dropHandlers(item.id)}
+                    disabled={busy}
+                    onClick={() => navigate(item.id)}
+                  >
+                    <span className="project-browser-icon">
+                      <FolderOpen size={20} />
+                    </span>
+                    <span className="project-browser-copy">
+                      <strong>{item.name}</strong>
+                      <span>
+                        {searching ? `${item.parent || 'Library'} · ` : ''}
+                        {count
+                          ? `${count} project${count === 1 ? '' : 's'}`
+                          : item.empty
+                            ? 'Empty folder'
+                            : 'Contains items'}
+                      </span>
+                    </span>
+                    <ChevronRight size={16} />
+                  </button>
+                  {item.empty === true && (
+                    <button
+                      className="icon-button project-delete-button explorer-folder-delete"
+                      aria-label={`Delete empty folder ${item.name}`}
+                      title="Delete empty folder"
+                      disabled={busy}
+                      onClick={async () => {
+                        setError('');
+                        try {
+                          await deleteFolder(item.id);
+                          if (destination === item.id) {
+                            setDestination(item.parent);
+                            setCreatingMoveFolder(false);
+                          }
+                        } catch (failure) {
+                          setError(errorText(failure));
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {visibleProjects.map((item) => {
             const current = item.id === activeProjectId;
             return (
               <div className="project-browser-entry" key={item.id}>
-                <article className={`project-browser-item ${current ? 'current' : ''}`}>
+                <article
+                  className={`project-browser-item ${current ? 'current' : ''}${draggedProjectId === item.id ? ' explorer-dragging' : ''}`}
+                  aria-label={item.name}
+                  data-project-id={item.id}
+                  draggable={!busy && !dropPending.current}
+                  onDragStart={(event) => {
+                    if (
+                      busy ||
+                      dropPending.current ||
+                      (event.target instanceof Element &&
+                        event.target.closest('button, input, select, a'))
+                    ) {
+                      event.preventDefault();
+                      return;
+                    }
+                    event.dataTransfer.setData(PROJECT_DRAG_TYPE, item.id);
+                    event.dataTransfer.effectAllowed = 'move';
+                    dragProjectId.current = item.id;
+                    setDraggedProjectId(item.id);
+                    setDropFolder(null);
+                    setError('');
+                  }}
+                  onDragEnd={clearDrag}
+                >
+                  <span
+                    className="explorer-drag-handle"
+                    aria-hidden="true"
+                    title="Drag to move this project"
+                  >
+                    <GripVertical size={14} />
+                  </span>
                   <span className="project-browser-icon">
-                    <FolderOpen size={20} />
+                    <GalleryHorizontalEnd size={20} aria-hidden="true" />
                   </span>
                   <div className="project-browser-copy">
-                    <strong>{item.name}</strong>
+                    <strong title={item.name}>{item.name}</strong>
+                    {(searching || allProjects) && (
+                      <button
+                        className="text-button explorer-project-location"
+                        disabled={busy}
+                        onClick={() => navigate(projectFolder(item.id))}
+                      >
+                        {projectFolder(item.id) || 'Library'}
+                      </button>
+                    )}
                     <span>
                       {item.cardCount} card{item.cardCount === 1 ? '' : 's'}
                       <i />
@@ -402,16 +808,152 @@ function ProjectsModal({
                       {current ? 'Open' : 'Open project'}
                     </button>
                     <button
+                      className="icon-button"
+                      aria-label={`Move ${item.name} to folder`}
+                      title="Move to folder"
+                      disabled={busy}
+                      onClick={() => {
+                        setMoveCandidate(item);
+                        setDestination(projectFolder(item.id));
+                        setCreatingMoveFolder(false);
+                        setMoveFolderName('');
+                        setDeleteCandidate(null);
+                        setError('');
+                      }}
+                    >
+                      <FolderInput size={15} />
+                    </button>
+                    <button
                       className="icon-button project-delete-button"
                       aria-label={`Delete ${item.name}`}
                       title="Move project to Trash"
                       disabled={busy}
-                      onClick={() => setDeleteCandidate(item)}
+                      onClick={() => {
+                        setDeleteCandidate(item);
+                        setMoveCandidate(null);
+                        setError('');
+                      }}
                     >
                       <Trash2 size={15} />
                     </button>
                   </div>
                 </article>
+                {moveCandidate?.id === item.id && (
+                  <form
+                    className="explorer-inline-form explorer-move"
+                    onSubmit={async (event) => {
+                      event.preventDefault();
+                      setError('');
+                      try {
+                        let target = destination;
+                        if (creatingMoveFolder) {
+                          target = await createFolder(destination, moveFolderName.trim());
+                          // Keep the created folder selected if moving fails, so retrying
+                          // never attempts to create the same folder again.
+                          setDestination(target);
+                          setCreatingMoveFolder(false);
+                          setMoveFolderName('');
+                        }
+                        await move(item.id, target);
+                        setMoveCandidate(null);
+                      } catch (failure) {
+                        setError(errorText(failure));
+                      }
+                    }}
+                  >
+                    <label htmlFor="project-move-destination">Move “{item.name}” to</label>
+                    <div>
+                      <select
+                        id="project-move-destination"
+                        ref={moveDestination}
+                        autoFocus
+                        value={destination}
+                        disabled={busy}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          setError('');
+                          if (next === '/new-folder/') {
+                            setCreatingMoveFolder(true);
+                            setMoveFolderName('');
+                          } else {
+                            setDestination(next);
+                            if (next.split('/').filter(Boolean).length >= 8)
+                              setCreatingMoveFolder(false);
+                          }
+                        }}
+                      >
+                        <option value="">Library</option>
+                        {folders.map((target) => (
+                          <option key={target.id} value={target.id}>
+                            {target.id}
+                          </option>
+                        ))}
+                        <option
+                          value="/new-folder/"
+                          disabled={destination.split('/').filter(Boolean).length >= 8}
+                        >
+                          ＋ New folder…
+                        </option>
+                      </select>
+                      <button
+                        className="primary compact"
+                        disabled={
+                          busy ||
+                          (creatingMoveFolder
+                            ? !moveFolderName.trim()
+                            : destination === projectFolder(item.id))
+                        }
+                      >
+                        {creatingMoveFolder ? 'Create & move' : 'Move project'}
+                      </button>
+                      <button
+                        className="secondary compact"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setMoveCandidate(null);
+                          setError('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {creatingMoveFolder && (
+                      <div className="explorer-new-destination">
+                        <label htmlFor="project-move-folder-name">
+                          New folder in {destination || 'Library'}
+                        </label>
+                        <div>
+                          <FolderPlus size={16} aria-hidden="true" />
+                          <input
+                            id="project-move-folder-name"
+                            autoFocus
+                            required
+                            maxLength={80}
+                            placeholder="Folder name"
+                            value={moveFolderName}
+                            disabled={busy}
+                            onChange={(event) => setMoveFolderName(event.target.value)}
+                          />
+                          <button
+                            className="icon-button"
+                            type="button"
+                            aria-label="Cancel new folder"
+                            title="Cancel new folder"
+                            disabled={busy}
+                            onClick={() => {
+                              setCreatingMoveFolder(false);
+                              setError('');
+                              moveDestination.current?.focus();
+                            }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                )}
                 {deleteCandidate?.id === item.id && (
                   <div className="project-delete-confirm" role="alert">
                     <span>
@@ -441,11 +983,45 @@ function ProjectsModal({
               </div>
             );
           })}
-          {snapshot && !snapshot.projects.length && (
+          {snapshot && !visibleProjects.length && !visibleFolders.length && (
             <div className="empty-project-browser">
               <FolderOpen size={30} strokeWidth={1.3} />
-              <strong>No saved projects yet</strong>
-              <span>Save the current project to create its folder and add it here.</span>
+              <strong>
+                {searching ? 'No matching projects or folders' : 'No saved projects here yet'}
+              </strong>
+              <span>
+                {searching
+                  ? 'Try another project name or folder name.'
+                  : 'Save a new project here, create a subfolder, or move a project from the library.'}
+              </span>
+              {(searching || folder || allProjects) && (
+                <div className="empty-project-browser-actions">
+                  <button
+                    className="secondary compact"
+                    disabled={busy}
+                    onClick={() => navigate('')}
+                  >
+                    Back to library
+                  </button>
+                  {!searching && !allProjects && currentFolder?.empty === true && (
+                    <button
+                      className="secondary compact project-delete-button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setError('');
+                        try {
+                          await deleteFolder(currentFolder.id);
+                          navigate(currentFolder.parent);
+                        } catch (failure) {
+                          setError(errorText(failure));
+                        }
+                      }}
+                    >
+                      <Trash2 size={14} /> Delete folder
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {!snapshot && (
@@ -468,9 +1044,13 @@ function ProjectsModal({
             <FilePlus2 size={14} /> New project
           </button>
         </div>
-        <button className="primary compact" disabled={busy} onClick={saveCurrent}>
+        <button className="primary compact" disabled={busy} onClick={() => saveCurrent(folder)}>
           {busy ? <LoaderCircle className="spin" size={14} /> : <Save size={14} />}
-          Save current project
+          {activeProjectId
+            ? 'Save current project'
+            : folder
+              ? 'Save new project here'
+              : 'Save current project'}
         </button>
       </div>
     </Modal>
@@ -2332,7 +2912,7 @@ export default function App() {
       setToast(errorText(error));
     }
   }
-  async function saveCurrentProject() {
+  async function saveCurrentProject(folder = '') {
     const projects = window.criprox?.projects;
     if (!projects) {
       await exportProjectBackup();
@@ -2340,7 +2920,7 @@ export default function App() {
     }
     setLibraryBusy(true);
     try {
-      const result = await saveManagedProject(projects, activeProjectId, project);
+      const result = await saveManagedProject(projects, activeProjectId, project, folder);
       rememberActiveProject(result.project.id);
       setProjectLibrary(result.snapshot);
       setToast('Project saved to your CriProx projects folder.');
@@ -2385,6 +2965,42 @@ export default function App() {
       );
     } catch (error) {
       setToast(errorText(error));
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function createProjectFolder(parent: string, name: string) {
+    const projects = window.criprox?.projects;
+    if (!projects) throw new Error('Project folders are unavailable.');
+    setLibraryBusy(true);
+    try {
+      const result = await projects.createFolder(parent, name);
+      setProjectLibrary(result.snapshot);
+      return result.folder;
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function deleteProjectFolder(folder: string) {
+    const projects = window.criprox?.projects;
+    if (!projects) throw new Error('Project folders are unavailable.');
+    setLibraryBusy(true);
+    try {
+      setProjectLibrary(await projects.deleteFolder(folder));
+      setToast(`Empty folder “${folder.split('/').pop()}” deleted.`);
+    } finally {
+      setLibraryBusy(false);
+    }
+  }
+  async function moveManagedProject(projectId: string, folder: string) {
+    const projects = window.criprox?.projects;
+    if (!projects) throw new Error('Project folders are unavailable.');
+    setLibraryBusy(true);
+    try {
+      const result = await projects.move(projectId, folder);
+      setProjectLibrary(result.snapshot);
+      if (projectId === activeProjectId) rememberActiveProject(result.project.id);
+      setToast(`“${result.project.name}” moved to ${folder || 'Library'}.`);
     } finally {
       setLibraryBusy(false);
     }
@@ -3307,7 +3923,10 @@ export default function App() {
           reveal={() => void revealProjectsDirectory()}
           open={(projectId) => void openManagedProject(projectId)}
           remove={(item) => void deleteManagedProject(item)}
-          saveCurrent={() => void saveCurrentProject()}
+          saveCurrent={(folder) => void saveCurrentProject(folder)}
+          createFolder={createProjectFolder}
+          deleteFolder={deleteProjectFolder}
+          move={moveManagedProject}
           importBackup={() => {
             setModal(null);
             projectInput.current?.click();
