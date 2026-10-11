@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+const { bundledReleaseHistory, mergeReleaseHistory } = createRequire(import.meta.url)(
+  './electron/release-history.cjs',
+);
 
 const packageVersion = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
@@ -11,6 +16,9 @@ export default defineConfig({
   base: './',
   define: {
     __APP_VERSION__: JSON.stringify(packageVersion),
+    __APP_CHANGELOG__: JSON.stringify(
+      mergeReleaseHistory(packageVersion, bundledReleaseHistory(packageVersion)),
+    ),
   },
   server: {
     proxy: {

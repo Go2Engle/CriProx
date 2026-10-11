@@ -249,6 +249,11 @@ Remote URLs in a project backup are references, not embedded copies of the remot
   emphasis, inline code, and working issue and guide links. Commit hashes and duplicate entries
   are removed. Markdown is sanitized before display; remote images and executable content are
   excluded. A GitHub link opens the full release.
+- **Changelog** stays visible in **Settings → Updates**, including when you’re up to date.
+  Releases appear newest first; versions newer than your app are labeled **New**, and your
+  current version is labeled **Installed**. The release history shipped with CriProx is readable
+  offline, and update checks refresh it with published stable releases. A failed check keeps
+  the available notes visible.
 - Downloads the published package for the running platform and architecture, with progress,
   cancellation, retries, and SHA-256 verification using the release’s checksum file. Failed or
   incomplete downloads are removed; the file is verified again before opening it.

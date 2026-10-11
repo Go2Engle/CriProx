@@ -50,6 +50,7 @@ async function fixture(
     checksum?: string;
     data?: Buffer;
     request?: typeof fetch;
+    history?: unknown[];
     openInstaller?: (file: string) => Promise<string | null>;
   } = {},
 ) {
@@ -66,19 +67,23 @@ async function fixture(
     arch: 'x64',
     directory,
     notify: (state) => states.push(state),
-    fetchRelease:
-      options.request ||
-      ((async (input) => {
-        const url = String(input);
-        if (url.includes('/releases/latest')) {
-          checks++;
-          return new Response(JSON.stringify(release));
-        }
-        if (url.endsWith('SHA256SUMS.txt'))
-          return new Response(`${options.checksum || hash}  ${name}\n`);
-        if (url === base + name) return new Response(new Uint8Array(options.data || bytes));
-        throw new Error('Unexpected URL');
-      }) as typeof fetch),
+    fetchRelease: (async (input, init) => {
+      if (String(input).includes('/releases?')) {
+        return options.history
+          ? new Response(JSON.stringify(options.history))
+          : new Response('', { status: 503 });
+      }
+      if (options.request) return options.request(input, init);
+      const url = String(input);
+      if (url.includes('/releases/latest')) {
+        checks++;
+        return new Response(JSON.stringify(release));
+      }
+      if (url.endsWith('SHA256SUMS.txt'))
+        return new Response(`${options.checksum || hash}  ${name}\n`);
+      if (url === base + name) return new Response(new Uint8Array(options.data || bytes));
+      throw new Error('Unexpected URL');
+    }) as typeof fetch,
     onInstallerOpened: () => handoffs++,
     openInstaller:
       options.openInstaller ||
@@ -237,6 +242,8 @@ test('failed checks report errors and can be retried', async (t) => {
   });
   assert.equal((await f.manager.check()).status, 'error');
   assert.equal(f.manager.snapshot().lastChecked, null);
+  assert.equal(f.manager.snapshot().changelog[0].version, '0.13.0');
+  assert.equal(f.manager.snapshot().changelog[0].isInstalled, true);
   fail = false;
   assert.equal((await f.manager.check()).status, 'available');
 });
@@ -280,11 +287,54 @@ test('up-to-date and incomplete releases keep the correct check result', async (
       new Response(JSON.stringify({ ...release, tag_name: 'v0.13.0' }))) as typeof fetch,
   });
   assert.equal((await current.manager.check()).status, 'up-to-date');
+  assert.equal(current.manager.snapshot().update, null);
+  assert.ok(current.manager.snapshot().changelog.some((release) => release.isInstalled));
   const incomplete = await fixture(t, {
     request: (async () => new Response(JSON.stringify({ ...release, assets: [] }))) as typeof fetch,
   });
   assert.equal((await incomplete.manager.check()).update?.canDownload, false);
   await assert.rejects(incomplete.manager.download());
+});
+
+test('changelog remains available before checks and after download and connection failures', async (t) => {
+  let offline = false;
+  const f = await fixture(t, {
+    history: [
+      { ...release, tag_name: 'v0.13.0', body: '* Installed notes' },
+      { ...release, tag_name: 'v0.13.1', body: '* Intermediate notes' },
+    ],
+    request: (async (input) => {
+      if (offline) throw new Error('Offline');
+      if (String(input).includes('/releases/latest')) return new Response(JSON.stringify(release));
+      return new Response(String(input).endsWith('SHA256SUMS.txt') ? `${hash}  ${name}` : bytes);
+    }) as typeof fetch,
+  });
+  assert.equal(f.manager.snapshot().changelog[0].isInstalled, true);
+  const state = await f.manager.check();
+  assert.deepEqual(
+    state.changelog
+      .slice(0, 3)
+      .map((release) => [release.version, release.isNew, release.isInstalled]),
+    [
+      ['0.14.0', true, false],
+      ['0.13.1', true, false],
+      ['0.13.0', false, true],
+    ],
+  );
+  assert.match(state.changelog[2].releaseNotesHtml, /Installed notes/);
+  const ready = await f.manager.download();
+  assert.deepEqual(ready.changelog, state.changelog);
+  assert.equal(ready.changelog[0].isNew, true);
+  offline = true;
+  const failed = await f.manager.check(true);
+  assert.equal(failed.status, 'error');
+  assert.deepEqual(failed.changelog, state.changelog);
+  const snapshot = f.manager.snapshot();
+  snapshot.changelog[0].releaseHeading = 'Changed outside the manager';
+  assert.notEqual(
+    f.manager.snapshot().changelog[0].releaseHeading,
+    snapshot.changelog[0].releaseHeading,
+  );
 });
 
 test('streamed chunks produce the complete installer', async (t) => {

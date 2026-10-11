@@ -38,7 +38,7 @@ CriProx brings the fiddly parts of a playtest-card workflow into one focused des
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
 | 🃏 **Flexible artwork**      | Search cards, browse sets, commander precons, or tokens, choose Scryfall printings or MPC Autofill community art, or use local images. |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
-| ⬇️ **Guided updates**       | Review release notes, download the right desktop package in CriProx, and verify it before guided installation.                     |
+| ⬇️ **Guided updates**       | Browse the changelog anytime with new releases clearly marked, then download and verify the right desktop package for guided installation. |
 | ✂️ **Reusable cuts**         | Capture a Design Space template once, print CriProx PDFs from a PDF application, and cut with the same saved project.             |
 | ✅ **Compact print workflow** | Completed setup and settings collapse into summaries with green checks. Reopen any section whenever you need it.                 |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |

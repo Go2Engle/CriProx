@@ -42,9 +42,12 @@ for (const scenario of ['success', 'checksum-failure', 'network-failure', 'up-to
     if (scenario === 'up-to-date') {
       assert.equal(checked.status, 'up-to-date');
       assert.equal(checked.update, null);
+      assert.equal(checked.changelog[0].isInstalled, true);
+      assert.equal(checked.changelog[0].isNew, false);
       return;
     }
     assert.equal(checked.status, 'available');
+    assert.equal(checked.changelog[0].isNew, true);
     assert.match(checked.update.releaseNotesHtml, /<ul>/);
     let downloaded = await manager.download();
     if (scenario === 'checksum-failure') {
