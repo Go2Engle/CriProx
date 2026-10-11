@@ -267,7 +267,7 @@ Remote URLs in a project backup are references, not embedded copies of the remot
   macOS still requires dragging the app into Applications, and Windows setup remains interactive.
   Unsigned-app warnings may still apply.
 
-![Website-style release notes in the local update simulation](assets/criprox-updates.png)
+![Changelog visible while CriProx is up to date, with the current version labeled Installed](assets/criprox-updates.png)
 
 ![Small update reminder beside the donation button after snoozing](assets/criprox-update-reminder.png)
 
