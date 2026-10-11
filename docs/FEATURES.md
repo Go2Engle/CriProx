@@ -167,6 +167,10 @@ Back pages contain artwork only. Alignment controls can compensate for a consist
 
 ## Local projects and caching
 
+- Dialogs use the available window height on larger displays. Projects shows more saved projects
+  before scrolling, Settings has more room for defaults and release notes, and artwork choices
+  can grow taller. Dialogs stay within the window, with Projects and Settings controls kept visible
+  while their content scrolls; shorter dialogs stay compact.
 - One autosaved workspace stored in IndexedDB.
 - Settings opens directly to **New project defaults**, with editable **Sheet**, **Print**,
   **Card backs**, **Cut guides**, and **Alignment** groups. Configure paper, machine, layout,
