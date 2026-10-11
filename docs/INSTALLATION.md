@@ -193,6 +193,10 @@ individual project and its artwork to Trash.
 
 ## Configure your defaults
 
+Maximize CriProx or use full screen on a larger display to give Projects, Settings, and other
+dialogs more vertical room. Longer lists and pages show more content before scrolling; close
+and save controls in Projects and Settings remain visible. Short dialogs keep their compact size.
+
 Open **Settings → New project defaults** to edit the starting setup for future decks. The Sheet,
 Print, Card backs, Cut guides, and Alignment groups share one draft and one **Save defaults**
 button. Select **Also apply to current project** if the open deck should use those choices too.
