@@ -6,9 +6,42 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Match the Node.js version used by CI and installer builds.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+    groups:
+      app-dependencies:
+        dependency-type: production
+        patterns: ['*']
+        update-types: [minor, patch]
+      development-tools:
+        dependency-type: development
+        patterns: ['*']
+        exclude-patterns: [electron]
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(site)'
+    groups:
+      website-dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      codeql:
+        patterns: ['github/codeql-action*']
+      workflow-actions:
+        patterns: ['*']
+        exclude-patterns: ['github/codeql-action*', 'actions/deploy-pages']
+        update-types: [minor, patch]
