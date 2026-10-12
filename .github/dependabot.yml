@@ -10,6 +10,9 @@ updates:
     ignore:
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # ESRGAN thick 1.0.0 requires ~4.11.0; upgrade the model and engine together.
+      - dependency-name: '@tensorflow/tfjs'
+        versions: ['>=4.12.0']
     groups:
       app-dependencies:
         dependency-type: production
