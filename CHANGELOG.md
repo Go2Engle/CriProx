@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.0](https://github.com/Go2Engle/CriProx/compare/v0.15.0...v0.16.0) (2026-10-15)
+
+
+### Features
+
+* **artwork:** show alternate artwork with highest DPI first ([#126](https://github.com/Go2Engle/CriProx/issues/126)) ([cfd9b8b](https://github.com/Go2Engle/CriProx/commit/cfd9b8b94821038fff14eec5b2222aabf7960546))
+* **updates:** browse the changelog anytime and mark new releases ([#109](https://github.com/Go2Engle/CriProx/issues/109)) ([bf8aad2](https://github.com/Go2Engle/CriProx/commit/bf8aad2831ceb8a25852f27ea1c955905f9b4659))
+
 ## [0.15.0](https://github.com/Go2Engle/CriProx/compare/v0.14.0...v0.15.0) (2026-10-11)
 
 
