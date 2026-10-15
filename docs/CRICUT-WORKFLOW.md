@@ -74,6 +74,19 @@ day, and previews use the same image cache as card and set searches.
 
 ![Find a card showing the Tokens category, name and set filters, and token artwork](assets/criprox-token-browser.png)
 
+## Choose alternate artwork
+
+1. Click a card on the sheet and choose **MPC Autofill** in its artwork picker.
+2. **Sort artwork**, to the right of the search box, starts with **DPI: highest first**.
+   Choose lowest DPI, name A–Z or Z–A, or **Recently updated** to change the order.
+   The same options appear when browsing token
+   artwork or MPC Autofill card backs.
+3. DPI sorting compares the results loaded so far. Choose **Load more** to add more choices;
+   the combined list is sorted again. Name and update sorting cover the full search.
+4. Select an image to apply it to the current copy, then review the sheet before printing.
+
+Source DPI describes available image detail; the output DPI in Sheet setup controls export density.
+
 ## Understand the integration boundary
 
 CriProx does **not** generate or reproduce Cricut registration marks, create native Design Space project files, or control the machine. Design Space creates the sensor marks and owns the actual Print Then Cut job. CriProx's registered-print workflow preserves marks from a PDF that Design Space produced for the exact saved job.

@@ -31,6 +31,10 @@
 - Search loaded cards and filter printings by set and collector number.
 - Select either face of a double-faced card from the inspector.
 - Search MPC Autofill community artwork and browse its dedicated card-back collection.
+- **Sort artwork**, beside the MPC Autofill search box, defaults to **DPI: highest first**, with
+  options for lowest DPI, name A–Z or Z–A, and recently updated artwork. DPI sorting covers loaded results;
+  **Load more** adds results and reorders the combined list. Name and update sorting apply to the
+  full search. The same controls are available for card fronts, tokens, and shared card backs.
 - Trim MPC Autofill's native print bleed from fronts and card backs so the finished-card area fills
   the 63 × 88 mm cut; when output bleed is enabled, reuse the source artwork outside that trim.
 - Import local PNG, JPEG, or WebP artwork up to 20 MB per file.

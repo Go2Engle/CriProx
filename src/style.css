@@ -2910,16 +2910,18 @@ html[data-theme='dark'] .app-shell .explorer-folder.explorer-drop-over {
   font-size: 9px;
   text-decoration: none;
 }
+.mpc-search-controls {
+  margin-top: 12px;
+}
 .mpc-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 35px;
+  height: 40px;
   padding: 0 5px 0 9px;
   border: 1px solid #ececf1;
   border-radius: 6px;
   background: #fafbfc;
-  margin-top: 12px;
 }
 .mpc-search > svg {
   color: #9a88ab;
@@ -2945,6 +2947,11 @@ html[data-theme='dark'] .app-shell .explorer-folder.explorer-drop-over {
   min-height: 26px;
   padding: 6px 10px;
   font-size: 9px;
+}
+.mpc-sort-help {
+  margin: 6px 0 0;
+  font-size: 10px;
+  opacity: 0.75;
 }
 .mpc-results {
   display: grid;
@@ -3719,9 +3726,6 @@ html[data-theme='dark'] .app-shell .explorer-folder.explorer-drop-over {
   .mpc-results,
   .art-inspector .mpc-results {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .mpc-search {
-    height: 35px;
   }
   .mpc-search button {
     width: auto;
