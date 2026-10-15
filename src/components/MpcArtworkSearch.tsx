@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, LoaderCircle, Search } from 'lucide-react';
-import { searchMpcArtwork, type MpcArtwork, type MpcArtworkType } from '../lib/mpc';
+import {
+  MPC_ARTWORK_SORT_OPTIONS,
+  searchMpcArtwork,
+  sortMpcArtwork,
+  type MpcArtwork,
+  type MpcArtworkSort,
+  type MpcArtworkType,
+} from '../lib/mpc';
 
 export default function MpcArtworkSearch({
   type,
@@ -17,38 +24,56 @@ export default function MpcArtworkSearch({
 }) {
   const [open, setOpen] = useState(openByDefault),
     [query, setQuery] = useState(initialQuery),
+    [sort, setSort] = useState<MpcArtworkSort>('dpiDescending'),
+    [search, setSearch] = useState<{ query: string; sort: MpcArtworkSort; page: number } | null>(
+      openByDefault ? { query: initialQuery, sort: 'dpiDescending', page: 0 } : null,
+    ),
     [items, setItems] = useState<MpcArtwork[]>([]),
     [page, setPage] = useState(0),
     [more, setMore] = useState(false),
     [total, setTotal] = useState(0),
-    [busy, setBusy] = useState(false),
+    [busy, setBusy] = useState(openByDefault),
     [error, setError] = useState('');
 
-  async function search(nextPage = 0) {
+  useEffect(() => {
+    if (!search) return;
+    let active = true;
+    searchMpcArtwork(search.query, type, search.page, search.sort)
+      .then((result) => {
+        if (!active) return;
+        setItems((current) => (search.page ? [...current, ...result.artwork] : result.artwork));
+        setPage(search.page);
+        setMore(result.more);
+        setTotal(result.total);
+      })
+      .catch((reason) => {
+        if (active)
+          setError(reason instanceof Error ? reason.message : 'MPC Autofill search failed.');
+      })
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [search, type]);
+
+  const sortedItems = useMemo(() => sortMpcArtwork(items, sort), [items, sort]);
+
+  function startSearch(nextSort = sort, nextPage = 0, nextQuery = query) {
     setBusy(true);
     setError('');
-    try {
-      const result = await searchMpcArtwork(query, type, nextPage);
-      setItems((current) => (nextPage ? [...current, ...result.artwork] : result.artwork));
-      setPage(nextPage);
-      setMore(result.more);
-      setTotal(result.total);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'MPC Autofill search failed.');
-    } finally {
-      setBusy(false);
+    if (!nextPage) {
+      setItems([]);
+      setMore(false);
+      setTotal(0);
     }
+    setSearch({ query: nextQuery, sort: nextSort, page: nextPage });
   }
-
-  useEffect(() => {
-    if (openByDefault) void search();
-    // The initial query is intentionally searched once when this source tab opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function reveal() {
     setOpen(true);
-    if (!items.length) void search();
+    if (!items.length) startSearch();
   }
 
   if (!open && hideTrigger) return null;
@@ -73,32 +98,58 @@ export default function MpcArtworkSearch({
         </a>
       </div>
       <form
-        className="search-field mpc-search"
+        className="set-browser-controls mpc-search-controls"
         onSubmit={(event) => {
           event.preventDefault();
-          void search();
+          startSearch();
         }}
       >
-        <Search size={16} />
-        <input
-          aria-label={`Search MPC Autofill ${type === 'CARDBACK' ? 'card backs' : type === 'TOKEN' ? 'token art' : 'card art'}`}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={
-            type === 'CARDBACK'
-              ? 'Search card backs, or leave blank…'
-              : type === 'TOKEN'
-                ? 'Token name…'
-                : 'Card name…'
-          }
-        />
-        <button className="secondary" disabled={busy || (type !== 'CARDBACK' && !query.trim())}>
-          Search
-        </button>
+        <div className="search-field mpc-search">
+          <Search size={16} />
+          <input
+            aria-label={`Search MPC Autofill ${type === 'CARDBACK' ? 'card backs' : type === 'TOKEN' ? 'token art' : 'card art'}`}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={
+              type === 'CARDBACK'
+                ? 'Search card backs, or leave blank…'
+                : type === 'TOKEN'
+                  ? 'Token name…'
+                  : 'Card name…'
+            }
+          />
+          <button className="secondary" disabled={busy || (type !== 'CARDBACK' && !query.trim())}>
+            Search
+          </button>
+        </div>
+        <label>
+          Sort artwork
+          <select
+            value={sort}
+            disabled={busy}
+            onChange={(event) => {
+              const nextSort = event.target.value as MpcArtworkSort;
+              setSort(nextSort);
+              if (sort.startsWith('dpi') && nextSort.startsWith('dpi')) return;
+              startSearch(nextSort, 0, search?.query ?? query);
+            }}
+          >
+            {MPC_ARTWORK_SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </form>
+      {(sort === 'dpiDescending' || sort === 'dpiAscending') && (
+        <p className="mpc-sort-help">
+          DPI sorting applies to loaded results. Load more to compare more artwork.
+        </p>
+      )}
       {error && <div className="error-box">{error}</div>}
       <div className="mpc-results">
-        {items.map((artwork) => (
+        {sortedItems.map((artwork) => (
           <button
             key={artwork.id}
             className="mpc-result"
@@ -115,7 +166,10 @@ export default function MpcArtworkSearch({
             </span>
             <strong>{artwork.name}</strong>
             <span>
-              {artwork.source} · {artwork.dpi} DPI
+              {artwork.source} ·{' '}
+              {Number.isFinite(artwork.dpi) && artwork.dpi > 0
+                ? `${artwork.dpi} DPI`
+                : 'DPI unknown'}
             </span>
           </button>
         ))}
@@ -133,7 +187,11 @@ export default function MpcArtworkSearch({
           {total ? `${items.length} of ${total} results` : 'Images served by MPC Autofill'}
         </span>
         {more && (
-          <button className="text-button" disabled={busy} onClick={() => void search(page + 1)}>
+          <button
+            className="text-button"
+            disabled={busy}
+            onClick={() => startSearch(sort, page + 1, search?.query)}
+          >
             Load more
           </button>
         )}

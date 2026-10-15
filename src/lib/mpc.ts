@@ -8,6 +8,29 @@ export type MpcArtwork = {
   face: CardFace;
 };
 export type MpcArtworkType = 'CARD' | 'TOKEN' | 'CARDBACK';
+export const MPC_ARTWORK_SORT_OPTIONS = [
+  { value: 'dpiDescending', label: 'DPI: highest first' },
+  { value: 'dpiAscending', label: 'DPI: lowest first' },
+  { value: 'nameAscending', label: 'Name: A–Z' },
+  { value: 'nameDescending', label: 'Name: Z–A' },
+  { value: 'dateModifiedDescending', label: 'Recently updated' },
+] as const;
+export type MpcArtworkSort = (typeof MPC_ARTWORK_SORT_OPTIONS)[number]['value'];
+
+export function sortMpcArtwork(items: MpcArtwork[], sort: MpcArtworkSort): MpcArtwork[] {
+  if (sort !== 'dpiDescending' && sort !== 'dpiAscending') return items;
+  const dpi = (artwork: MpcArtwork) =>
+    Number.isFinite(artwork.dpi) && artwork.dpi > 0 ? artwork.dpi : undefined;
+  return [...items].sort((a, b) => {
+    const left = dpi(a),
+      right = dpi(b);
+    // Unknown resolutions follow known ones in either direction. Equal DPIs
+    // retain the service's order so loading more does not shuffle existing ties.
+    if (left === undefined) return right === undefined ? 0 : 1;
+    if (right === undefined) return -1;
+    return sort === 'dpiDescending' ? right - left : left - right;
+  });
+}
 
 export function mpcArtworkType(card: Card): 'CARD' | 'TOKEN' {
   // Older saved Scryfall tokens predate the explicit kind field.
@@ -85,13 +108,16 @@ export function mpcExploreSearchPayload(
   type: MpcArtworkType,
   page: number,
   sourceIds: number[],
+  sort: MpcArtworkSort = 'dpiDescending',
 ) {
   return {
     cardTypes: [type],
     pageSize: PAGE_SIZE,
     pageStart: page * PAGE_SIZE,
     query: query.trim() || null,
-    sortBy: type === 'CARDBACK' && !query.trim() ? 'dateModifiedDescending' : 'nameAscending',
+    // The service supports name/date order only. DPI is sorted locally over
+    // loaded pages, using name order as a stable base for pagination.
+    sortBy: sort === 'dpiDescending' || sort === 'dpiAscending' ? 'nameAscending' : sort,
     searchSettings: {
       searchTypeSettings: { fuzzySearch: true, filterCardbacks: type === 'CARDBACK' },
       sourceSettings: { sources: sourceIds.map((id) => [id, true] as const) },
@@ -111,6 +137,7 @@ export async function searchMpcArtwork(
   query: string,
   type: MpcArtworkType,
   page = 0,
+  sort: MpcArtworkSort = 'dpiDescending',
 ): Promise<{ artwork: MpcArtwork[]; total: number; more: boolean }> {
   const sourceList = await sourceRows();
   const response = await request<{ cards: MpcResult[]; count: number }>(
@@ -121,6 +148,7 @@ export async function searchMpcArtwork(
       type,
       page,
       sourceList.map((source) => source.pk),
+      sort,
     ),
   );
   const artwork = response.cards
