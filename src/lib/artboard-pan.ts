@@ -1,5 +1,8 @@
 /** Move the preview by dragging empty space or holding the right mouse button. */
-export function enableArtboardPanning(viewport: HTMLElement): () => void {
+export function enableArtboardPanning(
+  viewport: HTMLElement,
+  openContextMenu?: (event: MouseEvent) => void,
+): () => void {
   let drag: {
     pointerId: number;
     buttons: number;
@@ -9,11 +12,13 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
     scrollTop: number;
   } | null = null;
   let suppressClick = false;
+  let pendingContextMenu: MouseEvent | null = null;
 
   const finish = () => {
     if (!drag) return;
     const { pointerId } = drag;
     drag = null;
+    pendingContextMenu = null;
     viewport.classList.remove('panning');
     if (viewport.hasPointerCapture(pointerId)) viewport.releasePointerCapture(pointerId);
   };
@@ -32,7 +37,7 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
     )
       return;
 
-    event.preventDefault();
+    if (event.button === 0) event.preventDefault();
     drag = {
       pointerId: event.pointerId,
       buttons: event.button === 2 ? 2 : 1,
@@ -41,7 +46,8 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
       scrollLeft: viewport.scrollLeft,
       scrollTop: viewport.scrollTop,
     };
-    viewport.setPointerCapture(event.pointerId);
+    // Keep a stationary right-click targeted at the card. Capture once it becomes a drag.
+    if (event.button === 0) viewport.setPointerCapture(event.pointerId);
     viewport.classList.add('panning');
   };
   const move = (event: PointerEvent) => {
@@ -53,13 +59,18 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
     event.preventDefault();
     const dx = drag.x - event.clientX;
     const dy = drag.y - event.clientY;
-    if (dx || dy) suppressClick = true;
+    if (!suppressClick && Math.hypot(dx, dy) < 4) return;
+    suppressClick = true;
+    if (!viewport.hasPointerCapture(event.pointerId)) viewport.setPointerCapture(event.pointerId);
     // Measure from the start so fractional mouse steps cannot accumulate rounding drift.
     viewport.scrollLeft = drag.scrollLeft + dx;
     viewport.scrollTop = drag.scrollTop + dy;
   };
   const end = (event: PointerEvent) => {
-    if (event.pointerId === drag?.pointerId) finish();
+    if (event.pointerId !== drag?.pointerId) return;
+    const menu = event.type === 'pointerup' && !suppressClick ? pendingContextMenu : null;
+    finish();
+    if (menu) openContextMenu?.(menu);
   };
   const click = (event: MouseEvent) => {
     if (!suppressClick || event.detail === 0) return;
@@ -67,7 +78,13 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
     event.preventDefault();
     event.stopPropagation();
   };
-  const contextMenu = (event: MouseEvent) => event.preventDefault();
+  const contextMenu = (event: MouseEvent) => {
+    event.preventDefault();
+    if (suppressClick) return;
+    // macOS/Linux can emit contextmenu on press; Windows can emit it on release.
+    if (drag?.buttons === 2) pendingContextMenu = event;
+    else openContextMenu?.(event);
+  };
   const window = viewport.ownerDocument.defaultView;
 
   viewport.addEventListener('pointerdown', start);
@@ -78,6 +95,9 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
   viewport.addEventListener('click', click, true);
   viewport.addEventListener('contextmenu', contextMenu);
   window?.addEventListener('blur', finish);
+  // A stationary right press has no pointer capture until it moves.
+  window?.addEventListener('pointerup', end);
+  window?.addEventListener('pointercancel', end);
   return () => {
     finish();
     viewport.removeEventListener('pointerdown', start);
@@ -88,5 +108,7 @@ export function enableArtboardPanning(viewport: HTMLElement): () => void {
     viewport.removeEventListener('click', click, true);
     viewport.removeEventListener('contextmenu', contextMenu);
     window?.removeEventListener('blur', finish);
+    window?.removeEventListener('pointerup', end);
+    window?.removeEventListener('pointercancel', end);
   };
 }

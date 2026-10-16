@@ -19,6 +19,7 @@ import CardSearchResults from './components/CardSearchResults';
 import SetBrowser from './components/SetBrowser';
 import PreconBrowser from './components/PreconBrowser';
 import TokenBrowser from './components/TokenBrowser';
+import SheetCardMenu, { type SheetCardMenuTarget } from './components/SheetCardMenu';
 import { useDialogBackdropDismiss } from './lib/dialog-backdrop';
 import type { PreconEntry } from './lib/precons';
 import {
@@ -132,6 +133,8 @@ import {
 } from './lib/theme';
 import {
   addCardToEntries,
+  copyEntryOnSheet,
+  deleteEntryCopy,
   doubleSidedCardCount,
   editEntryCopy,
   isDoubleSidedCard,
@@ -2222,7 +2225,14 @@ function SheetPreview({
               <button
                 key={`${p.entry.id}-${p.copy}`}
                 aria-label={`Select ${p.entry.card.name}, copy ${p.copy + 1}`}
-                title={cutOnly ? 'Select card' : 'Open artwork preview'}
+                data-entry-id={p.entry.id}
+                data-copy={p.copy}
+                aria-haspopup="menu"
+                title={
+                  cutOnly
+                    ? 'Select card · Right-click for actions'
+                    : 'Open artwork preview · Right-click for actions'
+                }
                 className={`placed-card ${cutOnly ? 'cut-only' : ''}`}
                 onDragStart={(event) => event.preventDefault()}
                 style={{
@@ -2463,6 +2473,12 @@ export default function App() {
     [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
       localStorage.getItem('criprox-active-project'),
     );
+  const [cardMenu, setCardMenu] = useState<SheetCardMenuTarget | null>(null);
+  const [deletingCard, setDeletingCard] = useState<SheetCardMenuTarget | null>(null);
+  const deleteCardCancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => setDeletingCard(null), [project, page, mode, modal]);
+  const closeCardMenu = useCallback(() => setCardMenu(null), []);
+  useEffect(closeCardMenu, [project, page, zoom, mode, modal, closeCardMenu]);
   const imageInput = useRef<HTMLInputElement>(null),
     projectInput = useRef<HTMLInputElement>(null),
     paperViewport = useRef<HTMLDivElement>(null),
@@ -2533,7 +2549,31 @@ export default function App() {
     const viewport = paperViewport.current;
     if (!viewport) return;
 
-    return enableArtboardPanning(viewport);
+    const openMenu = (event: Pick<MouseEvent, 'target' | 'clientX' | 'clientY'>) => {
+      const anchor = (event.target as Element).closest<HTMLButtonElement>('.placed-card');
+      if (!anchor) return;
+      const target = { entryId: anchor.dataset.entryId!, copy: Number(anchor.dataset.copy) };
+      setSelected(target);
+      setCardMenu({ target, anchor, x: event.clientX, y: event.clientY });
+    };
+    const keyboardMenu = (event: KeyboardEvent) => {
+      if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+      const anchor = (event.target as Element).closest<HTMLButtonElement>('.placed-card');
+      if (!anchor) return;
+      event.preventDefault();
+      const bounds = anchor.getBoundingClientRect();
+      openMenu({
+        target: anchor,
+        clientX: bounds.left + bounds.width / 2,
+        clientY: bounds.top + bounds.height / 2,
+      });
+    };
+    viewport.addEventListener('keydown', keyboardMenu);
+    const dispose = enableArtboardPanning(viewport, openMenu);
+    return () => {
+      dispose();
+      viewport.removeEventListener('keydown', keyboardMenu);
+    };
   }, []);
   useEffect(() => {
     const viewport = paperViewport.current;
@@ -2677,6 +2717,15 @@ export default function App() {
     doubleSidedCount = doubleSidedCardCount(project.entries),
     sharedBackRequired = count > doubleSidedCount;
   const activeEntry = project.entries.find((e) => e.id === selected?.entryId);
+  const menuEntry = project.entries.find((e) => e.id === cardMenu?.target.entryId);
+  const deletingEntry = project.entries.find((e) => e.id === deletingCard?.target.entryId);
+  const emptySlots = sheet ? g.capacity - sheet.placements.length : 0;
+  const fillHint =
+    emptySlots === 0
+      ? 'This page is already full.'
+      : count + emptySlots > 500
+        ? 'Filling this page would exceed the 500-card limit.'
+        : `Fill ${emptySlots} empty slot${emptySlots === 1 ? '' : 's'} with this artwork.`;
   const inspectedEntry = project.entries.find((e) => e.id === inspecting?.entryId);
   const customArt = project.entries
     .filter(
@@ -2748,6 +2797,43 @@ export default function App() {
   function inspect(target: EntryCopy) {
     setSelected(target);
     setInspecting(target);
+  }
+  function copyOnSheet(target: EntryCopy, action: 'duplicate' | 'fill') {
+    const ids = { added: crypto.randomUUID(), remainder: crypto.randomUUID() };
+    setProject((current) => {
+      const entries = copyEntryOnSheet(
+        current.entries,
+        current.settings,
+        target,
+        currentPage,
+        action,
+        ids,
+      );
+      return entries === current.entries ? current : { ...current, entries };
+    });
+  }
+  function cancelDeleteCard() {
+    const anchor = deletingCard?.anchor;
+    setDeletingCard(null);
+    requestAnimationFrame(() => anchor?.focus({ preventScroll: true }));
+  }
+  function confirmDeleteCard() {
+    if (!deletingCard) return;
+    const target = deletingCard.target;
+    setProject((current) => {
+      const entries = deleteEntryCopy(current.entries, target);
+      return entries === current.entries ? current : { ...current, entries };
+    });
+    setSelected(null);
+    setInspecting(null);
+    setDeletingCard(null);
+    setPage(Math.min(currentPage, Math.max(0, Math.ceil((count - 1) / g.capacity) - 1)));
+    setToast('Card deleted.');
+    requestAnimationFrame(() =>
+      paperViewport.current
+        ?.querySelector<HTMLButtonElement>('.placed-card')
+        ?.focus({ preventScroll: true }),
+    );
   }
   function editCopy(target: EntryCopy, patch: EntryArtworkPatch) {
     const entry = project.entries.find((candidate) => candidate.id === target.entryId);
@@ -3467,7 +3553,7 @@ export default function App() {
                 <div
                   className="paper-viewport"
                   ref={paperViewport}
-                  title="Scroll to zoom · Drag empty space or right-drag anywhere to pan"
+                  title="Scroll to zoom · Drag to pan · Right-click a card for actions"
                 >
                   <SheetPreview
                     sheet={sheet}
@@ -4036,6 +4122,39 @@ export default function App() {
               }}
             >
               <Trash2 size={16} /> Clear deck
+            </button>
+          </div>
+        </Modal>
+      )}
+      {cardMenu && menuEntry && loaded && (
+        <SheetCardMenu
+          menu={cardMenu}
+          name={menuEntry.card.name}
+          duplicateDisabled={count >= 500}
+          fillDisabled={emptySlots === 0 || count + emptySlots > 500}
+          fillHint={fillHint}
+          close={closeCardMenu}
+          inspect={() => inspect(cardMenu.target)}
+          copy={(action) => copyOnSheet(cardMenu.target, action)}
+          remove={() => setDeletingCard(cardMenu)}
+        />
+      )}
+      {deletingCard && deletingEntry && (
+        <Modal
+          title="Delete this card?"
+          subtitle={`Are you sure you want to delete one copy of ${deletingEntry.card.name}?`}
+          close={cancelDeleteCard}
+          initialFocus={deleteCardCancel}
+        >
+          <div className="confirm-copy">
+            Only this copy will be removed. Any other copies will stay in your project.
+          </div>
+          <div className="modal-footer">
+            <button ref={deleteCardCancel} className="secondary" onClick={cancelDeleteCard}>
+              Cancel
+            </button>
+            <button className="danger-button" onClick={confirmDeleteCard}>
+              <Trash2 size={16} /> Delete card
             </button>
           </div>
         </Modal>

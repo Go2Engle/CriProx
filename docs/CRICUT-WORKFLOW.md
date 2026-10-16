@@ -13,6 +13,19 @@ Click a card on the sheet to open its artwork preview. Placed cards stay on the 
 click and drag, so they cannot be accidentally added again. To add local artwork, drop image files
 from your file manager onto the sheet or use **Add artwork**.
 
+To repeat artwork, right-click a card on the active sheet and choose **Duplicate** to insert one
+copy after it, or **Fill Page** to fill that sheet's empty slots with the same artwork and selected
+face. Existing cards stay on the sheet; duplicating on a full sheet moves overflow to the next
+sheet. Fill Page is unavailable when the sheet is full or filling it would exceed 500 cards.
+Duplicate is unavailable at the 500-card limit. **Change Artwork** opens the clicked copy's
+artwork picker. You can also focus a card and press **Shift+F10** or the context-menu key, then
+use the arrow keys and Enter. Press **Escape** or click outside to close the menu.
+
+To remove one card, right-click it and choose **Delete Card**. The **Delete this card?** popup
+names the card and removes only the clicked copy after you choose **Delete card**. Choose
+**Cancel**, press **Escape**, or click outside the popup to keep it. Other copies remain in your
+project, and later cards move forward to fill the space.
+
 While reviewing the sheet, scroll the mouse wheel to zoom in or out. To move around the preview,
 left-click and drag empty space on or around the paper, or hold the right mouse button and drag
 anywhere, including over a selected card. Release the button to stop panning. This changes only
