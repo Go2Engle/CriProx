@@ -58,6 +58,16 @@ newly announced products may not have decklists or artwork yet.
   and zoom controls.
 - Click a card on the sheet to open its artwork preview. Placed cards cannot be dragged or
   dropped back onto the sheet as new artwork; external image files can still be dropped to add them.
+- Right-click a card on the active sheet for **Change Artwork**, **Duplicate**, or **Fill Page**.
+  Duplicate inserts one copy immediately after the clicked card, moving overflow onto the next
+  sheet. Fill Page fills only the active sheet's empty slots and keeps its existing cards.
+  Both actions preserve the clicked copy's exact artwork and selected face. Fill Page is disabled
+  on a full sheet or when filling it would exceed the 500-card project limit; Duplicate is disabled
+  at that limit. Focus a card and press **Shift+F10** or the context-menu key for keyboard access;
+  use arrow keys to choose an action and **Escape** to dismiss the menu.
+- Choose **Delete Card** in the card's right-click menu to remove that copy. An **Are you sure**
+  popup names the card and asks you to confirm with **Delete card**. **Cancel**, **Escape**, or
+  clicking outside keeps the card. Other copies remain in the project.
 - Scroll the mouse wheel over the sheet to zoom. Drag empty space on or around the sheet to pan,
   or hold the right mouse button and drag anywhere, including over a selected card. Panning moves
   only the preview; normal left-clicks on cards still select them or open their artwork preview.

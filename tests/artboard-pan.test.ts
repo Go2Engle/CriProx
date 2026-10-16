@@ -3,6 +3,7 @@ import test from 'node:test';
 import { enableArtboardPanning } from '../src/lib/artboard-pan';
 
 function preview() {
+  const menus: MouseEvent[] = [];
   const classes = new Set<string>();
   const captures = new Set<number>();
   const window = new EventTarget();
@@ -21,7 +22,9 @@ function preview() {
     hasPointerCapture: (id: number) => captures.has(id),
     releasePointerCapture: (id: number) => captures.delete(id),
   });
-  const dispose = enableArtboardPanning(viewport as unknown as HTMLElement);
+  const dispose = enableArtboardPanning(viewport as unknown as HTMLElement, (event) =>
+    menus.push(event),
+  );
   function send(type: string, options: Record<string, unknown> = {}, card = false) {
     const event = Object.assign(new Event(type, { cancelable: true }), {
       pointerType: 'mouse',
@@ -37,7 +40,7 @@ function preview() {
     viewport.dispatchEvent(event);
     return event;
   }
-  return { viewport, window, classes, captures, dispose, send };
+  return { viewport, window, classes, captures, dispose, send, menus };
 }
 
 test('dragging empty space moves the view with the mouse and suppresses the release click', () => {
@@ -60,13 +63,41 @@ test('dragging empty space moves the view with the mouse and suppresses the rele
 
 test('right dragging over card artwork pans without opening the context menu', () => {
   const p = preview();
-  assert.equal(p.send('pointerdown', { button: 2, buttons: 2 }, true).defaultPrevented, true);
+  assert.equal(p.send('pointerdown', { button: 2, buttons: 2 }, true).defaultPrevented, false);
   assert.equal(p.send('contextmenu', {}, true).defaultPrevented, true);
   p.send('pointermove', { buttons: 2, clientX: 65, clientY: 50 }, true);
   assert.equal(p.viewport.scrollLeft, 235);
   assert.equal(p.viewport.scrollTop, 350);
   p.send('pointerup', { button: 2, buttons: 0 });
+  p.send('contextmenu', {}, true);
+  assert.equal(p.menus.length, 0);
   assert.equal(p.classes.has('panning'), false);
+  p.dispose();
+});
+
+test('stationary right clicks open card actions with press-time or release-time context events', () => {
+  for (const timing of ['press', 'release']) {
+    const p = preview();
+    p.send('pointerdown', { button: 2, buttons: 2 }, true);
+    assert.equal(p.captures.size, 0);
+    if (timing === 'press') p.send('contextmenu', {}, true);
+    p.send('pointermove', { buttons: 2, clientX: 101, clientY: 101 }, true);
+    assert.equal(p.viewport.scrollLeft, 200);
+    assert.equal(p.menus.length, 0);
+    p.send('pointerup', { button: 2, buttons: 0 }, true);
+    if (timing === 'release') p.send('contextmenu', {}, true);
+    assert.equal(p.menus.length, 1);
+    p.dispose();
+  }
+});
+
+test('releasing an uncaptured right press outside the viewport ends the gesture', () => {
+  const p = preview();
+  p.send('pointerdown', { button: 2, buttons: 2 }, true);
+  p.window.dispatchEvent(Object.assign(new Event('pointerup'), { pointerId: 1 }));
+  assert.equal(p.classes.has('panning'), false);
+  p.send('pointermove', { buttons: 2, clientX: 150, clientY: 150 });
+  assert.equal(p.viewport.scrollLeft, 200);
   p.dispose();
 });
 
