@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/Go2Engle/CriProx/compare/v0.16.0...v0.17.0) (2026-10-16)
+
+
+### Features
+
+* **editor:** duplicate cards, fill pages, and delete cards with a right-click ([#127](https://github.com/Go2Engle/CriProx/issues/127)) ([36c65ef](https://github.com/Go2Engle/CriProx/commit/36c65efa9f6a1ebe927e97a18f3d33f03d3f4c7b))
+
 ## [0.16.0](https://github.com/Go2Engle/CriProx/compare/v0.15.0...v0.16.0) (2026-10-15)
 
 
