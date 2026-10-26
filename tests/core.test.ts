@@ -113,6 +113,23 @@ test('double-faced deck names use the front face for Scryfall lookup and retain 
   }
   assert.equal(scryfallLookupName('Silundi Vision//Silundi Isle'), 'Silundi Vision');
 });
+test('Moxfield single-slash flip names match Scryfall without relaxing exact printing checks', () => {
+  const parsed = parseDeck('1 Nezumi Graverobber / Nighteyes the Desecrator (PLST) CHK-129');
+  assert.deepEqual(parsed.errors, []);
+  const line = parsed.cards[0];
+  const card = {
+    ...entry.card,
+    name: 'Nezumi Graverobber // Nighteyes the Desecrator',
+    set: 'plst',
+    collector: 'CHK-129',
+    faces: [{ ...entry.card.faces[0], name: 'Nezumi Graverobber // Nighteyes the Desecrator' }],
+  };
+  assert.equal(scryfallLookupName(line.name), 'Nezumi Graverobber');
+  assert.ok(cardMatchesDeckLine(card, line));
+  assert.ok(!cardMatchesDeckLine(card, { ...line, set: 'chk' }));
+  assert.ok(!cardMatchesDeckLine(card, { ...line, collector: 'CHK-130' }));
+  assert.ok(!cardMatchesDeckLine(card, { ...line, name: 'Nezumi Graverobber / Wrong Name' }));
+});
 test('card search includes printable tokens and supports token-only names', () => {
   assert.equal(
     scryfallSearchPath('  Sol Ring  '),

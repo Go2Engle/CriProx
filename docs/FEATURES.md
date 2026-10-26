@@ -3,7 +3,10 @@
 ## Card and artwork sources
 
 - Import a public or unlisted Moxfield or Archidekt deck link, preserving selected printings when available.
-- Paste a deck list and resolve cards through Scryfall.
+  Moxfield imports keep each selected printing and its quantity, including mixed basic-land artwork.
+- Paste a deck list and resolve cards through Scryfall, including Moxfield flip-card names separated
+  by `/`, such as `Nezumi Graverobber / Nighteyes the Desecrator`. Set and collector numbers still
+  select the exact printing.
 - Search the Scryfall card catalog by full or partial name and add cards one at a time.
   **Find a card** focuses the search box when it opens, so you can start typing immediately.
   Pop-ups that close on outside clicks stay open when you select text or drag from inside and

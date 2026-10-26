@@ -94,6 +94,24 @@ export function parseMoxfieldDeck(payload: unknown): ImportedDeck {
       const name = text(card?.name);
       const count = quantity(entry?.quantity);
       if (!name || !count) continue;
+      // The card is only a representative printing. Mixed artwork (and finishes)
+      // is recorded separately, with quantities that already include every copy.
+      if (Array.isArray(entry?.printingData) && entry.printingData.length) {
+        let total = 0;
+        for (const value of entry.printingData) {
+          const printing = record(value);
+          const printingCount = quantity(printing?.quantity);
+          const set = text(printing?.set)?.toLowerCase();
+          const collector = text(printing?.cn);
+          if (!printingCount || !set || !collector)
+            throw new Error(`Moxfield returned unreadable printing details for ${name}.`);
+          total += printingCount;
+          cards.push({ name, quantity: printingCount, set, collector });
+        }
+        if (total !== count)
+          throw new Error(`Moxfield returned inconsistent printing quantities for ${name}.`);
+        continue;
+      }
       cards.push({
         name,
         quantity: count,

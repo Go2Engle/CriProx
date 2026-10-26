@@ -98,17 +98,20 @@ export function normalizeScryfallCard(raw: RawCard): Card {
     faces,
   };
 }
+// Moxfield exports flip cards with " / "; Scryfall uses " // ".
+const faceSeparator = /\s*\/\/\s*|\s+\/\s+/;
 function comparableName(name: string) {
   return name
     .normalize('NFKC')
     .replace(/[‘’]/g, "'")
-    .replace(/\s*\/\/\s*/g, ' // ')
+    .split(faceSeparator)
+    .join(' // ')
     .replace(/\s+/g, ' ')
     .trim()
     .toLocaleLowerCase('en-US');
 }
 export function scryfallLookupName(name: string) {
-  return name.split(/\s*\/\/\s*/, 1)[0].trim();
+  return name.split(faceSeparator, 1)[0].trim();
 }
 // Precon lists identify exact printings, including cards from older sets.
 export async function resolveCardIds(ids: string[]): Promise<Card[]> {
