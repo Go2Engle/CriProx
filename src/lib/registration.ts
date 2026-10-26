@@ -182,7 +182,9 @@ export function detectTemplate(
     data[i] - data[i + 1] > 45 &&
     data[i + 2] - data[i + 1] > 35;
   const columns = new Uint32Array(width),
-    rows = new Uint32Array(height);
+    rows = new Uint32Array(height),
+    opaqueColumns = new Uint32Array(width),
+    opaqueRows = new Uint32Array(height);
   let minX = width,
     minY = height,
     maxX = -1,
@@ -196,6 +198,12 @@ export function detectTemplate(
         minY = Math.min(minY, y);
         maxX = Math.max(maxX, x);
         maxY = Math.max(maxY, y);
+        // At least 75% magenta over white. JPEG compression and resampling can
+        // leave a narrow, less saturated fringe beyond this solid edge.
+        if (data[i + 1] < 64) {
+          opaqueColumns[x]++;
+          opaqueRows[y]++;
+        }
       }
       if (strong || isSoftMarker(i)) {
         columns[x]++;
@@ -223,9 +231,38 @@ export function detectTemplate(
     if (rows[y] >= edgePixels) minY = Math.min(minY, y);
   for (let y = solidMaxY + 1; y <= Math.min(height - 1, solidMaxY + marginY); y++)
     if (rows[y] >= edgePixels) maxY = Math.max(maxY, y);
+  const sizeToleranceMm = 0.3;
+  const trimFringe = (
+    min: number,
+    max: number,
+    pixelsPerMm: number,
+    expectedMm: number,
+    opaqueCounts: Uint32Array,
+  ): [number, number] => {
+    if ((max - min + 1) / pixelsPerMm <= expectedMm + sizeToleranceMm) return [min, max];
+    let first = min,
+      last = max;
+    while (first <= last && opaqueCounts[first] < edgePixels) first++;
+    while (last >= first && opaqueCounts[last] < edgePixels) last--;
+    // Recover only a small fringe, backed by continuous opaque edges and the
+    // original size tolerance. The complete slot and mark checks still follow.
+    if (
+      first <= last &&
+      (first - min) / pixelsPerMm <= 0.2 &&
+      (max - last) / pixelsPerMm <= 0.2 &&
+      Math.abs((last - first + 1) / pixelsPerMm - expectedMm) <= sizeToleranceMm
+    )
+      return [first, last];
+    return [min, max];
+  };
+  [minX, maxX] = trimFringe(minX, maxX, sx, sheet.width, opaqueColumns);
+  [minY, maxY] = trimFringe(minY, maxY, sy, sheet.height, opaqueRows);
   const measuredW = (maxX - minX + 1) / sx,
     measuredH = (maxY - minY + 1) / sy;
-  if (Math.abs(measuredW - sheet.width) > 0.3 || Math.abs(measuredH - sheet.height) > 0.3) {
+  if (
+    Math.abs(measuredW - sheet.width) > sizeToleranceMm ||
+    Math.abs(measuredH - sheet.height) > sizeToleranceMm
+  ) {
     throw new Error(
       `The captured template measures ${measuredW.toFixed(2)} × ${measuredH.toFixed(2)} mm; expected ${sheet.width} × ${sheet.height} mm. Correct the Canvas dimensions, disable bleed and printer scaling, and capture again.`,
     );
