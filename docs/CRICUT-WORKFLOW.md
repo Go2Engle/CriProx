@@ -221,11 +221,31 @@ The seven-card profile is a separate 2–3–2 test for Maker and Explore. It fi
 
 The eight-card profile fixes two horizontal cards per row across four rows at 63 × 88 mm per card, 1 mm gaps, and 2.5 mm corners. The complete magenta template is 177 × 255 mm.
 
-1. Select the eight-card profile in CriProx, download its magenta setup PNG, and upload it to Design Space as one flat Print Then Cut image. Set both Canvas dimensions to 177 × 255 mm, save the project, and keep its mat arrangement unchanged.
+1. Select the eight-card profile in CriProx, download its magenta setup PNG, and upload it to Design Space as one flat Print Then Cut image. Set both Canvas dimensions to 177 × 255 mm (17.7 × 25.5 cm in Design Space's Metric mode), save the project, and keep its mat arrangement unchanged.
 2. Select portrait **Tabloid (11 × 17 in)** in Design Space and the system print dialog. Turn bleed off and save one complete Tabloid PDF at **100% / Actual size**. Keep every card and all four sensor marks on one page.
 3. Import that PDF into **Create print PDF**. CriProx verifies the eight-card pattern and checks that all printed content fits on your selected portrait output paper (**US Letter** or **A4**) with at least 1 mm clearance. It moves the complete captured page content and card artwork together, without changing their size. A4 is narrower than Letter; captures that cannot fit are rejected.
 4. Save the resulting size-check PDF and print it from a dedicated PDF application on the selected **US Letter** or **A4** paper at **100% / Actual size**, with fit-to-page/shrink-to-fit disabled. Check all four marks on plain paper.
 5. Reopen the same saved Design Space project and mat, choose **Already Printed / Skip printing** when available, and cut the printed sheet. Confirm the machine reads the marks and cuts a 63 × 88 mm card before printing a full deck.
+
+### Windows PDF capture troubleshooting
+
+Newer Design Space print setup opens the system print dialog automatically; the older
+**Use System Dialog** toggle may be absent. See Cricut's
+[print setup release notes](https://help.cricut.com/hc/en-us/articles/29247748906519-Older-Design-Space-Release-Notes).
+For **Microsoft Print to PDF**, open **More settings → Advanced → Paper Size** and explicitly
+choose **Tabloid / 11 × 17 inches**. Keep Portrait selected and bleed off. The driver can remain
+on Letter even when Design Space is set to Tabloid, shrinking the template in the saved file.
+
+Some Windows dialogs do not expose a scale or **100% / Actual size** control. Confirm the saved
+PDF is one portrait 11 × 17 inch page, then import it into CriProx to check its template geometry.
+Do not resize or reprint an already shrunken capture to compensate; save a fresh capture with the
+correct paper settings. Print finished Letter or A4 card PDFs at actual size from a PDF application.
+
+Windows PDF captures can contain compressed magenta artwork with a narrow fringe of softened
+edge pixels. CriProx can use continuous solid edges to check the size when that fringe alone
+would exceed the size limit. It still checks the full card pattern, surrounding marks, and paper
+clearance. Passing these checks does not establish physical cut accuracy; run the size-check cut
+on plain paper before printing a deck.
 
 The Sheet area selector follows the selected paper and cutting method. Maker and Explore offer six-, eight-, and nine-card layouts for A4; seven-card remains Letter-only. Changing an eight-card project between Letter and A4 preserves its layout but requires a matching capture for the new output paper.
 

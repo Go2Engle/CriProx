@@ -115,6 +115,9 @@ print it from a dedicated PDF application, and reuse the matching saved Design S
   0.05 mm for seven-card sheets. Back sheets extend artwork 1.5 mm past exposed outside edges to
   hide small front-to-back alignment shifts.
 - The captured PDF must correspond to the exact saved Design Space cut job.
+- Capture checks tolerate a narrow compression fringe around solid magenta edges in Windows
+  Print to PDF captures. Card sizes, the complete slot pattern, surrounding marks, and the output
+  paper fit are still verified; enlarged or shrunken templates are rejected.
 - The desktop app stores verified six-cut, seven-cut, and eight-cut captures as PDFs at the root of the selected
   CriProx project library and loads them automatically whenever their exact cut geometry is selected.
   Existing captures in local app storage are copied into the library on first use.

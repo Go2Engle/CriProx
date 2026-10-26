@@ -288,9 +288,11 @@ function fixture(
   paperWidth = 215.9,
   paperHeight = 279.4,
   softEdges = false,
+  fringeMm = 0,
+  pixelsPerMm = 4,
 ) {
-  const w = Math.round(paperWidth * 4),
-    h = Math.round(paperHeight * 4),
+  const w = Math.round(paperWidth * pixelsPerMm),
+    h = Math.round(paperHeight * pixelsPerMm),
     sx = w / paperWidth,
     sy = h / paperHeight;
   const data = new Uint8ClampedArray(w * h * 4).fill(255),
@@ -308,11 +310,11 @@ function fixture(
           qy = Math.abs(my - p.y - p.height / 2) - (p.height / 2 - r);
         const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
         distance = Math.min(distance, d);
-        if (d < 0) inside = true;
+        if (d < fringeMm) inside = true;
       }
       if (inside) {
         const i = (y * w + x) * 4,
-          opacity = softEdges && distance > -0.3 ? 0.32 : 1;
+          opacity = distance >= 0 || (softEdges && distance > -0.3) ? 0.32 : 1;
         data[i] = Math.round(255 - 25 * opacity);
         data[i + 1] = Math.round(255 - 255 * opacity);
         data[i + 2] = Math.round(255 - 55 * opacity);
@@ -363,6 +365,33 @@ test('capture recognizes the eight-card pattern on portrait Tabloid', () => {
     p = detectTemplate(f.data, f.w, f.h, 279.4, 431.8, settings);
   assert.ok(Math.abs(p.leftMm - 21.25) < 0.15);
   assert.ok(Math.abs(p.topMm - 21.25) < 0.15);
+});
+test('capture ignores a narrow pale fringe outside opaque card edges', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+    f = fixture(1, false, true, false, settings, 21.25, 21.25, 279.4, 431.8, false, 0.18, 12),
+    p = detectTemplate(f.data, f.w, f.h, 279.4, 431.8, settings);
+  assert.ok(Math.abs(p.leftMm - 21.25) < 0.1);
+  assert.ok(Math.abs(p.topMm - 21.25) < 0.1);
+  // The complete footprint still includes pale pixels excluded from sizing.
+  assert.ok(p.contentBoundsMm.left < p.leftMm);
+  // A valid outer edge must not hide damaged artwork inside a card.
+  for (let y = 40 * 12; y < 50 * 12; y++)
+    for (let x = 40 * 12; x < 50 * 12; x++) {
+      const i = (y * f.w + x) * 4;
+      f.data[i] = f.data[i + 1] = f.data[i + 2] = 255;
+    }
+  assert.throws(
+    () => detectTemplate(f.data, f.w, f.h, 279.4, 431.8, settings),
+    /slot pattern does not match/,
+  );
+});
+test('capture rejects a broad pale fringe even when the solid template is the right size', () => {
+  const settings = { ...DEFAULT_SETTINGS, profile: 'eight' as const, gap: 1, bleed: 0.5 },
+    f = fixture(1, false, true, false, settings, 21.25, 21.25, 279.4, 431.8, false, 1);
+  assert.throws(
+    () => detectTemplate(f.data, f.w, f.h, 279.4, 431.8, settings),
+    /captured template measures/,
+  );
 });
 test('Tabloid capture is centered on Letter without scaling cards or marks', () => {
   const frame = fitTabloidCaptureToPaper('letter', 792, 1224, 21.25, 21.25, {
