@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/Go2Engle/CriProx/compare/v0.17.0...v0.17.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **print:** accept Windows setup PDFs with softened edges ([#135](https://github.com/Go2Engle/CriProx/issues/135)) ([1443bb5](https://github.com/Go2Engle/CriProx/commit/1443bb5655c8df37389a9c00c4493f666b6d693d))
+
 ## [0.17.0](https://github.com/Go2Engle/CriProx/compare/v0.16.0...v0.17.0) (2026-10-16)
 
 
