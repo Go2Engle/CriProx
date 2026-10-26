@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.2](https://github.com/Go2Engle/CriProx/compare/v0.17.1...v0.17.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* **import:** preserve Moxfield land artwork and accept flip-card names ([#145](https://github.com/Go2Engle/CriProx/issues/145)) ([3a889e5](https://github.com/Go2Engle/CriProx/commit/3a889e576a5f20946b8d422463fb08c99133801c))
+
 ## [0.17.1](https://github.com/Go2Engle/CriProx/compare/v0.17.0...v0.17.1) (2026-10-26)
 
 
