@@ -13,6 +13,13 @@ Click a card on the sheet to open its artwork preview. Placed cards stay on the 
 click and drag, so they cannot be accidentally added again. To add local artwork, drop image files
 from your file manager onto the sheet or use **Add artwork**.
 
+Use **Import deck** to paste a public or unlisted Moxfield or Archidekt deck link. Moxfield imports
+keep separate quantities for each selected printing, including different artwork for basic lands.
+You can also choose the **Card list** tab and paste an exported deck list with set and collector
+numbers. Flip-card names such as `1 Nezumi Graverobber / Nighteyes the Desecrator (PLST) CHK-129`
+are supported, as are names separated by `//`. If Moxfield blocks a link import, use its **Export**
+option and paste the deck list into **Card list** instead.
+
 To repeat artwork, right-click a card on the active sheet and choose **Duplicate** to insert one
 copy after it, or **Fill Page** to fill that sheet's empty slots with the same artwork and selected
 face. Existing cards stay on the sheet; duplicating on a full sheet moves overflow to the next
