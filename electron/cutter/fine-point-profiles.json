@@ -1,0 +1,12 @@
+{
+  "white-sticker-paper": {
+    "name": "Printable Sticker Paper, White",
+    "pressure": 80,
+    "adjustment": [-4, 0, 4]
+  },
+  "medium-cardstock": {
+    "name": "Medium Cardstock — 80 lb (216 gsm)",
+    "pressure": 180,
+    "adjustment": [-9, 0, 9]
+  }
+}

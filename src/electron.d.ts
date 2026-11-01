@@ -64,9 +64,38 @@ declare global {
   interface Window {
     criprox?: {
       platform?: 'darwin' | 'win32' | 'linux';
+      printing?: import('./lib/direct-print').PrintApi;
+      materials?: {
+        import: () => Promise<{ profiles: import('./lib/cut-settings').MaterialProfile[]; warnings: string[]; files: number }>;
+      };
+      cutter?: {
+        state: () => Promise<import('./lib/cutter').CutterState>;
+        keyStatus: () => Promise<{ available: boolean }>;
+        connectSaved: (transport: 'usb' | 'ble') => Promise<import('./lib/cutter').CutterState>;
+        connect: (
+          transport: 'usb' | 'ble',
+          authorized: boolean,
+        ) => Promise<import('./lib/cutter').CutterState>;
+        disconnect: () => Promise<import('./lib/cutter').CutterState>;
+        forgetKey: () => Promise<import('./lib/cutter').CutterState>;
+        home: (bladeRemoved: boolean) => Promise<import('./lib/cutter').CutterState>;
+        cutSheet: (job: string, sheetIndex: number, materialReady: boolean) => Promise<import('./lib/cutter').CutterState>;
+        cancel: () => Promise<import('./lib/cutter').CutterState>;
+        pause: () => Promise<import('./lib/cutter').CutterState>;
+        resume: () => Promise<import('./lib/cutter').CutterState>;
+        onState: (callback: (state: import('./lib/cutter').CutterState) => void) => () => void;
+      };
       mpcRequest: (path: string, method: 'GET' | 'POST', body?: unknown) => Promise<unknown>;
       deckRequest?: (provider: 'moxfield' | 'archidekt', id: string) => Promise<unknown>;
       saveProject?: (defaultName: string, data: string) => Promise<boolean>;
+      cricut?: {
+        inspect: () => Promise<{
+          installed: boolean;
+          version: string | null;
+          bridgeInstalled: boolean;
+        }>;
+        open: () => Promise<void>;
+      };
       upscayl?: {
         detect: () => Promise<{ cacheKey: string } | null>;
         run: (id: string, input: Uint8Array) => Promise<Uint8Array>;

@@ -6,6 +6,7 @@ import {
   type Project,
 } from './types';
 import { availableSheetProfiles } from './paper-workflow';
+import { readCutSettings } from './cut-settings';
 const supportedImage = (url: unknown) =>
   typeof url === 'string' &&
   /^(https:\/\/(cards\.scryfall\.io\/|cdn\.mpcautofill\.com\/images\/google_drive\/(full|large)\/)|data:image\/(png|jpeg|webp);base64,)/.test(
@@ -23,6 +24,7 @@ export function validateProject(value: unknown): Project {
   )
     throw new Error('This is not a supported CriProx project.');
   const s = p.settings;
+  Object.assign(s, readCutSettings(s));
   // Older projects stay valid. The removed four-slot profile migrates to the
   // six-slot layout, and any enabled custom bleed amount becomes the fixed amount.
   if ((s.profile as string) === 'conservative') s.profile = 'expanded';
@@ -59,7 +61,7 @@ export function validateProject(value: unknown): Project {
   if (
     !['mm', 'in'].includes(s.units) ||
     !['letter', 'a4'].includes(s.paper) ||
-    !['maker', 'explore', 'joy-xtra', 'manual'].includes(s.machine) ||
+    !['maker', 'explore-5', 'explore', 'joy-xtra', 'manual'].includes(s.machine) ||
     !['expanded', 'seven', 'eight', 'nine'].includes(s.profile) ||
     !PRINT_DPI_OPTIONS.includes(s.dpi) ||
     typeof s.upscaleScryfall !== 'boolean' ||

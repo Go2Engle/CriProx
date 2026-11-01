@@ -4,6 +4,36 @@ contextBridge.exposeInMainWorld(
   'criprox',
   Object.freeze({
     platform: process.platform,
+    materials: Object.freeze({ import: () => ipcRenderer.invoke('materials-import') }),
+    printing: Object.freeze({
+      begin: settings => ipcRenderer.invoke('print-begin', settings),
+      page: (id, index, png) => ipcRenderer.invoke('print-page', id, index, png),
+      finish: id => ipcRenderer.invoke('print-finish', id),
+      abort: id => ipcRenderer.invoke('print-abort', id),
+    }),
+    cutter: Object.freeze({
+      state: () => ipcRenderer.invoke('cutter-state'),
+      keyStatus: () => ipcRenderer.invoke('cutter-key-status'),
+      connectSaved: (transport) => ipcRenderer.invoke('cutter-connect-saved', { transport }),
+      connect: (transport, authorized) =>
+        ipcRenderer.invoke('cutter-connect', { transport, authorized }),
+      disconnect: () => ipcRenderer.invoke('cutter-disconnect'),
+      forgetKey: () => ipcRenderer.invoke('cutter-forget-key'),
+      home: (bladeRemoved) => ipcRenderer.invoke('cutter-home', { bladeRemoved }),
+      cutSheet: (job, sheetIndex, materialReady) => ipcRenderer.invoke('cutter-cut-sheet', { job, sheetIndex, materialReady }),
+      cancel: () => ipcRenderer.invoke('cutter-cancel'),
+      pause: () => ipcRenderer.invoke('cutter-pause'),
+      resume: () => ipcRenderer.invoke('cutter-resume'),
+      onState: (callback) => {
+        const listener = (_event, state) => callback(state);
+        ipcRenderer.on('cutter-state', listener);
+        return () => ipcRenderer.removeListener('cutter-state', listener);
+      },
+    }),
+    cricut: Object.freeze({
+      inspect: () => ipcRenderer.invoke('cricut-installation'),
+      open: () => ipcRenderer.invoke('cricut-open'),
+    }),
     mpcRequest: (path, method, body) => ipcRenderer.invoke('mpc-request', { path, method, body }),
     deckRequest: (provider, id) => ipcRenderer.invoke('deck-request', { provider, id }),
     saveProject: (defaultName, data) => ipcRenderer.invoke('save-project', { defaultName, data }),

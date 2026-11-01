@@ -1,4 +1,4 @@
-const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, net, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, net, safeStorage, shell } = require('electron');
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -30,6 +30,88 @@ const {
 } = require('./project-library.cjs');
 const { projectLibraryPaths } = require('./project-library-paths.cjs');
 const { findUpscayl, runUpscayl } = require('./upscayl.cjs');
+const { findCricutInstallation } = require('./cricut-installation.cjs');
+const { createCutterController } = require('./cutter/controller.cjs');
+const printing = require('./printing.cjs').createPrintService({ BrowserWindow, nativeImage,
+  showPreview: require('./print-preview.cjs').createPrintPreview({BrowserWindow,ipcMain}) });
+for (const command of ['begin', 'page', 'finish', 'abort']) {
+  ipcMain.handle(`print-${command}`, (event, ...args) => {
+    if (event.senderFrame !== event.sender.mainFrame) throw Error('Printing requires the main workspace.');
+    checkCutterSender(event);
+    return printing[command](event.sender, ...args);
+  });
+}
+const cutter = createCutterController({
+  keyStore: require('./cutter/protected-key.cjs').createProtectedKeyStore({
+    safeStorage, directory: () => app.getPath('userData'),
+  }),
+  onState: (state) => {
+    for (const window of BrowserWindow.getAllWindows())
+      if (!window.isDestroyed()) window.webContents.send('cutter-state', state);
+  },
+});
+function checkCutterSender(event) {
+  const url = event.senderFrame?.url;
+  if (
+    !url ||
+    require('node:url').fileURLToPath(new URL(url)) !==
+      path.resolve(__dirname, '../dist/index.html')
+  )
+    throw new Error('Cutter access is limited to the CriProx workspace.');
+}
+ipcMain.handle('materials-import', (event) => {
+  checkCutterSender(event);
+  return require('./material-import.cjs').importDesignSpaceMaterials();
+});
+ipcMain.handle('cutter-state', (event) => {
+  checkCutterSender(event);
+  return cutter.snapshot();
+});
+ipcMain.handle('cutter-key-status', (event) => {
+  checkCutterSender(event);
+  return cutter.keyStatus();
+});
+ipcMain.handle('cutter-connect-saved', (event, request) => {
+  checkCutterSender(event);
+  return cutter.command('connect', { transport: request?.transport, authorized: true, savedOnly: true });
+});
+ipcMain.handle('cutter-connect', (event, request) => {
+  checkCutterSender(event);
+  return cutter.command('connect', {
+    transport: request?.transport,
+    authorized: request?.authorized === true,
+  });
+});
+ipcMain.handle('cutter-disconnect', (event) => {
+  checkCutterSender(event);
+  return cutter.command('disconnect');
+});
+ipcMain.handle('cutter-forget-key', (event) => {
+  checkCutterSender(event);
+  return cutter.command('forgetKey');
+});
+ipcMain.handle('cutter-home', (event, request) => {
+  checkCutterSender(event);
+  return cutter.command('home', { bladeRemoved: request?.bladeRemoved === true });
+});
+ipcMain.handle('cutter-cut-sheet', (event, request) => {
+  checkCutterSender(event);
+  return cutter.command('cutSheet', {
+    job: request?.job, sheetIndex: request?.sheetIndex,
+    materialReady: request?.materialReady === true,
+  });
+});
+for (const [channel,command] of [['cutter-cancel','cancelCut'],['cutter-pause','pauseCut'],['cutter-resume','resumeCut']])
+  ipcMain.handle(channel, event => { checkCutterSender(event); return cutter.command(command); });
+let cutterQuitReady = false;
+app.on('before-quit', (event) => {
+  if (cutterQuitReady) return;
+  event.preventDefault();
+  void cutter.close().finally(() => {
+    cutterQuitReady = true;
+    app.quit();
+  });
+});
 const {
   loadRegistrationTemplate,
   saveRegistrationTemplate,
@@ -227,6 +309,24 @@ ipcMain.handle('upscayl-run', async (event, request) => {
 });
 ipcMain.handle('upscayl-cancel', (event, id) => {
   if (typeof id === 'string') upscaylJobs.get(`${event.sender.id}:${id}`)?.abort();
+});
+
+ipcMain.handle('cricut-installation', async () => {
+  const found = await findCricutInstallation();
+  return {
+    installed: !!found,
+    version: found?.version || null,
+    bridgeInstalled: !!found?.bridgeInstalled,
+  };
+});
+ipcMain.handle('cricut-open', async () => {
+  const found = await findCricutInstallation();
+  if (!found)
+    throw new Error(
+      'Design Space was not found. Open it manually; automatic launch currently supports Windows installations only.',
+    );
+  const error = await shell.openPath(found.executable);
+  if (error) throw new Error(error);
 });
 
 ipcMain.handle('save-project', async (event, request) => {

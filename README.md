@@ -24,42 +24,56 @@
   </p>
 </div>
 
-![CriProx desktop studio showing an eight-card print sheet and sheet settings](docs/assets/criprox-studio.png)
+![CriProx Home with workspaces and recent projects](docs/assets/criprox-home.png)
 
-<p align="center"><em>Eight-card print-sheet preview · Card imagery loaded through Scryfall.</em></p>
+<p align="center"><em>Choose a workspace, start a project, or continue a recent one from CriProx Home. Card imagery loads through Scryfall.</em></p>
 
 ## Why CriProx?
 
-CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, and preview the physical layout. Print the finished PDF from a dedicated PDF application, then cut with your saved Design Space project.
+CriProx brings the fiddly parts of a playtest-card workflow into one focused desktop app. Import a deck list, choose printings or custom art, and preview the physical layout. Generate marked print PDFs locally, or reuse a captured template with its matching Design Space cut project.
 
 |                              |                                                                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 🏠 **Start from Home** | Choose Proxy Card Builder or Stickers, continue a draft, create a new project, or reopen recent local projects. |
 | 🔒 **Local-first**           | Projects, imported artwork, and autosaves stay on your device. No account or hosted backend.                                     |
 | 📐 **Physical dimensions**   | Millimeter-based geometry, standard 63 × 88 mm cards, matched PNG/SVG output, and 300–1200 DPI export.                           |
 | 🃏 **Flexible artwork**      | Search cards, browse sets, commander precons, or tokens, choose Scryfall printings or MPC Autofill community art, or use local images. |
 | ✨ **Optional upscale**      | Choose high-detail local 4× enhancement for Scryfall card images when preparing a print PDF; ordinary exports use the originals. |
 | ⬇️ **Guided updates**       | Browse the changelog anytime with new releases clearly marked, then download and verify the right desktop package for guided installation. |
-| ✂️ **Reusable cuts**         | Capture a Design Space template once, print CriProx PDFs from a PDF application, and cut with the same saved project.             |
+| ✂️ **Reusable cuts**         | Capture a Design Space template once, print from CriProx, and cut with the same saved project.             |
+| 🖨️ **Generate registration marks** | Create marked PDFs and matching cut coordinates for cards or freely arranged stickers, with no template capture required. |
+| 🖨️ **Print directly** | Review the full page in CriProx’s print preview, choose a printer, copies, color, and duplex, then print artwork and registration marks together. |
+| 🎨 **Design your own stickers** | Combine editable text, shapes, images, and drawn lines; choose color palettes, design custom blade paths, and show the cuts before filling a sheet. |
 | ✅ **Compact print workflow** | Completed setup and settings collapse into summaries with green checks. Reopen any section whenever you need it.                 |
 | 📐 **Manual nine-card cuts** | Print a 3×3 PDF with paper-edge guides for a trimmer, or use a matched Basic Cut PNG with a Cricut.                              |
 | 🔁 **Fronts and backs**      | Export manual-refeed or alternating duplex pages; double-sided cards automatically use their matching reverse face.              |
 | 💾 **Local project library** | Drag decks into subfolders, search and sort your library, keep artwork with each project, and save reusable defaults in Settings.                   |
+| 🧭 **One window, two workspaces** | Cards and Stickers share the same layout: inputs and selection on the left, sheet in the center, setup on the right, with common zoom, navigation, and editing shortcuts. |
+| 📐 **Machine and paper guides** | Preview layout space, sensor clearance, and the same black registration marks included in generated print PDFs. |
+| 🏷️ **Automatic sticker sheets** | Trim empty margins without losing artwork, add white padding and a colored border, and nest cut shapes with edge-to-edge spacing. Manage designs from the right-click menu and fill sheets while keeping reserved corners clear. |
+| 🧰 **Material manager** | Import cached Design Space materials, save custom presets, and automatically fill pressure and passes when you choose a material. |
+| 🔌 **Cutter connection** | Connect an Explore 5 on Windows to scan and cut prepared sheets with Light/Medium/Hard pressure and 1–10 passes; one USB sticker-sheet run is physically validated. |
+| 🔑 **Remember your cutter key** | Automatically connect from the cut page using a Windows-protected saved key; guided Design Space setup appears when a new key is needed. |
 
 > [!IMPORTANT]
-> CriProx does **not** create Cricut registration marks, produce native Design Space projects, or control a cutting machine. Design Space supplies the sensor marks and cut job. The manual nine-card profile deliberately bypasses sensor registration and requires repeatable physical mat placement. Read the [Cricut workflow and physical validation guide](docs/CRICUT-WORKFLOW.md) before committing a full deck to card stock.
+> CriProx generates and prints registration marks locally. Windows Explore 5 builds can submit their matching scan-and-cut job, and one USB sticker-sheet run at 80 g / one pass produced usable stickers. Other materials and settings still need testing. Keep generated sheets paired with their CriProx coordinates; an unrelated Design Space mat may not align. See the [print workflow](docs/CRICUT-WORKFLOW.md).
 
 ## From card list to cut
 
-1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse sets, commander precons, or tokens, or add local artwork. Click a card to choose alternate artwork; MPC Autofill shows loaded choices with the highest DPI first. Right-click a card to duplicate it or fill the active sheet's empty slots with that artwork.
+Start from **Home → Proxy Card Builder**, or choose it from the **Workspace** menu. Home also opens recent projects and creates new card or sticker projects. **Stickers** keeps its own draft in the same window. Both editors place imports and selected-item controls on the left, the preview in the center, and sheet setup on the right; click the CriProx logo to return Home.
+
+1. **Build the sheet.** Import a Moxfield or Archidekt link, paste a deck list, search cards, browse sets, commander precons, or tokens, or add local artwork. Click a card to choose alternate artwork; MPC Autofill shows loaded choices with the highest DPI first. Right-click a card to duplicate it or fill the active sheet's empty slots with that artwork. For label batches, choose **Stickers** to import images or a grouped SVG, or **Create sticker** to design with text, shapes, images, and drawing tools, then arrange them automatically; see the [sticker workflow](docs/CRICUT-WORKFLOW.md#sticker-sheets-and-label-batches).
 2. **Organize and dial in the output.** Save decks in the project library, drag them into folders, and use search to reopen them. Choose the machine, paper, layout, resolution, bleed, and optional card backs. Scroll over the preview to zoom; drag empty space or right-drag anywhere to pan. Edit your preferred setup directly in Settings and save it for future projects, or also apply it to the current deck.
-3. **Set up the cut template once.** In Create print PDF, download the setup PNG. Upload it to Design Space as a flat Print Then Cut image, preserve the supplied dimensions, and save the project and mat arrangement.
-4. **Capture the template once.** Save that Design Space job's print output as a one-page PDF and import it into CriProx to verify and save its registration marks. The setup sections collapse with green checks; choose Done for reviewed settings, and reopen any section from its header.
-5. **Print the PDF.** Use the visible prepare controls, review the pages, and save the finished card-sheet PDF from CriProx. Open it in a dedicated PDF application and print at 100% / Actual size, with fit or shrink scaling disabled.
-6. **Cut with the saved project.** Reopen the matching Design Space project and mat, choose Already Printed / Skip printing when available, and cut the printed sheet.
+3. **Generate the marks.** Open **Print then cut → Prepare print sheets**. CriProx creates all corner marks and the directional arrow with the artwork, for each sheet. Review the PDF and any clearance or printer-margin warnings.
+4. **Save the matching files.** Choose a material in sheet setup or **Print then cut** to fill its pressure and passes automatically. **Manage materials** imports the local Design Space catalog and saves your custom presets. Choose **Save PDF + matching cut job** to keep the marked PDF, cut coordinates, and requested cut settings together. Card backs retain the chosen manual-refeed or duplex order.
+5. **Print directly.** Use the prepared preview’s print buttons to review the page image and choose printer, copies, color, page range, and duplex. CriProx prints at actual size; **System printer settings** opens advanced driver options. Select matching paper with fit or shrink disabled. Keep every black mark and the arrow complete.
+6. **Cut the printed sheet.** The cut page automatically tries your saved Explore 5 key. If a new key is needed, follow **Open Cricut Design Space**, connect there, close it, then authorize remembering the key and connect in CriProx. Choose the printed front page and confirm its mat placement and fine-point blade. **Cut sheet** measures the mat, scans the marks, and cuts the matching contours. Pause, resume, or cancel from the app. One USB sticker sheet has been validated at 80 g / one pass; the optional captured-template route uses its exact saved Design Space job.
 
-Reuse the captured template for later decks with the same cut geometry. Changing paper, spacing, machine, layout, or the saved cut job requires a matching new capture. The [workflow guide](docs/CRICUT-WORKFLOW.md) covers the paper settings and a measured test print and cut before a full deck.
+Generated PDFs need no capture. The optional **Reuse a captured Design Space job** section preserves the existing capture workflow; its PDFs must use that saved job. See the [workflow guide](docs/CRICUT-WORKFLOW.md) for both paths and physical validation.
 
-CriProx also exports transparent artwork PNGs, matched vector geometry, dimensions, and a Design Space handoff guide for the separate direct PNG workflow. Those exports do not contain registration marks; use **Create print PDF** for reusable registered pages.
+![Direct printing and a zoomable sticker preview in CriProx](docs/assets/criprox-print-cut.png)
+
+CriProx also exports transparent artwork PNGs, matched vector geometry, dimensions, and a Design Space handoff guide for the separate direct PNG workflow. Those exports do not contain registration marks; use **Prepare print sheets** for locally generated marks.
 
 Export filenames use the deck name, output paper, layout, and purpose, such as
 `My-Deck-US-Letter-6-card-fronts.pdf` or `My-Deck-US-Letter-6-card-sheet-01-artwork.png`.
@@ -75,7 +89,7 @@ Selecting **Manual cutting** as the machine also uses the nine-card layout. The 
 configurable card and page cut guides as you change their separate colors, width, placement, line style, corners,
 length, and page style. The front PDF uses those guides; backs remain artwork-only. Cricut registered
 layouts show their saved Design Space registration marks and exported card positions in the sheet
-preview. Until a matching capture is saved, the preview uses approximate marks. Print at actual size
+preview when a capture is selected. Otherwise the preview uses the locally generated mark geometry. Print at actual size
 and check the dimensions before cutting.
 
 ## Download

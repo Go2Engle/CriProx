@@ -3,7 +3,11 @@ import type { Settings } from './types';
 export function availableSheetProfiles(settings: Pick<Settings, 'paper' | 'machine'>) {
   const profiles: Settings['profile'][] = [];
   if (settings.machine !== 'manual') profiles.push('expanded');
-  if (settings.machine === 'maker' || settings.machine === 'explore') {
+  if (
+    settings.machine === 'maker' ||
+    settings.machine === 'explore' ||
+    settings.machine === 'explore-5'
+  ) {
     if (settings.paper === 'letter') profiles.push('seven');
     profiles.push('eight');
   }

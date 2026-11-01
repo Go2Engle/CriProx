@@ -1,3 +1,4 @@
+import { DEFAULT_CUT_SETTINGS, type CutSettings } from './cut-settings';
 export type CardFace = {
   name: string;
   image: string;
@@ -21,10 +22,10 @@ export type Card = {
   demo?: boolean;
 };
 export type Entry = { id: string; card: Card; quantity: number; face: number };
-export type Settings = {
+export type Settings = CutSettings & {
   units: 'mm' | 'in';
   paper: 'letter' | 'a4';
-  machine: 'maker' | 'explore' | 'joy-xtra' | 'manual';
+  machine: 'maker' | 'explore-5' | 'explore' | 'joy-xtra' | 'manual';
   profile: 'expanded' | 'seven' | 'eight' | 'nine';
   width: number;
   height: number;
@@ -74,6 +75,7 @@ export type Project = {
   backArtwork?: CardFace;
 };
 export const DEFAULT_SETTINGS: Settings = {
+  ...DEFAULT_CUT_SETTINGS,
   units: 'in',
   paper: 'letter',
   machine: 'maker',

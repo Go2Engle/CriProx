@@ -1,0 +1,157 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font:
+    14px/1.45 system-ui,
+    sans-serif;
+  color: #282536;
+  background: #f4f3f8;
+  display: flex;
+  height: 100vh;
+}
+aside {
+  width: 300px;
+  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid #dedbe8;
+  padding: 24px;
+  overflow: auto;
+}
+h1 {
+  font-size: 23px;
+  margin: 0 0 8px;
+}
+#summary {
+  color: #625e70;
+  margin: 0 0 24px;
+}
+label {
+  display: block;
+  font-weight: 550;
+  margin-bottom: 14px;
+}
+select,
+input,
+button {
+  font: inherit;
+  border: 1px solid #d5d0e2;
+  border-radius: 7px;
+  padding: 9px;
+  background: white;
+  color: inherit;
+}
+select,
+input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid #7860d2;
+  outline-offset: 2px;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+legend {
+  font-weight: 550;
+}
+.range {
+  display: flex;
+  gap: 12px;
+}
+.range label {
+  flex: 1;
+  font-size: 12px;
+  min-width: 0;
+}
+.note {
+  font-size: 12px;
+  color: #625e70;
+  padding: 12px;
+  background: #f5f3fa;
+  border-radius: 7px;
+}
+#print {
+  background: #7560cf;
+  color: white;
+  border-color: #7560cf;
+  font-weight: 650;
+}
+form > button {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+}
+.secondary {
+  background: #fff;
+}
+#error {
+  color: #a32835;
+}
+#status:empty,
+#error:empty {
+  display: none;
+}
+main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+nav label {
+  margin: 0 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+nav select {
+  width: auto;
+  margin: 0;
+}
+nav button {
+  font-size: 21px;
+  padding: 1px 12px;
+}
+#viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  text-align: center;
+  padding: 18px;
+  background: #e7e4ed;
+  border-radius: 8px;
+}
+#page {
+  background: white;
+  box-shadow: 0 3px 14px #27213230;
+  vertical-align: top;
+  max-width: none;
+}
+.caption {
+  font-size: 11px;
+  color: #6d6879;
+  text-align: center;
+  margin: 12px 0 0;
+}

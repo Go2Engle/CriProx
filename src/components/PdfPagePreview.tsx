@@ -9,17 +9,35 @@ import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
 import { pdfRenderer } from '../lib/registered-pdf';
 import { pdfPreviewPages } from '../lib/pdf-preview-pages';
 import './PdfPagePreview.css';
+import PrintPdfActions from './PrintPdfActions';
 
 export default function PdfPagePreview({
   pdf,
   backPdf,
   mode,
+  backFlip,
 }: {
   pdf: Uint8Array;
   backPdf?: Uint8Array;
   mode: 'front' | 'manual' | 'duplex';
+  backFlip?: 'long-edge' | 'short-edge';
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
+  const [displayWidth, setDisplayWidth] = useState(600),
+    [zoom, setZoom] = useState(100);
+  useEffect(() => {
+    const update = () =>
+      setDisplayWidth((sheet.current?.clientWidth || 600) * (window.devicePixelRatio || 1));
+    const observer = new ResizeObserver(update);
+    if (sheet.current) observer.observe(sheet.current);
+    window.addEventListener('resize', update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
   const [documents, setDocuments] = useState<PDFDocumentProxy[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -64,7 +82,12 @@ export default function PdfPagePreview({
     void (async () => {
       page = await documents[selected.document].getPage(selected.page);
       if (!active) return;
-      const viewport = page.getViewport({ scale: 1.5 });
+      const natural = page.getViewport({ scale: 1 });
+      const scale = Math.min(
+        Math.max(1.5, (displayWidth * zoom) / 100 / natural.width),
+        Math.sqrt(32_000_000 / (natural.width * natural.height)),
+      );
+      const viewport = page.getViewport({ scale });
       target.width = Math.ceil(viewport.width);
       target.height = Math.ceil(viewport.height);
       render = page.render({ canvas: target, viewport });
@@ -88,10 +111,11 @@ export default function PdfPagePreview({
       active = false;
       render?.cancel();
     };
-  }, [documents, selected?.document, selected?.page]);
+  }, [documents, selected?.document, selected?.page, displayWidth, zoom]);
 
   return (
     <div className="pdf-page-preview">
+      <PrintPdfActions pdf={pdf} backPdf={backPdf} mode={mode} backFlip={backFlip} />
       <div className="pdf-page-navigation">
         <button
           className="icon-button"
@@ -126,12 +150,26 @@ export default function PdfPagePreview({
           <ChevronRight size={18} />
         </button>
       </div>
-      <div className="pdf-preview-sheet" aria-busy={loading}>
+      <label className="pdf-preview-zoom">
+        Preview zoom{' '}
+        <select value={zoom} onChange={(event) => setZoom(Number(event.target.value))}>
+          {[100, 150, 200, 300].map((value) => (
+            <option key={value} value={value}>
+              {value === 100 ? 'Fit width' : `${value}%`}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="pdf-preview-sheet" ref={sheet} aria-busy={loading}>
         <canvas
           ref={canvas}
           role="img"
           aria-label={selected ? `${selected.label} PDF preview` : 'PDF preview'}
-          style={{ visibility: loading || error ? 'hidden' : 'visible' }}
+          style={{
+            visibility: loading || error ? 'hidden' : 'visible',
+            width: `${zoom}%`,
+            maxWidth: 'none',
+          }}
         />
         {loading && (
           <div className="pdf-preview-status" role="status">

@@ -1,5 +1,32 @@
 # Installing and running CriProx
 
+## Start from Home
+
+The app opens on **Home**. Choose **Proxy Card Builder** for gaming cards or **Stickers** for labels and custom designs. Continue an existing draft, create a new project, or use **Open project** and the recent-project tiles. Opening a project file selects its workspace automatically. Click the CriProx logo to return Home. Recent local snapshots are bounded to eight projects and a 90 MB budget; keep saved project files for permanent storage.
+
+## Explore 5 connection requirements
+
+The Windows desktop app's **Print then cut → Connect your cutter** requires the inspected
+Design Space **10.8.81** installation. A current signed-in session and internet access are needed
+for the first connection or when a new machine key is required. **Print then cut** automatically tries
+an available saved key once, using the last selected USB or experimental Bluetooth LE transport.
+With no usable key, choose **Open Cricut Design Space**, sign in and connect the cutter there,
+then close Design Space. Authorize remembering the key and choose **Connect cutter** in CriProx. CriProx
+loads verified installed components; it does not bundle Cricut's runtime or keys. An automatic
+Design Space update can disable connection until the new build is inspected.
+
+After successful authentication, the machine key is encrypted with Windows account protection
+in `cutter-key.bin` inside CriProx's application data folder. Automatic connections use only that key;
+they never read the Design Space session or request a new key. Login tokens are not saved. While disconnected,
+**Forget saved key** removes it and requires a current Design Space sign-in next time. A failed
+saved-key handshake removes it and shows the setup prompt. Disconnecting does not trigger another
+automatic attempt until you revisit the cut page. The app reports if protection or
+saving is unavailable; it never writes a plaintext fallback. Key lifetime remains unverified.
+
+USB authentication, homing, and a one-pass 80 g sticker-paper square are verified on Explore 5 firmware 4.8.2. The Windows app now provides **Cut sheet** for generated registration marks and matching contours, plus Pause, Resume, and Cancel. A full USB sticker-sheet print-and-cut run at 80 g, one pass has also succeeded. Other paper and material settings still need validation. Other cutter models are not supported by the direct controller.
+
+Both workspaces can print prepared sheets from CriProx’s desktop print preview, including a page image and printer, copies, color, range, and duplex controls, or save PDFs. Advanced driver settings remain available through the system dialog. Browser/macOS/Linux builds retain editing and printing but cannot connect to the cutter. See [the print workflow](CRICUT-WORKFLOW.md) for paper placement, print scale, and validation.
+
 ## Desktop releases
 
 Download the newest stable build from [GitHub Releases](https://github.com/Go2Engle/CriProx/releases/latest).
@@ -212,10 +239,8 @@ Theme and project-folder changes on the Appearance and Project library pages app
 ## Next step
 
 Before printing, continue with the [Cricut workflow and physical validation guide](CRICUT-WORKFLOW.md).
-For registered Cricut layouts, set up and save the cut template in Design Space once, capture its
-print output as a PDF, and import it into CriProx. For each deck, save the finished PDF from
-CriProx, print it from a dedicated PDF application at **100% / Actual size**, then cut with the
-matching saved Design Space project using **Already Printed / Skip printing** when available.
-CriProx saves print files; it does not print directly or control the cutter. Manual cutting also
-uses a saved PDF printed from a PDF application, with paper-edge guides for trimming or a matched
-Basic Cut template for Cricut.
+Cards and stickers can **Prepare print sheets** locally without Design Space or a capture. Use the print buttons to open CriProx’s print preview and print at actual size, or save the PDF and matching cut coordinates. In Stickers, **Create sticker** adds editable text, shapes, image layers, palettes, and line/freehand drawing; **Save design to sheet** retains these elements in local project files. **Show cuts** displays the non-printing blade paths. Use **Editing → Cut paths** in the designer to create editable outlines with shapes, polygons, freehand, or straight lines. Windows Explore 5 users can scan and cut the prepared sheet from the same workflow; one USB sticker-sheet run is physically validated. Captured-template jobs continue to use their exact saved Design Space mat. Manual cutting retains paper-edge guides or matching Basic Cut templates.
+
+### Import Design Space materials
+
+Open **Manage materials** in sheet setup or **Print then cut**. Desktop builds import the material settings cached under your local Design Space data folder on first use. No separate download or sign-in is required to read the cache. If the catalog is empty or incomplete, open Design Space, select your machine, browse its materials, and then choose **Refresh from Design Space** in CriProx. Customizations are saved in CriProx and never written back to Design Space. Browser builds support custom presets but cannot read the desktop cache. See the [material manager guide](FEATURES.md#material-manager-pressure-and-passes).

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src file:; script-src 'self'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CriProx — Print preview</title>
+    <link rel="stylesheet" href="print-preview.css" />
+  </head>
+  <body>
+    <aside>
+      <h1>Print preview</h1>
+      <p id="summary">Loading prepared pages…</p>
+      <form id="settings">
+        <label>Printer<select id="printer" required></select></label>
+        <label>Copies<input id="copies" type="number" min="1" max="99" value="1" required /></label>
+        <label
+          >Color<select id="color">
+            <option value="color">Color</option>
+            <option value="gray">Black and white</option>
+          </select></label
+        >
+        <label
+          >Sides<select id="duplex">
+            <option value="simplex">One-sided</option>
+            <option value="longEdge">Double-sided · long edge</option>
+            <option value="shortEdge">Double-sided · short edge</option>
+          </select></label
+        >
+        <fieldset>
+          <legend>Pages to print</legend>
+          <div class="range">
+            <label>From<input id="first" type="number" min="1" value="1" required /></label
+            ><label>To<input id="last" type="number" min="1" value="1" required /></label>
+          </div>
+        </fieldset>
+        <p class="note">
+          Actual size · 100% · 300 DPI<br />Artwork and registration marks print together. Use the
+          matching paper in your printer.
+        </p>
+        <p id="status" role="status"></p>
+        <p id="error" role="alert"></p>
+        <button id="print" type="submit" disabled>Print</button>
+        <button id="advanced" type="button" class="secondary" disabled>
+          System printer settings…
+        </button>
+        <button id="cancel" type="button" class="secondary">Cancel</button>
+      </form>
+    </aside>
+    <main aria-label="Prepared page preview">
+      <nav>
+        <button id="previous" aria-label="Previous page" disabled>‹</button
+        ><span id="page-label">Page 1</span
+        ><button id="next" aria-label="Next page" disabled>›</button
+        ><label
+          >Zoom<select id="zoom">
+            <option value="fit">Fit page</option>
+            <option value="100">100%</option>
+            <option value="150">150%</option>
+            <option value="200">200%</option>
+          </select></label
+        >
+      </nav>
+      <div id="viewport"><img id="page" alt="Prepared print page" hidden /></div>
+      <p class="caption">
+        Preview of the prepared pages. Printer margins and driver-specific adjustments may differ.
+      </p>
+    </main>
+    <script src="print-preview.js"></script>
+  </body>
+</html>

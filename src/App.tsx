@@ -1,4 +1,17 @@
 import {
+  WorkspaceGrid,
+  WorkspacePanel,
+  WorkspacePanelHeading,
+  SheetNavigation,
+  ZoomControl,
+  MachineSelect,
+  PaperOptions,
+} from './components/WorkspaceChrome';
+import { createPortal } from 'react-dom';
+import { MachineGuideShapes, MachineGuideLegend } from './components/MachineGuides';
+import { machineGuide, outsidePlanningGuide } from './lib/machine-guides';
+import { polygonPath, shapePolygon } from './lib/generated-registration';
+import {
   canMoveProjectToFolder,
   explorerProjects,
   PROJECT_DRAG_TYPE,
@@ -9,6 +22,21 @@ import { templateFilenameStem } from './lib/filenames';
 import { enableArtboardPanning } from './lib/artboard-pan';
 import { enableProjectDragging, type ProjectDragCallbacks } from './lib/project-drag';
 import RegisteredPrint from './components/RegisteredPrint';
+import StickerStudio from './components/StickerStudio';
+import HomeScreen, { type HomeProject } from './components/HomeScreen';
+import { WORKSPACES, type WorkspaceId } from './lib/workspaces';
+import {
+  listRecentProjects,
+  readRecentProject,
+  rememberRecentProject,
+  projectSummary,
+  type RecentProject,
+} from './lib/recent-projects';
+import { validateStickerProject, type StickerProject } from './lib/stickers';
+import { useWorkspaceHistory } from './lib/use-workspace-history';
+import { workspaceShortcut, isTextEditing } from './lib/workspace-history';
+import PrintCutWorkflow from './components/PrintCutWorkflow';
+import CutSettingsControls from './components/CutSettingsControls';
 import FrontBleedControl from './components/FrontBleedControl';
 import MpcArtworkSearch from './components/MpcArtworkSearch';
 import ArtworkTrimControl from './components/ArtworkTrimControl';
@@ -40,7 +68,6 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   Clock3,
   CircleHelp,
@@ -75,8 +102,6 @@ import {
   Trash2,
   Upload,
   X,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react';
 import type { Card, Entry, PrintDpi, Project, Settings } from './lib/types';
 import {
@@ -122,7 +147,7 @@ import {
   registeredOutputFrame,
   REGISTERED_ART_MASK_PAD_MM,
 } from './lib/registered-pdf';
-import { MOCK_REGISTRATION_MARKS, sheetPreviewFrame } from './lib/sheet-preview';
+import { sheetPreviewFrame } from './lib/sheet-preview';
 import { registrationPreviewImage } from './lib/registration-preview-image';
 import { looksLikeMpcPrintCanvas, usesMpcTrim, withMpcTrim } from './lib/artwork';
 import {
@@ -2123,7 +2148,7 @@ function useCapturedRegistration(settings: Settings, refresh: number) {
         await set(`registration:${key}`, profile).catch(() => {});
         await show(profile);
       } catch {
-        // Keep a valid local capture, or show the approximate layout until one is available.
+        // Keep a valid local capture, or show the generated print layout.
       }
     })();
     return () => {
@@ -2134,17 +2159,21 @@ function useCapturedRegistration(settings: Settings, refresh: number) {
 }
 
 function SheetPreview({
+  legendHost,
   sheet,
   settings,
   mode,
+  showCuts,
   zoom,
   registrationRefresh,
   select,
   inspect,
 }: {
+  legendHost: HTMLElement | null;
   sheet?: Sheet;
   settings: Settings;
   mode: string;
+  showCuts: boolean;
   zoom: number;
   registrationRefresh: number;
   select: (target: EntryCopy) => void;
@@ -2170,14 +2199,7 @@ function SheetPreview({
             { width: paper.w, height: paper.h },
             settings,
           )
-        : { page: [], card: [] },
-    markLeft = frame.left - MOCK_REGISTRATION_MARKS.offset,
-    markRight = frame.left + area.width + MOCK_REGISTRATION_MARKS.offset,
-    markTop = frame.top - MOCK_REGISTRATION_MARKS.offset,
-    markBottom = frame.top + area.height + MOCK_REGISTRATION_MARKS.offset,
-    markWidth = MOCK_REGISTRATION_MARKS.thickness,
-    markLength = MOCK_REGISTRATION_MARKS.armLength,
-    markGap = MOCK_REGISTRATION_MARKS.cornerGap;
+        : { page: [], card: [] };
   return (
     <div className="paper-stage">
       <div
@@ -2279,6 +2301,38 @@ function SheetPreview({
             <span>Drop images here or use Add artwork.</span>
           </div>
         )}
+        {showCuts && sheet && (
+          <svg
+            className="sheet-guide-overlay"
+            viewBox={`0 0 ${paper.w} ${paper.h}`}
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Card cut paths"
+          >
+            {sheet.placements.map((p, i) => (
+              <path
+                key={`${p.entry.id}-${p.copy}`}
+                d={polygonPath(
+                  shapePolygon({
+                    itemId: `card-${i}`,
+                    x: frame.left + p.x,
+                    y: frame.top + p.y,
+                    width: p.width,
+                    height: p.height,
+                    radius: settings.radius,
+                    rotation: 0,
+                  }),
+                )}
+                fill="none"
+                stroke="#ec268f"
+                strokeWidth={1}
+                strokeDasharray="4 3"
+                vectorEffect="non-scaling-stroke"
+                pointerEvents="none"
+              />
+            ))}
+          </svg>
+        )}
         {manualHandCut && (guidePaths.page.length > 0 || guidePaths.card.length > 0) && (
           <svg
             className="sheet-guide-overlay"
@@ -2307,46 +2361,35 @@ function SheetPreview({
             )}
           </svg>
         )}
-        {registered && !captured && (
-          <svg
-            className="mock-registration-overlay"
-            viewBox={`0 0 ${paper.w} ${paper.h}`}
-            aria-label="Approximate Cricut registration marks; capture a template for an exact preview"
-          >
-            <polygon
-              points={`${markLeft},${markTop + markWidth} ${markLeft + markWidth / 2},${markTop} ${markLeft + markWidth},${markTop + markWidth}`}
-            />
-            <rect
-              x={markLeft + markWidth + markGap}
-              y={markTop}
-              width={markLength}
-              height={markWidth}
-            />
-            <rect
-              x={markLeft}
-              y={markTop + markWidth + markGap}
-              width={markWidth}
-              height={markLength}
-            />
-            <rect x={markRight - markLength} y={markTop} width={markLength} height={markWidth} />
-            <rect x={markRight - markWidth} y={markTop} width={markWidth} height={markLength} />
-            <rect x={markLeft} y={markBottom - markLength} width={markWidth} height={markLength} />
-            <rect x={markLeft} y={markBottom - markWidth} width={markLength} height={markWidth} />
-            <rect
-              x={markRight - markLength}
-              y={markBottom - markWidth}
-              width={markLength}
-              height={markWidth}
-            />
-            <rect
-              x={markRight - markWidth}
-              y={markBottom - markLength}
-              width={markWidth}
-              height={markLength}
-            />
-          </svg>
-        )}
+        <svg className="machine-guide-overlay" viewBox={`0 0 ${paper.w} ${paper.h}`}>
+          <MachineGuideShapes
+            machine={settings.machine}
+            paper={settings.paper}
+            area={{ x: frame.left, y: frame.top, width: area.width, height: area.height }}
+            captured={!!captured}
+            optical={registered}
+          />
+        </svg>
       </div>
+      {legendHost &&
+        createPortal(
+          <MachineGuideLegend
+            machine={settings.machine}
+            paper={settings.paper}
+            area={{ x: frame.left, y: frame.top, width: area.width, height: area.height }}
+            captured={!!captured}
+            optical={registered}
+            conflicts={
+              sheet?.placements.filter((p) =>
+                outsidePlanningGuide(
+                  { x: p.x + frame.left, y: p.y + frame.top, width: p.width, height: p.height },
+                  machineGuide(settings.machine, settings.paper),
+                ),
+              ).length ?? 0
+            }
+          />,
+          legendHost,
+        )}
     </div>
   );
 }
@@ -2427,8 +2470,74 @@ function DonationLink() {
 
 export default function App() {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(getInitialColorTheme);
-  const [project, setProject] = useState<Project>(createSample),
-    [projectDefaults, setProjectDefaults] = useState<ProjectDefaults>(FACTORY_PROJECT_DEFAULTS),
+  const {
+    value: project,
+    setValue: setProject,
+    reset: resetProject,
+    undo: undoCards,
+    redo: redoCards,
+  } = useWorkspaceHistory<Project>(createSample);
+  const [workspace, setWorkspace] = useState<'home' | WorkspaceId>('home'),
+    [stickerPrintRequest, setStickerPrintRequest] = useState(0);
+  const [showCardCuts, setShowCardCuts] = useState(false);
+  const workspaceRef = useRef(workspace);
+  workspaceRef.current = workspace;
+  const stickerDraft = useRef<StickerProject | undefined>(undefined);
+  const [initialRecentIds] = useState<Partial<Record<WorkspaceId, string>>>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('criprox-recent-active') || '{}');
+      return Object.fromEntries(
+        Object.entries(stored).filter(
+          ([key, value]) => WORKSPACES.some((mode) => mode.id === key) && typeof value === 'string',
+        ),
+      );
+    } catch {
+      return {};
+    }
+  });
+  const recentIds = useRef(initialRecentIds);
+  function setRecentId(mode: WorkspaceId, id?: string) {
+    if (id) recentIds.current[mode] = id;
+    else delete recentIds.current[mode];
+    try {
+      localStorage.setItem('criprox-recent-active', JSON.stringify(recentIds.current));
+    } catch {}
+  }
+  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]),
+    [homeBusy, setHomeBusy] = useState(false);
+  const [stickerDraftSummary, setStickerDraftSummary] =
+    useState<ReturnType<typeof projectSummary>>();
+  const [stickerRequest, setStickerRequest] = useState<{
+    sequence: number;
+    project?: StickerProject;
+  }>();
+  const homeInput = useRef<HTMLInputElement>(null);
+  const updateStickerDraft = useCallback((next: StickerProject) => {
+    const first = !stickerDraft.current;
+    stickerDraft.current = next;
+    if (first || workspaceRef.current === 'home')
+      setStickerDraftSummary(projectSummary(next, 'stickers'));
+  }, []);
+  const recordRecent = useCallback(
+    async (next: Project | StickerProject, mode: WorkspaceId, fresh: boolean | string = false) => {
+      if (typeof fresh === 'string') setRecentId(mode, fresh);
+      else if (fresh) setRecentId(mode);
+      const items = await rememberRecentProject(next, mode, recentIds.current[mode]);
+      setRecentId(mode, items[0].id);
+      setRecentProjects(items);
+    },
+    [],
+  );
+  const recordStickerRecent = useCallback(
+    (next: StickerProject, fresh: boolean | string = false) =>
+      recordRecent(next, 'stickers', fresh),
+    [recordRecent],
+  );
+  const [stickerTitleHost, setStickerTitleHost] = useState<HTMLDivElement | null>(null),
+    [stickerActionsHost, setStickerActionsHost] = useState<HTMLDivElement | null>(null);
+  const cardClipboard = useRef<Entry | undefined>(undefined);
+  const [guideLegendHost, setGuideLegendHost] = useState<HTMLDivElement | null>(null);
+  const [projectDefaults, setProjectDefaults] = useState<ProjectDefaults>(FACTORY_PROJECT_DEFAULTS),
     [savingSheetDefaults, setSavingSheetDefaults] = useState(false),
     [loaded, setLoaded] = useState(false),
     [saved, setSaved] = useState('Opening workspace…');
@@ -2440,10 +2549,12 @@ export default function App() {
     | 'new'
     | 'clear'
     | 'registered'
+    | 'print-cut'
     | 'projects'
     | 'settings'
     | null
   >(null);
+  const [returnToPrintCut, setReturnToPrintCut] = useState(false);
   const [selected, setSelected] = useState<EntryCopy | null>(null),
     [inspecting, setInspecting] = useState<EntryCopy | null>(null),
     [search, setSearch] = useState(''),
@@ -2628,13 +2739,93 @@ export default function App() {
     }
   }, []);
   useEffect(() => {
+    void listRecentProjects()
+      .then(setRecentProjects)
+      .catch(() => {});
+  }, []);
+  function chooseWorkspace(id: WorkspaceId) {
+    setWorkspace(id);
+    setModal(null);
+    setCardMenu(null);
+  }
+  async function showHome() {
+    setWorkspace('home');
+    setModal(null);
+    setCardMenu(null);
+    setHomeBusy(true);
+    if (stickerDraft.current)
+      setStickerDraftSummary(projectSummary(stickerDraft.current, 'stickers'));
+    try {
+      if (workspace === 'cards' && project.entries.length) await recordRecent(project, 'cards');
+      if (workspace === 'stickers' && stickerDraft.current?.artwork.length)
+        await recordRecent(stickerDraft.current, 'stickers');
+      await refreshProjectLibrary();
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setHomeBusy(false);
+    }
+  }
+  async function newWorkspace(id: WorkspaceId) {
+    setHomeBusy(true);
+    try {
+      if (id === 'cards') {
+        if (project.entries.length) await recordRecent(project, 'cards');
+        setRecentId('cards');
+        startFreshProject();
+        chooseWorkspace('cards');
+      } else {
+        if (stickerDraft.current?.artwork.length)
+          await recordRecent(stickerDraft.current, 'stickers');
+        setRecentId('stickers');
+        setStickerRequest((r) => ({ sequence: (r?.sequence ?? 0) + 1 }));
+        chooseWorkspace('stickers');
+      }
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setHomeBusy(false);
+    }
+  }
+  async function openHomeRecent(item: HomeProject) {
+    setHomeBusy(true);
+    try {
+      if (item.source === 'library') {
+        await openManagedProject(item.id);
+        return;
+      }
+      const next = await readRecentProject(item.id);
+      if (item.workspace === 'cards') {
+        const cards = validateProject(next);
+        if (project.entries.length) await recordRecent(project, 'cards');
+        setRecentId('cards', item.id);
+        resetProject(cards);
+        rememberActiveProject(null);
+        setPage(0);
+        setSelected(null);
+        setInspecting(null);
+      } else {
+        const stickers = validateStickerProject(next);
+        if (stickerDraft.current?.artwork.length)
+          await recordRecent(stickerDraft.current, 'stickers');
+        setRecentId('stickers', item.id);
+        setStickerRequest((r) => ({ sequence: (r?.sequence ?? 0) + 1, project: stickers }));
+      }
+      chooseWorkspace(item.workspace);
+    } catch (error) {
+      setToast(errorText(error));
+    } finally {
+      setHomeBusy(false);
+    }
+  }
+  useEffect(() => {
     let active = true;
     async function restoreWorkspace() {
       let workspaceFailed = false,
         defaultsFailed = false;
       try {
         const value = await get('criprox-project');
-        if (active && value) setProject(validateProject(value));
+        if (active && value) resetProject(validateProject(value));
       } catch {
         workspaceFailed = true;
       }
@@ -2739,6 +2930,53 @@ export default function App() {
   const filtered = project.entries.filter((e) =>
     `${e.card.name} ${e.card.setName}`.toLowerCase().includes(search.toLowerCase()),
   );
+  useEffect(() => {
+    if (workspace !== 'cards' || !loaded || modal || libraryBusy) return;
+    const handler = (event: KeyboardEvent) => {
+      const action = workspaceShortcut(event, isTextEditing(event.target));
+      if (!action) return;
+      event.preventDefault();
+      if (action === 'undo' || action === 'redo') {
+        (action === 'undo' ? undoCards : redoCards)();
+        setSelected(null);
+        setInspecting(null);
+        setCardMenu(null);
+        return;
+      }
+      if (action === 'paste') {
+        if (!cardClipboard.current) return;
+        if (project.entries.reduce((n, e) => n + e.quantity, 0) >= 500) {
+          setToast('A project can contain at most 500 cards.');
+          return;
+        }
+        const entry = { ...cardClipboard.current, id: crypto.randomUUID(), quantity: 1 };
+        add([entry]);
+        setSelected({ entryId: entry.id, copy: 0 });
+        setToast('Card pasted.');
+        return;
+      }
+      const target = selected ?? inspecting;
+      if (!target) return;
+      const entry = project.entries.find((e) => e.id === target.entryId);
+      if (!entry) return;
+      if (action !== 'delete') cardClipboard.current = { ...entry, quantity: 1 };
+      if (action === 'cut' || action === 'delete') {
+        setProject((p) => ({ ...p, entries: deleteEntryCopy(p.entries, target) }));
+        setSelected(null);
+        setInspecting(null);
+        setCardMenu(null);
+      }
+      setToast(
+        action === 'delete'
+          ? 'Card deleted. Ctrl+Z restores it.'
+          : action === 'cut'
+            ? 'Card cut. Use Paste to place it.'
+            : 'Card copied.',
+      );
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  });
   function settings(patch: Partial<Settings>) {
     setProject((p) => ({ ...p, settings: { ...p.settings, ...patch } }));
   }
@@ -2780,7 +3018,9 @@ export default function App() {
     setToast('Saved sheet setup applied to the current project.');
   }
   function startFreshProject() {
-    setProject(projectFromDefaults(projectDefaults));
+    setRecentId('cards');
+    setWorkspace('cards');
+    resetProject(projectFromDefaults(projectDefaults));
     rememberActiveProject(null);
     setSelected(null);
     setInspecting(null);
@@ -2993,6 +3233,7 @@ export default function App() {
   async function exportProjectBackup() {
     try {
       const didSave = await saveProjectAs(project);
+      if (didSave) await recordRecent(project, 'cards');
       setToast(didSave ? 'Project backup exported.' : 'Export cancelled.');
     } catch (error) {
       setToast(errorText(error));
@@ -3022,12 +3263,15 @@ export default function App() {
     setLibraryBusy(true);
     try {
       const next = validateProject(await loadManagedProject(projects, projectId));
-      setProject(next);
+      if (project.entries.length) await recordRecent(project, 'cards');
+      resetProject(next);
       rememberActiveProject(projectId);
+      setRecentId('cards');
       setPage(0);
       setSelected(null);
       setInspecting(null);
       setModal(null);
+      chooseWorkspace('cards');
       setToast('Project opened.');
     } catch (error) {
       setToast(errorText(error));
@@ -3140,17 +3384,31 @@ export default function App() {
     if (!file) return;
     try {
       if (file.size > 100000000) throw new Error('Project files must be under 100 MB.');
-      const next = validateProject(JSON.parse(await file.text()));
-      setProject(next);
+      const value = JSON.parse(await file.text());
+      if (value.kind === 'criprox-stickers') {
+        const next = validateStickerProject(value);
+        if (stickerDraft.current?.artwork.length)
+          await recordRecent(stickerDraft.current, 'stickers');
+        await recordRecent(next, 'stickers', `file:stickers:${file.name}:${file.lastModified}`);
+        setStickerRequest((r) => ({ sequence: (r?.sequence ?? 0) + 1, project: next }));
+        chooseWorkspace('stickers');
+        return;
+      }
+      const next = validateProject(value);
+      if (project.entries.length) await recordRecent(project, 'cards');
+      await recordRecent(next, 'cards', `file:cards:${file.name}:${file.lastModified}`);
+      resetProject(next);
       rememberActiveProject(null);
       setPage(0);
       setSelected(null);
       setInspecting(null);
+      chooseWorkspace('cards');
       setToast('Project opened.');
     } catch (e) {
       setToast(errorText(e));
     } finally {
       if (projectInput.current) projectInput.current.value = '';
+      if (homeInput.current) homeInput.current.value = '';
     }
   }
   const snoozedUpdate =
@@ -3200,16 +3458,42 @@ export default function App() {
     <div className="app-shell">
       <header className="topbar">
         <WindowControls />
-        <a className="brand" href="#" aria-label="CriProx studio">
+        <a
+          className="brand"
+          href="#"
+          aria-label="CriProx Home"
+          onClick={(event) => {
+            event.preventDefault();
+            void showHome();
+          }}
+        >
           <span className="brand-icon">
             <Layers3 size={22} />
           </span>
           <span>
             Cri<span className="brand-accent">Prox</span>
-            <small>CARD SHEET STUDIO</small>
+            <small>SHEET STUDIO</small>
           </span>
         </a>
-        <div className="workspace-title">
+        <label className="workspace-switch">
+          Workspace
+          <select
+            aria-label="Workspace"
+            value={workspace}
+            onChange={(e) => {
+              if (e.target.value === 'home') void showHome();
+              else chooseWorkspace(e.target.value as WorkspaceId);
+            }}
+          >
+            <option value="home">Home</option>
+            {WORKSPACES.map((mode) => (
+              <option key={mode.id} value={mode.id}>
+                {mode.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="workspace-title" hidden={workspace !== 'cards'}>
           <button
             className="breadcrumb"
             onClick={() =>
@@ -3226,9 +3510,28 @@ export default function App() {
           />
           <span className="local-badge">{activeProjectId ? 'SAVED PROJECT' : 'LOCAL DRAFT'}</span>
         </div>
+        <div
+          className="workspace-title"
+          hidden={workspace !== 'stickers'}
+          ref={setStickerTitleHost}
+        />
         <div className="top-actions">
           <button
+            className="secondary compact"
+            hidden={workspace === 'home'}
+            disabled={!loaded}
+            onClick={() =>
+              workspace === 'stickers'
+                ? setStickerPrintRequest((v) => v + 1)
+                : setModal('print-cut')
+            }
+          >
+            <Scissors size={16} />
+            Print then cut
+          </button>
+          <button
             className="primary compact print-action"
+            hidden={workspace !== 'cards'}
             disabled={!loaded}
             onClick={() => setModal('registered')}
           >
@@ -3271,33 +3574,40 @@ export default function App() {
               <Settings2 size={18} />
             </button>
           )}
-          <span className="top-action-divider" />
-          <button
-            className="icon-button"
-            title="New project"
-            aria-label="New project"
-            disabled={!loaded}
-            onClick={() => setModal('new')}
-          >
-            <FilePlus2 size={18} />
-          </button>
-          <button
-            className="secondary compact"
-            disabled={!loaded}
-            onClick={() =>
-              window.criprox?.projects ? setModal('projects') : projectInput.current?.click()
-            }
-          >
-            <FolderOpen size={16} /> {window.criprox?.projects ? 'Projects' : 'Open'}
-          </button>
-          <button
-            className="secondary compact"
-            disabled={!loaded || libraryBusy}
-            onClick={() => void saveCurrentProject()}
-          >
-            {libraryBusy ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}
-            {activeProjectId ? 'Save' : 'Save project'}
-          </button>
+          <div
+            className="card-file-actions"
+            hidden={workspace !== 'stickers'}
+            ref={setStickerActionsHost}
+          />
+          <div className="card-file-actions" hidden={workspace !== 'cards'}>
+            <span className="top-action-divider" />
+            <button
+              className="icon-button"
+              title="New project"
+              aria-label="New project"
+              disabled={!loaded}
+              onClick={() => setModal('new')}
+            >
+              <FilePlus2 size={18} />
+            </button>
+            <button
+              className="secondary compact"
+              disabled={!loaded}
+              onClick={() =>
+                window.criprox?.projects ? setModal('projects') : projectInput.current?.click()
+              }
+            >
+              <FolderOpen size={16} /> {window.criprox?.projects ? 'Projects' : 'Open'}
+            </button>
+            <button
+              className="secondary compact"
+              disabled={!loaded || libraryBusy}
+              onClick={() => void saveCurrentProject()}
+            >
+              {libraryBusy ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}
+              {activeProjectId ? 'Save' : 'Save project'}
+            </button>
+          </div>
         </div>
       </header>
       {releaseUpdate && (
@@ -3323,32 +3633,60 @@ export default function App() {
           </button>
         </aside>
       )}
-      <div className="app-body">
+      {workspace === 'home' && (
+        <HomeScreen
+          busy={!loaded || homeBusy || libraryBusy}
+          drafts={[
+            projectSummary(project, 'cards'),
+            ...(stickerDraftSummary ? [stickerDraftSummary] : []),
+          ]}
+          recent={[
+            ...recentProjects.map((p) => ({ ...p, source: 'cache' as const })),
+            ...(projectLibrary?.projects ?? []).map((p) => ({
+              id: p.id,
+              workspace: 'cards' as const,
+              name: p.name,
+              count: p.cardCount,
+              updatedAt: p.updatedAt,
+              source: 'library' as const,
+            })),
+          ]
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+            .slice(0, 12)}
+          choose={chooseWorkspace}
+          create={(id) => void newWorkspace(id)}
+          open={() => homeInput.current?.click()}
+          openRecent={(item) => void openHomeRecent(item)}
+          browse={window.criprox?.projects ? () => setModal('projects') : undefined}
+        />
+      )}
+      <div className="app-body" hidden={workspace !== 'cards'}>
         <main>
-          <div className="studio-grid">
-            <section className="library panel">
-              <div className="panel-heading">
-                <h2>
-                  Your cards <span className="count-badge">{count}</span>
-                </h2>
-                <div className="library-heading-actions">
-                  <button
-                    className="text-button clear-deck"
-                    disabled={!loaded || !count}
-                    onClick={() => setModal('clear')}
-                  >
-                    <Trash2 size={13} /> Clear
-                  </button>
-                  <button
-                    className="icon-button"
-                    aria-label="Find a card"
-                    disabled={!loaded || count >= 500}
-                    onClick={() => setModal('search')}
-                  >
-                    <Plus size={19} />
-                  </button>
-                </div>
-              </div>
+          <WorkspaceGrid>
+            <WorkspacePanel kind="library">
+              <WorkspacePanelHeading
+                title="Your cards"
+                badge={count}
+                actions={
+                  <div className="library-heading-actions">
+                    <button
+                      className="text-button clear-deck"
+                      disabled={!loaded || !count}
+                      onClick={() => setModal('clear')}
+                    >
+                      <Trash2 size={13} /> Clear
+                    </button>
+                    <button
+                      className="icon-button"
+                      aria-label="Find a card"
+                      disabled={!loaded || count >= 500}
+                      onClick={() => setModal('search')}
+                    >
+                      <Plus size={19} />
+                    </button>
+                  </div>
+                }
+              />
               <div className="library-controls">
                 <button
                   className="primary find-card-button"
@@ -3471,7 +3809,7 @@ export default function App() {
                       <button
                         className="text-button"
                         onClick={() => {
-                          setProject(createSample());
+                          resetProject(createSample());
                           setPage(0);
                         }}
                       >
@@ -3481,12 +3819,50 @@ export default function App() {
                   </div>
                 )}
               </div>
+              {activeEntry && selected && (
+                <div className="selection-details">
+                  <div className="section-label">SELECTED CARD</div>
+                  <strong>{activeEntry.card.name}</strong>
+                  <p>{activeEntry.card.setName}</p>
+                  {activeEntry.card.faces.length > 1 && (
+                    <>
+                      <label>
+                        Card face
+                        <select
+                          aria-label="Card face"
+                          value={activeEntry.face}
+                          onChange={(e) => editCopy(selected, { face: Number(e.target.value) })}
+                        >
+                          {activeEntry.card.faces.map((face, i) => (
+                            <option key={i} value={i}>
+                              {face.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="warning-box double-sided-warning" role="status">
+                        Double-sided card.{' '}
+                        {project.settings.backsEnabled
+                          ? `${activeEntry.card.faces[activeEntry.face === 0 ? 1 : 0].name} is set as its reverse.`
+                          : 'Turn on Print card backs to print its reverse face.'}
+                      </div>
+                    </>
+                  )}
+                  <button
+                    className="text-button"
+                    disabled={count >= 500}
+                    onClick={() => add([{ ...activeEntry, id: crypto.randomUUID(), quantity: 1 }])}
+                  >
+                    <Copy size={13} /> Duplicate as separate entry
+                  </button>
+                </div>
+              )}
               <div className="library-footer">
                 <ShieldCheck size={15} />
                 <span>Your project stays on this device.</span>
               </div>
-            </section>
-            <section className="preview-panel panel">
+            </WorkspacePanel>
+            <WorkspacePanel kind="preview-panel">
               <div className="preview-toolbar">
                 {project.settings.machine !== 'manual' && project.settings.profile !== 'nine' ? (
                   <div className="segmented" aria-label="Preview mode">
@@ -3511,23 +3887,14 @@ export default function App() {
                     </button>
                   </div>
                 )}
-                <div className="zoom-control">
-                  <button
-                    aria-label="Zoom out"
-                    disabled={zoom <= 70}
-                    onClick={() => changeZoom((z) => Math.max(70, z - 10))}
-                  >
-                    <ZoomOut size={15} />
-                  </button>
-                  <span>{Math.round(zoom)}%</span>
-                  <button
-                    aria-label="Zoom in"
-                    disabled={zoom >= 400}
-                    onClick={() => changeZoom((z) => Math.min(400, z + 10))}
-                  >
-                    <ZoomIn size={15} />
-                  </button>
-                </div>
+                <ZoomControl value={zoom} onChange={(value) => changeZoom(() => value)} />
+                <button
+                  className="secondary compact"
+                  aria-pressed={showCardCuts}
+                  onClick={() => setShowCardCuts((value) => !value)}
+                >
+                  Show cuts
+                </button>
               </div>
               <div
                 className="preview-canvas"
@@ -3556,36 +3923,23 @@ export default function App() {
                   title="Scroll to zoom · Drag to pan · Right-click a card for actions"
                 >
                   <SheetPreview
+                    legendHost={guideLegendHost}
                     sheet={sheet}
                     settings={project.settings}
                     mode={mode}
+                    showCuts={showCardCuts}
                     zoom={zoom}
                     registrationRefresh={registrationRefresh}
                     select={setSelected}
                     inspect={inspect}
                   />
                 </div>
-                <div className="page-nav">
-                  <button
-                    className="icon-button"
-                    aria-label="Previous sheet"
-                    disabled={currentPage === 0}
-                    onClick={() => setPage(currentPage - 1)}
-                  >
-                    <ChevronLeft size={17} />
-                  </button>
-                  <span>
-                    Sheet <strong>{count ? currentPage + 1 : 0}</strong> of {sheets.length}
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label="Next sheet"
-                    disabled={currentPage >= sheets.length - 1}
-                    onClick={() => setPage(currentPage + 1)}
-                  >
-                    <ChevronRight size={17} />
-                  </button>
-                </div>
+                <div className="card-guide-legend" ref={setGuideLegendHost} />
+                <SheetNavigation
+                  index={currentPage}
+                  count={count ? sheets.length : 0}
+                  onChange={setPage}
+                />
               </div>
               <div className="preview-footer">
                 <span>
@@ -3602,104 +3956,75 @@ export default function App() {
                 </span>
                 <span>{project.settings.dpi} DPI print</span>
               </div>
-            </section>
-            <aside className="settings-panel panel">
-              <div className="panel-heading">
-                <h2>
-                  <SlidersHorizontal size={17} /> Sheet setup
-                </h2>
-                <button
-                  className="icon-button"
-                  aria-label="Reset sheet settings to project defaults"
-                  title="Reset sheet settings to project defaults"
-                  onClick={loadSheetSettingsDefaults}
-                >
-                  <RotateCcw size={15} />
-                </button>
-              </div>
+            </WorkspacePanel>
+            <WorkspacePanel kind="settings-panel">
+              <WorkspacePanelHeading
+                title="Sheet setup"
+                icon={<SlidersHorizontal size={17} />}
+                actions={
+                  <button
+                    className="icon-button"
+                    aria-label="Reset sheet settings to project defaults"
+                    title="Reset sheet settings to project defaults"
+                    onClick={loadSheetSettingsDefaults}
+                  >
+                    <RotateCcw size={15} />
+                  </button>
+                }
+              />
               <div className="settings-content">
-                <div className="setting-group">
-                  <label htmlFor="machine">Cutting method</label>
-                  <div className="select-wrap">
-                    <Scissors size={15} />
-                    <select
-                      id="machine"
-                      value={project.settings.machine}
-                      onChange={(e) => {
-                        const machine = e.target.value as Settings['machine'];
-                        settings({
-                          machine,
-                          ...(machine === 'manual'
-                            ? {
-                                profile: 'nine' as const,
-                                width: 63,
-                                height: 88,
-                                gap: 1,
-                                radius: STANDARD_CARD_RADIUS_MM,
-                                bleed: project.settings.bleed > 0 ? 0.5 : 0,
-                                manualCutCorrectionX: 0,
-                                manualCutCorrectionY: 0,
-                              }
-                            : {}),
-                          ...((project.settings.profile === 'seven' ||
-                            project.settings.profile === 'eight') &&
-                          machine === 'joy-xtra'
-                            ? {
-                                profile: 'expanded' as const,
-                                gap: 1,
-                                bleed:
-                                  project.settings.bleed > 0
-                                    ? fixedBleedMm({ profile: 'expanded' })
-                                    : 0,
-                              }
-                            : {}),
-                        });
-                      }}
-                    >
-                      <option value="maker">Cricut Maker series</option>
-                      <option value="explore">Cricut Explore series</option>
-                      <option value="joy-xtra">Cricut Joy Xtra</option>
-                      <option value="manual">Manual cutting</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="setting-group">
-                  <label>Paper size</label>
-                  <div className="paper-options">
-                    <button
-                      className={project.settings.paper === 'letter' ? 'chosen' : ''}
-                      onClick={() => settings({ paper: 'letter' })}
-                    >
-                      <span className="paper-mini" />
-                      <strong>US Letter</strong>
-                      <small>{formatDimensions(215.9, 279.4, project.settings.units)}</small>
-                      {project.settings.paper === 'letter' && <CheckCircle2 size={13} />}
-                    </button>
-                    <button
-                      className={project.settings.paper === 'a4' ? 'chosen' : ''}
-                      onClick={() =>
-                        settings({
-                          paper: 'a4',
-                          ...(project.settings.profile === 'seven'
-                            ? {
-                                profile: 'expanded' as const,
-                                gap: 1,
-                                bleed:
-                                  project.settings.bleed > 0
-                                    ? fixedBleedMm({ profile: 'expanded' })
-                                    : 0,
-                              }
-                            : {}),
-                        })
-                      }
-                    >
-                      <span className="paper-mini a4" />
-                      <strong>A4</strong>
-                      <small>{formatDimensions(210, 297, project.settings.units)}</small>
-                      {project.settings.paper === 'a4' && <CheckCircle2 size={13} />}
-                    </button>
-                  </div>
-                </div>
+                <MachineSelect
+                  id="machine"
+                  value={project.settings.machine}
+                  onChange={(machine) => {
+                    settings({
+                      machine,
+                      ...(machine === 'manual'
+                        ? {
+                            profile: 'nine' as const,
+                            width: 63,
+                            height: 88,
+                            gap: 1,
+                            radius: STANDARD_CARD_RADIUS_MM,
+                            bleed: project.settings.bleed > 0 ? 0.5 : 0,
+                            manualCutCorrectionX: 0,
+                            manualCutCorrectionY: 0,
+                          }
+                        : {}),
+                      ...((project.settings.profile === 'seven' ||
+                        project.settings.profile === 'eight') &&
+                      machine === 'joy-xtra'
+                        ? {
+                            profile: 'expanded' as const,
+                            gap: 1,
+                            bleed:
+                              project.settings.bleed > 0
+                                ? fixedBleedMm({ profile: 'expanded' })
+                                : 0,
+                          }
+                        : {}),
+                    });
+                  }}
+                />
+                <PaperOptions
+                  value={project.settings.paper}
+                  units={project.settings.units}
+                  onChange={(paper) =>
+                    settings({
+                      paper,
+                      ...(paper === 'a4' && project.settings.profile === 'seven'
+                        ? {
+                            profile: 'expanded' as const,
+                            gap: 1,
+                            bleed:
+                              project.settings.bleed > 0
+                                ? fixedBleedMm({ profile: 'expanded' })
+                                : 0,
+                          }
+                        : {}),
+                    })
+                  }
+                />
                 <div className="setting-group unit-setting">
                   <label>Display units</label>
                   <UnitToggle
@@ -3708,6 +4033,9 @@ export default function App() {
                   />
                   <p className="field-note">Changes labels only. Cut geometry stays exact.</p>
                 </div>
+                {project.settings.machine !== 'manual' && (
+                  <CutSettingsControls value={project.settings} onChange={settings} />
+                )}
                 <div className="settings-divider" />
                 <div className="section-label">
                   <Grid2X2 size={14} /> LAYOUT & DIMENSIONS
@@ -3857,46 +4185,6 @@ export default function App() {
                   />
                   <span className="switch" />
                 </label>
-                {activeEntry && selected && (
-                  <div className="selection-details">
-                    <div className="section-label">SELECTED CARD</div>
-                    <strong>{activeEntry.card.name}</strong>
-                    <p>{activeEntry.card.setName}</p>
-                    {activeEntry.card.faces.length > 1 && (
-                      <>
-                        <label>
-                          Card face
-                          <select
-                            aria-label="Card face"
-                            value={activeEntry.face}
-                            onChange={(e) => editCopy(selected, { face: Number(e.target.value) })}
-                          >
-                            {activeEntry.card.faces.map((face, i) => (
-                              <option key={i} value={i}>
-                                {face.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="warning-box double-sided-warning" role="status">
-                          Double-sided card.{' '}
-                          {project.settings.backsEnabled
-                            ? `${activeEntry.card.faces[activeEntry.face === 0 ? 1 : 0].name} is set as its reverse.`
-                            : 'Turn on Print card backs to print its reverse face.'}
-                        </div>
-                      </>
-                    )}
-                    <button
-                      className="text-button"
-                      disabled={count >= 500}
-                      onClick={() =>
-                        add([{ ...activeEntry, id: crypto.randomUUID(), quantity: 1 }])
-                      }
-                    >
-                      <Copy size={13} /> Duplicate as separate entry
-                    </button>
-                  </div>
-                )}
                 <div className="sheet-save-defaults">
                   <div className="sheet-default-actions">
                     <button
@@ -3930,8 +4218,8 @@ export default function App() {
                   </p>
                 </div>
               </div>
-            </aside>
-          </div>
+            </WorkspacePanel>
+          </WorkspaceGrid>
           <div className="bottom-status">
             <span>
               <Check size={14} />
@@ -3975,6 +4263,22 @@ export default function App() {
           </div>
         </main>
       </div>
+      <StickerStudio
+        open={workspace === 'stickers'}
+        printRequest={stickerPrintRequest}
+        titleHost={stickerTitleHost}
+        actionsHost={stickerActionsHost}
+        request={stickerRequest}
+        onDraft={updateStickerDraft}
+        onRemember={recordStickerRecent}
+      />
+      <input
+        hidden
+        ref={homeInput}
+        type="file"
+        accept=".json,.criprox.json"
+        onChange={(event) => void openProject(event.target.files?.[0])}
+      />
       <input
         hidden
         ref={imageInput}
@@ -4042,11 +4346,39 @@ export default function App() {
           reveal={() => void revealProjectsDirectory()}
         />
       )}
+
+      {modal === 'print-cut' && (
+        <Modal title="Print then cut" close={() => setModal(null)} wide className="print-cut-modal">
+          <PrintCutWorkflow
+            kind="cards"
+            generatedInput={{ kind: 'cards', project }}
+            cutSettings={project.settings}
+            onCutSettingsChange={settings}
+            generated={project.settings.profile !== 'nine'}
+            machine={project.settings.machine}
+            count={count}
+            paper={project.settings.paper}
+            registered={
+              project.settings.machine !== 'manual' && project.settings.profile !== 'nine'
+            }
+            jobKey={JSON.stringify([
+              project.settings,
+              project.entries.map((e) => [e.id, e.quantity, e.face]),
+            ])}
+            prepareLabel="Prepare card print PDF"
+            onPrepare={() => {
+              setReturnToPrintCut(true);
+              setModal('registered');
+            }}
+          />
+        </Modal>
+      )}
       {modal === 'registered' && (
         <RegisteredPrint
           project={project}
           close={() => {
-            setModal(null);
+            setModal(returnToPrintCut ? 'print-cut' : null);
+            setReturnToPrintCut(false);
             setRegistrationRefresh((value) => value + 1);
           }}
           onCapture={() => setRegistrationRefresh((value) => value + 1)}

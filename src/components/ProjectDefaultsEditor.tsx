@@ -153,6 +153,7 @@ export default function ProjectDefaultsEditor({
           <div className="defaults-field-grid">
             {select('machine', 'Cutting method', [
               { value: 'maker', label: 'Cricut Maker series' },
+              { value: 'explore-5', label: 'Cricut Explore 5' },
               { value: 'explore', label: 'Cricut Explore series' },
               { value: 'joy-xtra', label: 'Cricut Joy Xtra' },
               { value: 'manual', label: 'Manual cutting' },

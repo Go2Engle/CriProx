@@ -28,8 +28,8 @@ export async function pdfRenderer() {
   ).href;
   return pdfjs;
 }
-export async function setupPng(settings: Settings): Promise<Uint8Array> {
-  const sheet = fullTemplate(settings),
+export async function setupPng(settings: Settings, template?: Sheet): Promise<Uint8Array> {
+  const sheet = template ?? fullTemplate(settings),
     dpi = 300;
   const canvas = document.createElement('canvas');
   canvas.width = mmToPx(sheet.width, dpi);
@@ -59,6 +59,7 @@ export async function captureProfile(
   pdf: Uint8Array,
   settings: Settings,
   name: string,
+  template?: Sheet,
 ): Promise<RegistrationProfile> {
   if (pdf.length > 25_000_000) throw new Error('Use a template PDF under 25 MB.');
   const source = await PDFDocument.load(pdf);
@@ -110,6 +111,7 @@ export async function captureProfile(
       size.width / PT_PER_MM,
       size.height / PT_PER_MM,
       settings,
+      template,
     );
     const outputFrame = tabloidCapture
       ? fitTabloidCaptureToPaper(
@@ -310,6 +312,25 @@ export async function buildRegisteredBackPdf(
 ): Promise<Uint8Array> {
   if (profile.key !== registrationKey(project.settings))
     throw new Error('This template belongs to different sheet settings.');
+  return buildBackPdfAtFrame(
+    project,
+    registeredOutputFrame(profile, project.settings),
+    progress,
+    calibration,
+    upscaleScryfall,
+    upscaleBackend,
+    upscaylCacheKey,
+  );
+}
+export async function buildBackPdfAtFrame(
+  project: Project,
+  frame: OutputFrame,
+  progress: (text: string) => void,
+  calibration = false,
+  upscaleScryfall = false,
+  upscaleBackend: 'built-in' | 'upscayl' = 'built-in',
+  upscaylCacheKey = '',
+): Promise<Uint8Array> {
   if (!calibration && needsSharedCardBack(project.entries) && !project.backArtwork)
     throw new Error(
       'Upload shared card-back artwork for the single-sided cards before preparing back pages.',
@@ -319,7 +340,6 @@ export async function buildRegisteredBackPdf(
   if (!pages.length) throw new Error('Add at least one card.');
   const output = await PDFDocument.create();
   const pageList = calibration ? [full] : pages;
-  const frame = registeredOutputFrame(profile, project.settings);
   const pageWidthMm = frame.pageWidthPt / PT_PER_MM,
     pageHeightMm = frame.pageHeightPt / PT_PER_MM;
   for (const [index, sourceSheet] of pageList.entries()) {

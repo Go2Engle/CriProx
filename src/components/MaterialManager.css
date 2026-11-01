@@ -1,0 +1,242 @@
+.material-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.material-heading button,
+.material-manager button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.material-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.material-search input {
+  width: 100%;
+  min-width: 0;
+}
+.material-pressure strong {
+  color: var(--text);
+}
+.material-manager {
+  width: min(1000px, 94vw);
+  max-height: 90vh;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel, #fff);
+  color: var(--text);
+  box-shadow: 0 24px 80px #0005;
+}
+.material-manager::backdrop {
+  background: #14232288;
+}
+.material-manager-header,
+.material-manager-toolbar,
+.material-manager-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 22px;
+}
+.material-manager-header {
+  border-bottom: 1px solid var(--border);
+}
+.material-manager h2,
+.material-manager h3,
+.material-manager p {
+  margin: 0;
+}
+.material-manager-toolbar {
+  justify-content: flex-start;
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+.material-manager-toolbar span {
+  margin-left: auto;
+  color: var(--muted);
+}
+.material-manager-help {
+  padding: 0 22px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.material-manager-body {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+  border-block: 1px solid var(--border);
+}
+.material-browser {
+  padding: 18px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.material-manager label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.material-manager input:not([type='checkbox']),
+.material-manager select {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.material-manager .material-custom-filter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  font-weight: 400;
+}
+.material-list {
+  max-height: 430px;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+.material-manager .material-list button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  white-space: normal;
+}
+.material-list button.selected {
+  background: var(--accent-soft, #e8f4f1);
+  border-color: var(--accent, #297968);
+}
+.material-list span,
+.material-list small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+.material-editor {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.material-editor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.material-editor-numbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 5px 0;
+}
+.material-editor .field-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.material-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.material-manager-footer p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+@media (max-width: 700px) {
+  .material-manager-body {
+    grid-template-columns: 1fr;
+  }
+  .material-list {
+    max-height: 200px;
+  }
+  .material-browser {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .material-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+.cut-settings-controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.cut-settings-controls input,
+.material-manager input:not([type='checkbox']),
+.material-manager select {
+  min-height: 36px;
+  border: 1px solid var(--control-border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.cut-settings-controls .setting-group > input {
+  width: 100%;
+}
+.material-manager {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.material-manager button {
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid var(--control-border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.material-manager button:hover {
+  background: var(--surface-hover);
+}
+.material-manager button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.material-manager button.primary {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: #fff;
+}
+.material-manager .material-list button.selected {
+  background: var(--surface-selected);
+  border-color: var(--purple);
+}
+.material-manager .material-list button strong {
+  font-size: 13px;
+}
+.material-manager .material-list button span,
+.material-manager .material-list button small {
+  font-size: 11px;
+}
+.material-manager input:focus-visible,
+.material-manager select:focus-visible,
+.material-manager button:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .cut-settings-controls {
+    grid-template-columns: 1fr;
+  }
+}

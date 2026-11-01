@@ -1,8 +1,137 @@
 # Cricut workflow and physical validation
 
-**Print the PDF. Cut with your saved Design Space project.** Design Space supplies the cut
-template and registration marks during one-time setup. For each deck, CriProx saves the finished
-PDF, a dedicated PDF application prints it, and Design Space runs the matching saved cut job.
+**Prepare, print, and cut matching sheets in CriProx.** The Windows Explore 5 workflow now submits native registration scans and sheet contours. A full Explore 5 USB sticker sheet scanned and cut successfully at 80 g, one pass; the user confirmed usable stickers.
+
+Start on **Home** and choose **Proxy Card Builder** or **Stickers**. Continue a draft, start a new project, or open a recent project. Home's **Open project** detects the project type automatically; the CriProx logo returns Home.
+
+Use **Show cuts** above either workspace's sheet to inspect thin dashed pink cut contours over the artwork. Proxy Card Builder follows each placed card's dimensions and corner radius, including rotated cards and partial sheets. This toggle only changes the editor preview; it does not print the guides or change the cut job.
+
+## Generate registration marks in CriProx
+
+1. Choose the machine and Letter or A4 paper, then arrange cards or stickers. Choose a material in **Print then cut** or sheet setup to fill its pressure and pass count automatically. Use **Manage materials** to search the imported Design Space catalog, create a preset, or edit pressure and passes. Light/Medium/Hard adjusts the selected material; changing **Cut pressure (g)** sets every pass to that value.
+2. Open **Print then cut → Prepare print sheets** in either workspace. Every front page gets four black corner marks and a directional arrow, including partial sheets. Only occupied items become cut contours. Stickers use their editable custom blade paths when provided, otherwise rounded rectangles. Imported artwork edges are not automatically traced.
+3. Inspect the PDF preview and warnings. Use **Preview zoom** to inspect small text at up to 300%. Preview resolution follows the window size and display pixel density; zoom does not change physical dimensions.
+4. Choose **Print sheets**, **Print fronts / Print backs**, or **Print double-sided**. CriProx opens a **Print preview** with the full page image, navigation, and zoom. Choose printer, copies, color, page range, and one-sided or duplex output, then **Print**. Pages are rendered at 300 DPI with exact paper dimensions and 100% scale. **System printer settings** opens advanced driver options; that Windows dialog may lack its own preview image. Choose matching paper, **Actual size**, no headers, and no fit/shrink. Browser users set duplex in the browser dialog. PDF export remains available at the chosen project resolution.
+5. Optionally **Save PDF + matching cut job** to keep the print and coordinate reference together. A saved project can be reopened and prepared again for cutting. The exported JSON is not a Design Space project and is not imported as an executable machine command.
+
+CriProx uses independently implemented geometry measured from Design Space 10.8.81: 25.4 mm arms, approximately 1.5 mm thickness, a fixed 12.7 mm page inset, and 6.35 mm inner clearance. Explore 5, Explore series, Maker series, and Joy Xtra share these measurements. Black marks and the arrow print; amber clearance and blue layout guides do not. Artwork crossing marks or paper edges blocks preparation. Eight full-size cards need A4 or a different layout. Clearance warnings require inspection.
+
+Generated sheets must use their matching CriProx job. An unrelated Design Space mat can position marks differently. The optional captured-template workflow below retains its exact saved Design Space job and cannot be sent through CriProx's generated-sheet cutter.
+
+The desktop material library imports the cached Design Space catalog on first use. If materials are missing, browse them for your machine in Design Space, then choose **Manage materials → Refresh from Design Space**. Your CriProx edits survive refresh. Each saved project and prepared job keeps a copy of its selected material settings; select the material again to pick up newer library edits. See the [material manager reference](FEATURES.md#material-manager-pressure-and-passes).
+
+## Cut the printed sheet on Explore 5
+
+1. On Windows, keep the inspected Design Space 10.8.81 installation. Before the first connection, sign in there and close it. A saved cutter key allows later connections without reopening Design Space while that key remains valid. Connect one powered-on Explore 5 by USB (recommended). Bluetooth LE remains experimental.
+2. Open **Print then cut**. CriProx automatically attempts one connection with an available saved key, using the last selected transport. If no usable key exists, choose **Open Cricut Design Space**, sign in and connect the cutter there, then close Design Space. Back in CriProx, check **Use and remember my cutter key on this PC** and choose **Connect cutter** to obtain a new key. After a verified handshake, it saves only the machine key with Windows account protection. Login tokens stay in memory and go only to Cricut's machine-settings endpoint. To remove the saved key, disconnect and choose **Forget saved key**.
+3. Select the prepared **Printed sheet**. Its front PDF page and contour count identify the sheet, including duplex jobs. Check the displayed material, pressure, and passes. White sticker paper uses 76/80/84 g and defaults to one pass; the imported medium 80 lb cardstock profile uses 171/180/189 g and defaults to two passes. Imported multi-pressure materials retain their per-pass sequence. Confirm the profile says Explore 5 and Fine-Point Blade before direct cutting.
+4. Secure that printed front face up in portrait orientation at the upper-left of a 12 × 12 inch mat's adhesive grid. Its upper-left arrow points toward the machine. Leave all four marks visible. This placement is for CriProx's generated coordinate frame; the separate Design Space A4 instructions below differ.
+5. Confirm that this exact front page was printed at actual size and that the fine-point blade and mat are ready. Choose **Cut sheet**, then press the machine's Load button when prompted. CriProx resumes measurement and the scan/cut sequence automatically; a second Go press is not required by this controller.
+6. Watch the app's status. A failed scan cancels instead of bypassing registration. **Pause / Resume** and **Cancel cut** control the active job. A 30-minute deadline also requests cancellation. Wait for completion and idle status before unloading. The job keeps its original geometry and settings even if you edit the project.
+
+**Hardware validation:** USB authentication, firmware 4.8.2 status, homing, and a one-pass 80 g square have succeeded. The square-test UI has been removed. A full printed sticker sheet subsequently scanned and cut successfully at 80 g, one pass, producing usable stickers. Other paper/material settings, pause/resume, and repeatability still need hardware checks. Start with one pass on inexpensive printed material and measure alignment before production. Other cutter models cannot connect through this controller.
+
+## Choose a workspace and check its guides
+
+Select **Cards** or **Stickers** from the main-window **Workspace** dropdown. In both editors, add artwork and edit the selected item on the left, preview the sheet in the center, and choose machine, paper, and layout on the right. Open and Save are in the shared top bar. Choose the machine and paper before arranging the sheet. Blue is the layout area, amber reserves sensor clearance, and black marks match the generated PDF. A matching captured template instead displays its original marks. The dashed published maximum extents do not describe a completely usable rectangle. See [machine-guide details](FEATURES.md#workspaces-shortcuts-and-machine-guides).
+
+**Ctrl+Z / Ctrl+Y** undo and redo. **Ctrl+X / Ctrl+C / Ctrl+V** cut, copy, and paste selected items within
+the active workspace; text fields retain their usual shortcuts. Command works on macOS. Switching workspaces
+keeps their drafts and histories; portable card and sticker files remain separate.
+**Delete** removes the selected item and **Ctrl+Z** restores it. In the sticker library, clicking a design and pressing **Delete** removes the design and all its sheet copies; clicking a sticker on the sheet deletes only that copy. Designs with zero copies can also be deleted this way. Registration marks are included in every generated front PDF page. Artwork-only exports are explicitly for the optional Design Space import workflow.
+
+## Shared Print Then Cut workspace
+
+Choose **Print then cut** from either workspace to generate the marked PDF and matching cut coordinates, print at actual size, and check cutter connection. Manual nine-card layouts use their manual cut guide without optical registration.
+
+**Connect your cutter** supports Explore 5 in the Windows desktop app. Opening the cut page attempts
+one connection with the saved key; Home and editing pages do not connect. If a key is missing or
+rejected, the setup prompt offers **Open Cricut Design Space**. Sign in with Design Space 10.8.81,
+connect the cutter there, then close it and authorize remembering the key in CriProx.
+Connect shows encrypted status, firmware, and carriage state.
+Bluetooth LE is experimental; use USB if the cutter is not found. Internet access and a current
+Design Space session are needed to obtain a new machine key, but a saved key is tried without them.
+If its handshake fails, CriProx removes it and shows setup. Automatic connection never reads the
+account session or fetches a replacement key. **Disconnect** stays disconnected for this page visit;
+choose **Connect cutter** or return to the cut page to try again. Connection does not start cutting.
+An expired login requires signing in through Design Space again. Key lifetime after power cycles and over
+time remains unverified. If saving fails, the status says so and the current connection can still work.
+The key is encrypted for your Windows account in CriProx's app data, separate from projects. Login
+tokens are never persisted by CriProx, and neither tokens nor keys reach the renderer.
+
+![Cutter connection with Windows-protected key storage and a Forget saved key button](assets/criprox-cutter-key.png)
+
+![Missing-key setup prompt in the sticker cut page, using a simulated cutter service for UI testing](assets/criprox-cutter-setup.png)
+
+The generated-sheet workflow above provides the actual **Cut sheet** controls. Disconnect before using Design Space; closing CriProx cancels an active job and releases its connection. The captured-template route continues through its saved Design Space job.
+
+## Design a sticker with text, shapes, images, and lines
+
+1. In **Stickers**, choose **Create sticker** on the left. Set its name, width, height, and background on the right.
+2. Add text, a shape, or a PNG/JPEG/WebP image. Choose a palette or custom colors. **Line** and **Freehand** draw directly on the canvas; select a stroke to change its width and color.
+3. Drag elements to position them, drag the small corner handle to resize, or use the selected-element controls for exact dimensions, rotation, mirroring, fill, outline, and opacity. Drag rows in Layers to change the order, or use Bring forward/Send backward. Ctrl+Z/Ctrl+Y undo and redo.
+4. Choose **Save design to sheet**. With a closed cut outline, the sheet dimensions crop automatically to the cut bounds; the original canvas stays editable. Then choose **Fill last sheet** to repeat it with shape-aware spacing and staggered circles, or **Auto arrange** to repack existing copies. Select a design and choose **Edit design** to revise its layers later. Save the project to retain the editable design locally.
+5. To edit the blade path, choose **Editing → Cut paths**. Add a shape, draw an open **Line**, draw a closed **Freehand** outline, or click **Polygon** corners and choose **Finish outline**. Select a path to change its position, size, rotation, and vertices. **Element use** converts a printed shape to a cut; **Add default outline** starts with an editable rounded rectangle. Custom paths replace the default outer cut.
+6. Toggle **Show cuts** on the sheet to inspect the pink blade paths after sizing, mirroring, or rotating copies. These overlays do not print. **Use default sheet cut** restores the normal rounded boundary. Continue with **Print then cut** above. Custom blade paths require this generated-mark workflow; a captured template or Design Space image import has different cut geometry.
+
+For an automatic outer outline, set **Border width (mm)**, **Border stroke (mm)**, and its color in the designer's **Fit Cut border** section, then choose **Fit Cut** above the canvas. It encloses all visible elements as one sticker, including gaps between them, and expands the canvas to preserve artwork near its edges. A zero stroke disables the printed border. Inspect the thin dashed pink cut guide before **Save design to sheet**. These display guides are separate from any border stroke you choose to print.
+
+Auto arrange and Fill show background progress and **Cancel layout**. Cancel keeps the existing sheet; complex shapes can use the safe grid fallback after the nesting search budget is reached.
+
+Custom shapes, open paths, transforms, and registration limits passed automated checks and native offline plot construction. Their physical alignment has not yet been tested; the earlier successful hardware run used rounded rectangles.
+
+## Sticker sheets and label batches
+
+For local printing, arrange your stickers and use **Prepare print sheets** as described above. The steps for export/capture below are optional alternatives for cutting through Design Space.
+
+To preserve a label's text and logos, choose **Keep entire image** or **Trim empty space — keep artwork** in Sheet setup. The trim option removes blank outer margins without enlarging content past the cut, including when opening an older project saved with Crop to fill. Set **Border width (mm)** for white padding around imported artwork, **Border stroke (mm)** for an optional printed outline, and its color. A zero stroke turns the outline off. These controls apply to imported stickers; custom designs retain the artwork and paths edited in the designer.
+
+Right-click a design in the left library for editing and placement actions. **Delete all copies** clears its placements while keeping the design. **Delete design** removes that library entry and its copies; **Delete all designs** clears the entire sticker library and sheets. Ctrl+Z restores these actions. Library Copy/Paste makes independent designs without placing copies; select a sticker on the sheet to copy or delete only that instance.
+
+1. Choose **Workspace → Stickers**, then select the machine, paper, label dimensions, spacing, and layout limits.
+2. Choose **Add artwork** and select all your individual image/SVG files at once. They are placed in
+   natural filename order. For an existing SVG with one top-level group per label, use
+   **Import labels from grouped SVG** instead. Selecting the complete sheet PNG imports it as one
+   image; it does not extract individual labels. Individual imports preserve aspect ratio and SVG physical
+   dimensions.
+3. For repeated labels, select the design and choose **Fill last sheet**. Choose **All designs** to
+   repeat the collection. Review the sheet preview, dimensions, and number of sheets. A full sheet
+   is not duplicated by Fill; choose **Add one** to start the next sheet. Use **Auto arrange** to repack varied sizes or repair older placements that cross the guides. Import, Fill, and Auto arrange respect the machine’s planning bounds and reserved registration corners. Fill preserves existing placements and uses the better of shape nesting and a grid. Created stickers with closed cut outlines can share rectangular bounds without overlapping their silhouettes; spacing stays between their cut shapes. Older designs keep their saved frame until edited and saved again. Select a sticker to drag, resize, rotate, mirror, or flip it.
+   Exact dimensions and positions are in the inspector; Undo/Redo restores edits.
+4. Choose **Save file** to keep the artwork, arrangement, and capture together locally. Reopen with
+   **Stickers → Open file**. The card project library and sticker files are separate.
+5. Open **Print then cut**. For freely arranged stickers choose **Export sheets for Design Space**, unzip the files, and upload
+   each PNG as a Flat Graphic / Print Then Cut image. Set the occupied-artwork dimensions listed in
+   `READ-ME.txt` and check that each label has exactly one outer cut. The SVG is a reference; enabling
+   it alongside the PNG contours would create duplicate cuts. Select the same machine and paper in both apps.
+   If Design Space rejects the arrangement, reduce the layout limits or count instead of rescaling
+   the finished labels. Print and cut within the same Design Space job.
+6. For fixed-slot layouts only, the **Export and reusable registration templates** section offers
+   **Save setup PNG** for experimental reusable PDFs. Individual movement, resizing, rotation, mirroring,
+   or flipping switches to free layout and clears any old capture. Import that magenta template as one
+   flat Print Then Cut image with the exact full-template dimensions displayed by CriProx. Save the
+   project and its mat arrangement in Design Space. Disable bleed and save the complete print page
+   as a one-page color PDF. Use **Capture Design Space PDF** to measure it. CriProx preserves the
+   original marks and directional arrow, including marks in empty tapered corners; this optional route retains Design Space’s original geometry. A capture passing measurement is not proof that a sensor can read it.
+7. Choose **Save print PDF** and print at 100% / Actual size. Test one plain-paper sheet before using
+   sticker stock. Keep the exact matching saved Design Space cut job. A partial registered sheet
+   leaves blank artwork in unused slots, but that full-template job still cuts those slots. Changes
+   to paper, dimensions, spacing, corners, layout, or layout limits require a new capture.
+8. Complete material/pressure selection and cutting in Design Space. On Explore 5, place A4 **landscape on the mat**,
+   with the printed directional arrow in the upper-left corner pointing up. Press the machine's Go
+   button when prompted and unload after completion. The workflow's **Open matching job in Design Space**
+   disconnects CriProx and launches the installed app; choose the matching saved job yourself.
+
+Explore 5 cutting and captured-PDF reuse remain unvalidated on physical hardware. Cricut recommends
+printing and cutting in the same Design Space session and warns that PDF printing outside that flow
+can affect sensor-mark sizing. Its [Explore 5 guide](https://help.cricut.com/hc/en-us/articles/38613592650903-How-to-Print-Then-Cut-with-Cricut-Explore-5)
+also specifies the A4 mat orientation and directional arrow.
+
+For cutter-integration development, the source checkout provides an offline engine probe and
+optional native USB/Bluetooth discovery. Follow [the integration investigation](EXPLORE-5-INTEGRATION.md#run-the-repeatable-investigation).
+Discovery does not replace any of the print/cut steps above.
+
+The remaining card workflow below is unchanged.
 
 To add cards by name, open **Find a card** and start typing. The search box receives keyboard
 focus automatically when the dialog opens.
@@ -102,7 +231,7 @@ Source DPI describes available image detail; the output DPI in Sheet setup contr
 
 ## Understand the integration boundary
 
-CriProx does **not** generate or reproduce Cricut registration marks, create native Design Space project files, or control the machine. Design Space creates the sensor marks and owns the actual Print Then Cut job. CriProx's registered-print workflow preserves marks from a PDF that Design Space produced for the exact saved job.
+CriProx generates registration marks and matching page coordinates locally. Its Windows Explore 5 controller can scan and cut those generated sheets using their matching coordinates. It does not create native Design Space project files. The separate captured-template workflow preserves the original marks from the exact saved Design Space job and runs through Design Space.
 
 The standard export PNG contains one opaque rounded silhouette per card and transparent gaps. Its companion SVG contains matched vector geometry, not registration data. Inspect the traced contour in Design Space before printing, and do not enable both the PNG's cut contours and the SVG paths unless you deliberately intend duplicate cuts.
 
@@ -110,11 +239,11 @@ The layout engine works in millimeters. PNG density metadata is included, but al
 
 The dashed rectangle in the preview is a planning guide. It is not a registration mark or a certified, model-specific outline of Cricut's usable area. Machine selection records the intended target and tailors instructions; it does not emulate firmware or guarantee that a particular job will pass Design Space's checks.
 
-## Recommended workflow: print the PDF, reuse the saved cut project
+## Optional workflow: reuse a saved Design Space cut project
 
 ### One-time template setup
 
-1. Choose your machine, output paper, and layout in CriProx, then open **Create print PDF** and download the magenta setup PNG.
+1. Choose your machine, output paper, and layout in CriProx, then open **Create print PDF → Reuse a captured Design Space job (optional)** and download the magenta setup PNG.
 2. Upload that PNG to Design Space as one flat **Print Then Cut** image, preserve transparency, and set both Canvas dimensions to the values shown with the template. Inspect the contours, then save the project and keep its mat arrangement unchanged.
 3. Use Design Space's **Make → Send to Printer** flow to save the job's print output as a complete one-page portrait PDF at **100% / Actual size**, with bleed off. This captures the template; it does not print the deck. Follow the layout-specific paper settings below: six-card and seven-card captures use the selected output paper, while eight-card requires a complete Tabloid capture.
 4. Import the captured PDF into CriProx. CriProx verifies the template and saves it for reuse with the matching cut geometry.
@@ -283,3 +412,8 @@ The PNG's alpha silhouette is the recommended Print Then Cut input. The SVG is s
 | Nine-card manual alignment result | Pending                      |
 
 Until this record is filled in with real measurements, the application is a software-tested prototype, not a guarantee of perfect Cricut alignment.
+
+For experimental connection diagnostics from a source checkout, see the
+[Explore 5 connection probe](EXPLORE-5-INTEGRATION.md#physical-connection-probe). A successful BLE
+firmware read and an authorized encrypted USB homing test have succeeded. The user confirmed
+movement with the blade removed. The app also scanned and cut one complete USB sticker sheet at 80 g, one pass. Other settings and repeatability still need physical validation.

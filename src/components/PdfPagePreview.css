@@ -8,6 +8,22 @@
   align-items: flex-end;
   margin-bottom: 12px;
 }
+.direct-print-actions {
+  margin-bottom: 16px;
+}
+.direct-print-actions .registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.registered-preview .direct-print-actions button {
+  width: auto;
+  margin: 0;
+}
+.direct-print-actions p {
+  font-size: 12px;
+  line-height: 1.5;
+}
 .pdf-page-navigation label {
   flex: 1;
   min-width: 0;
@@ -23,11 +39,23 @@
   margin: 0;
 }
 .pdf-preview-sheet {
+  overflow: auto;
+  max-height: 75vh;
   position: relative;
   background: white;
   min-height: 250px;
   border: 1px solid #e3dbea;
   box-shadow: 0 3px 8px #30203f11;
+}
+.pdf-preview-zoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.pdf-preview-zoom select {
+  width: auto;
 }
 .pdf-preview-sheet canvas {
   display: block;

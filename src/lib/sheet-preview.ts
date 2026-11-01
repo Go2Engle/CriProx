@@ -3,14 +3,6 @@ import { registeredOutputFrame } from './registered-pdf';
 import { fullTemplate, PT_PER_MM, registrationKey, type RegistrationProfile } from './registration';
 import type { Settings } from './types';
 
-/** Approximation used only until Design Space marks have been captured. */
-export const MOCK_REGISTRATION_MARKS = {
-  offset: 8,
-  thickness: 1.4,
-  armLength: 22,
-  cornerGap: 1.5,
-} as const;
-
 /** Preview page and artwork origin, in mm; captured frames match PDF export. */
 export function sheetPreviewFrame(settings: Settings, profile?: RegistrationProfile) {
   if (settings.profile === 'nine') {
@@ -36,13 +28,12 @@ export function sheetPreviewFrame(settings: Settings, profile?: RegistrationProf
       },
     };
   }
-  // A registered export needs a capture. Keep the uncaptured artwork and marks
-  // within the output page, with the same slot geometry as the eventual export.
+  // Generated print PDFs use this same centered artwork origin.
   const paper = settings.paper === 'letter' ? { w: 215.9, h: 279.4 } : { w: 210, h: 297 };
   const full = fullTemplate(settings);
   return {
     paper,
     left: (paper.w - full.width) / 2,
-    top: Math.min(21.25, (paper.h - full.height) / 2),
+    top: (paper.h - full.height) / 2,
   };
 }

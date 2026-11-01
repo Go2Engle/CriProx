@@ -21,7 +21,7 @@ import {
   registrationKey,
   type RegistrationProfile,
 } from '../src/lib/registration';
-import { MOCK_REGISTRATION_MARKS, sheetPreviewFrame } from '../src/lib/sheet-preview';
+import { sheetPreviewFrame } from '../src/lib/sheet-preview';
 const entry = {
   id: 'a',
   quantity: 7,
@@ -111,7 +111,7 @@ test('eight-card preview uses the same Tabloid-to-output-paper translation as ex
     );
   }
 });
-test('uncaptured registered layouts keep the artwork and mock marks on the output page', () => {
+test('uncaptured registered layouts keep the artwork on the output page', () => {
   for (const settings of [
     DEFAULT_SETTINGS,
     { ...DEFAULT_SETTINGS, paper: 'a4' as const },
@@ -120,7 +120,7 @@ test('uncaptured registered layouts keep the artwork and mock marks on the outpu
   ]) {
     const frame = sheetPreviewFrame(settings),
       full = fullTemplate(settings),
-      offset = MOCK_REGISTRATION_MARKS.offset;
+      offset = 0;
     assert.ok(Math.abs(frame.left - (frame.paper.w - full.width) / 2) < 1e-9);
     assert.ok(frame.left - offset > 0);
     assert.ok(frame.top - offset > 0);

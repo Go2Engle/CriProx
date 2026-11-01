@@ -1,3 +1,4 @@
+import GeneratedPrintPanel from './GeneratedPrintPanel';
 import { useEffect, useRef, useState } from 'react';
 import { get, set } from 'idb-keyval';
 import {
@@ -492,7 +493,7 @@ export default function RegisteredPrint({
       <div className="registered-content">
         <div className="registration-summary">
           <div>
-            <strong>{manualNine ? '9-card cutting sheet' : 'Reusable cut template'}</strong>
+            <strong>{manualNine ? '9-card cutting sheet' : 'Print with registration marks'}</strong>
             <span>
               {full.placements.length} fixed slots ·{' '}
               {project.settings.paper === 'letter' ? 'US Letter' : 'A4'} ·{' '}
@@ -509,9 +510,11 @@ export default function RegisteredPrint({
               ? 'MANUAL'
               : project.settings.machine === 'maker'
                 ? 'MAKER'
-                : project.settings.machine === 'explore'
-                  ? 'EXPLORE'
-                  : 'JOY XTRA'}
+                : project.settings.machine === 'explore-5'
+                  ? 'EXPLORE 5'
+                  : project.settings.machine === 'explore'
+                    ? 'EXPLORE'
+                    : 'JOY XTRA'}
           </span>
         </div>
         <PrintSection
@@ -1129,189 +1132,195 @@ export default function RegisteredPrint({
           </>
         ) : (
           <>
-            <PrintSection
-              key={`${key}:setup`}
-              layoutKey={key}
-              section="setup"
-              title="1 · Create your reusable cut job"
-              summary={
-                hasCapturedTemplate
-                  ? 'Saved cut job matched to the captured template'
-                  : `${formatDimensions(full.width, full.height, project.settings.units)} · ${slotCount} slots`
-              }
-              autoComplete={hasCapturedTemplate}
-              busy={!!busy}
-            >
-              <div className="registration-step">
-                <div>
-                  <p>
-                    Download the magenta setup image. Upload it to Design Space as one flat Print
-                    Then Cut image, preserve transparency, and set both dimensions to{' '}
-                    <strong>
-                      {formatDimensions(full.width, full.height, project.settings.units)}
-                    </strong>
-                    . Save the project as <strong>{templateName}</strong>.
-                    {printPaper.usesTabloidSetup && (
-                      <>
-                        {' '}
-                        Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the
-                        Print Then Cut page size in Design Space.
-                      </>
+            <GeneratedPrintPanel input={{ kind: 'cards', project }} />
+            <details className="captured-print-alternative">
+              <summary>Reuse a captured Design Space job (optional)</summary>
+              <PrintSection
+                key={`${key}:setup`}
+                layoutKey={key}
+                section="setup"
+                title="1 · Create your reusable cut job"
+                summary={
+                  hasCapturedTemplate
+                    ? 'Saved cut job matched to the captured template'
+                    : `${formatDimensions(full.width, full.height, project.settings.units)} · ${slotCount} slots`
+                }
+                autoComplete={hasCapturedTemplate}
+                busy={!!busy}
+              >
+                <div className="registration-step">
+                  <div>
+                    <p>
+                      Download the magenta setup image. Upload it to Design Space as one flat Print
+                      Then Cut image, preserve transparency, and set both dimensions to{' '}
+                      <strong>
+                        {formatDimensions(full.width, full.height, project.settings.units)}
+                      </strong>
+                      . Save the project as <strong>{templateName}</strong>.
+                      {printPaper.usesTabloidSetup && (
+                        <>
+                          {' '}
+                          Before Make, choose <strong>{printPaper.designSpacePaper}</strong> as the
+                          Print Then Cut page size in Design Space.
+                        </>
+                      )}
+                    </p>
+                    <button className="secondary" disabled={!!busy} onClick={setup}>
+                      <Download size={15} /> Download setup PNG
+                    </button>
+                  </div>
+                </div>
+              </PrintSection>
+              <PrintSection
+                key={`${key}:capture`}
+                layoutKey={key}
+                section="capture"
+                title="2 · Capture the actual sensor marks"
+                summary={
+                  hasCapturedTemplate
+                    ? `Template saved · ${printPaper.outputPaper} · geometry checked`
+                    : 'Import the one-page PDF from Design Space'
+                }
+                autoComplete={hasCapturedTemplate}
+                canComplete={false}
+                busy={!!busy}
+              >
+                <div className="registration-step">
+                  <div>
+                    <p>
+                      In Design Space, choose Make → Send to Printer. Turn{' '}
+                      <strong>bleed off</strong>, use the system print dialog, and{' '}
+                      {printPaper.capturesTabloid ? (
+                        <>
+                          keep the printer paper on <strong>Tabloid (11 × 17 in)</strong>. Save a{' '}
+                          <strong>one-page portrait Tabloid PDF at 100% / Actual size</strong> with
+                          all four sensor marks. CriProx will check the complete marked area and
+                          reframe it onto {printPaper.outputPaper} without scaling.
+                        </>
+                      ) : printPaper.usesTabloidSetup ? (
+                        <>
+                          change the printer paper to <strong>{printPaper.systemPaper}</strong>.
+                          Save a <strong>one-page portrait PDF at 100% / Actual size</strong>;
+                          cancel if it becomes two pages or clips any of the four sensor marks.
+                        </>
+                      ) : (
+                        <>save a full-page, portrait PDF at actual size.</>
+                      )}{' '}
+                      Import that PDF here. We check the slot pattern and size, then{' '}
+                      {registrationTemplates
+                        ? 'save it in the root of your CriProx project library'
+                        : 'store it in local app storage'}
+                      . It loads automatically the next time this exact cut layout is selected.
+                    </p>
+                    <button
+                      className="secondary"
+                      disabled={!!busy}
+                      onClick={() => input.current?.click()}
+                    >
+                      <FileUp size={15} />
+                      {profile ? 'Replace captured PDF' : 'Import Design Space PDF'}
+                    </button>
+                    {profile && (
+                      <div className="capture-success">
+                        <CheckCircle2 size={16} />
+                        <span>
+                          {templateFilename(project.settings, 'cricut-template', 'pdf')}
+                          <small>
+                            Geometry checked · captured{' '}
+                            {new Date(profile.capturedAt).toLocaleDateString()} ·{' '}
+                            {registrationTemplates ? 'project library root' : 'local app storage'} ·
+                            {profile.outputFrame
+                              ? `${printPaper.outputPaper} output · ${formatMeasurement(profile.outputFrame.marginMm, project.settings.units)} minimum mark margin · `
+                              : ''}
+                            hardware unverified
+                          </small>
+                        </span>
+                      </div>
                     )}
-                  </p>
-                  <button className="secondary" disabled={!!busy} onClick={setup}>
-                    <Download size={15} /> Download setup PNG
-                  </button>
+                  </div>
                 </div>
-              </div>
-            </PrintSection>
-            <PrintSection
-              key={`${key}:capture`}
-              layoutKey={key}
-              section="capture"
-              title="2 · Capture the actual sensor marks"
-              summary={
-                hasCapturedTemplate
-                  ? `Template saved · ${printPaper.outputPaper} · geometry checked`
-                  : 'Import the one-page PDF from Design Space'
-              }
-              autoComplete={hasCapturedTemplate}
-              canComplete={false}
-              busy={!!busy}
-            >
+              </PrintSection>
+              <PrintSection
+                key={`${key}:reminders`}
+                layoutKey={key}
+                section="reminders"
+                title="Printing and cutting reminders"
+                summary="100% / Actual size · reuse the matching saved project and mat"
+                busy={!!busy}
+              >
+                <div className="registration-step">
+                  <div>
+                    <p>
+                      Prepare and inspect your pages below, then save the PDF and open it in a
+                      dedicated PDF application.{' '}
+                      {printPaper.capturesTabloid && (
+                        <>
+                          The exported pages are <strong>{printPaper.outputPaper}</strong>, with the
+                          captured marks and card positions moved together.{' '}
+                        </>
+                      )}
+                      Print at <strong>100% / Actual size</strong>, with no fit, shrink, headers, or
+                      margins. CriProx does not print directly because browser printing reduces
+                      output quality. If backs are enabled, print their artwork onto the same
+                      sheets; those back pages do not contain registration marks or cut lines. In
+                      Design Space, reopen this exact saved project and mat, select{' '}
+                      <strong>Already Printed / Skip printing</strong> when available, then load the
+                      sheet front-side up and cut.
+                    </p>
+                  </div>
+                </div>
+                <div className="soft-info">
+                  <Ruler size={18} />
+                  <span>
+                    Every page keeps all {full.placements.length} slots, including the last page.
+                    Unused slots print white and will still be cut. Change paper, spacing, machine,
+                    or layout and a new captured template is required. Card-back settings and
+                    alignment offsets reuse the current cut template; CriProx never creates a second
+                    Cricut template for the back side.
+                  </span>
+                </div>
+                <p className="guide-limit">
+                  Captured marks are preserved from your PDF, not independently generated. This is
+                  outside Cricut’s recommended print flow and still needs sensor and measurement
+                  tests on your machine. Recapture after changes to the saved mat, Design Space, or
+                  printer setup. CriProx only saves the print PDF so the captured marks’ original
+                  content and the selected artwork DPI are preserved. Print the saved file from a
+                  dedicated PDF application. Artwork bleed extends into the surrounding card spacing
+                  without changing the cut pattern.
+                </p>
+              </PrintSection>
               <div className="registration-step">
+                <span className="step-number">3</span>
                 <div>
-                  <p>
-                    In Design Space, choose Make → Send to Printer. Turn <strong>bleed off</strong>,
-                    use the system print dialog, and{' '}
-                    {printPaper.capturesTabloid ? (
-                      <>
-                        keep the printer paper on <strong>Tabloid (11 × 17 in)</strong>. Save a{' '}
-                        <strong>one-page portrait Tabloid PDF at 100% / Actual size</strong> with
-                        all four sensor marks. CriProx will check the complete marked area and
-                        reframe it onto {printPaper.outputPaper} without scaling.
-                      </>
-                    ) : printPaper.usesTabloidSetup ? (
-                      <>
-                        change the printer paper to <strong>{printPaper.systemPaper}</strong>. Save
-                        a <strong>one-page portrait PDF at 100% / Actual size</strong>; cancel if it
-                        becomes two pages or clips any of the four sensor marks.
-                      </>
-                    ) : (
-                      <>save a full-page, portrait PDF at actual size.</>
-                    )}{' '}
-                    Import that PDF here. We check the slot pattern and size, then{' '}
-                    {registrationTemplates
-                      ? 'save it in the root of your CriProx project library'
-                      : 'store it in local app storage'}
-                    . It loads automatically the next time this exact cut layout is selected.
-                  </p>
-                  <button
-                    className="secondary"
-                    disabled={!!busy}
-                    onClick={() => input.current?.click()}
-                  >
-                    <FileUp size={15} />
-                    {profile ? 'Replace captured PDF' : 'Import Design Space PDF'}
-                  </button>
-                  {profile && (
-                    <div className="capture-success">
-                      <CheckCircle2 size={16} />
-                      <span>
-                        {templateFilename(project.settings, 'cricut-template', 'pdf')}
-                        <small>
-                          Geometry checked · captured{' '}
-                          {new Date(profile.capturedAt).toLocaleDateString()} ·{' '}
-                          {registrationTemplates ? 'project library root' : 'local app storage'} ·
-                          {profile.outputFrame
-                            ? `${printPaper.outputPaper} output · ${formatMeasurement(profile.outputFrame.marginMm, project.settings.units)} minimum mark margin · `
-                            : ''}
-                          hardware unverified
-                        </small>
-                      </span>
-                    </div>
-                  )}
+                  <h3>Save the PDF, then use the saved cut job</h3>
+                  <p>Prepare, review, and save your pages. Print the PDF at 100% / Actual size.</p>
+                  <div className="registration-actions">
+                    <button
+                      className="secondary"
+                      disabled={!!busy || !profile || !project.entries.length}
+                      onClick={() => prepare(true)}
+                    >
+                      <Ruler size={15} />
+                      Prepare size-check sheet
+                    </button>
+                    <button
+                      className="primary"
+                      disabled={
+                        !!busy ||
+                        !profile ||
+                        !project.entries.length ||
+                        (project.settings.backsEnabled &&
+                          sharedBackRequired &&
+                          !project.backArtwork)
+                      }
+                      onClick={() => prepare(false)}
+                    >
+                      Prepare card sheets
+                    </button>
+                  </div>
                 </div>
               </div>
-            </PrintSection>
-            <PrintSection
-              key={`${key}:reminders`}
-              layoutKey={key}
-              section="reminders"
-              title="Printing and cutting reminders"
-              summary="100% / Actual size · reuse the matching saved project and mat"
-              busy={!!busy}
-            >
-              <div className="registration-step">
-                <div>
-                  <p>
-                    Prepare and inspect your pages below, then save the PDF and open it in a
-                    dedicated PDF application.{' '}
-                    {printPaper.capturesTabloid && (
-                      <>
-                        The exported pages are <strong>{printPaper.outputPaper}</strong>, with the
-                        captured marks and card positions moved together.{' '}
-                      </>
-                    )}
-                    Print at <strong>100% / Actual size</strong>, with no fit, shrink, headers, or
-                    margins. CriProx does not print directly because browser printing reduces output
-                    quality. If backs are enabled, print their artwork onto the same sheets; those
-                    back pages do not contain registration marks or cut lines. In Design Space,
-                    reopen this exact saved project and mat, select{' '}
-                    <strong>Already Printed / Skip printing</strong> when available, then load the
-                    sheet front-side up and cut.
-                  </p>
-                </div>
-              </div>
-              <div className="soft-info">
-                <Ruler size={18} />
-                <span>
-                  Every page keeps all {full.placements.length} slots, including the last page.
-                  Unused slots print white and will still be cut. Change paper, spacing, machine, or
-                  layout and a new captured template is required. Card-back settings and alignment
-                  offsets reuse the current cut template; CriProx never creates a second Cricut
-                  template for the back side.
-                </span>
-              </div>
-              <p className="guide-limit">
-                Captured marks are preserved from your PDF, not independently generated. This is
-                outside Cricut’s recommended print flow and still needs sensor and measurement tests
-                on your machine. Recapture after changes to the saved mat, Design Space, or printer
-                setup. CriProx only saves the print PDF so the captured marks’ original content and
-                the selected artwork DPI are preserved. Print the saved file from a dedicated PDF
-                application. Artwork bleed extends into the surrounding card spacing without
-                changing the cut pattern.
-              </p>
-            </PrintSection>
-            <div className="registration-step">
-              <span className="step-number">3</span>
-              <div>
-                <h3>Save the PDF, then use the saved cut job</h3>
-                <p>Prepare, review, and save your pages. Print the PDF at 100% / Actual size.</p>
-                <div className="registration-actions">
-                  <button
-                    className="secondary"
-                    disabled={!!busy || !profile || !project.entries.length}
-                    onClick={() => prepare(true)}
-                  >
-                    <Ruler size={15} />
-                    Prepare size-check sheet
-                  </button>
-                  <button
-                    className="primary"
-                    disabled={
-                      !!busy ||
-                      !profile ||
-                      !project.entries.length ||
-                      (project.settings.backsEnabled && sharedBackRequired && !project.backArtwork)
-                    }
-                    onClick={() => prepare(false)}
-                  >
-                    Prepare card sheets
-                  </button>
-                </div>
-              </div>
-            </div>
+            </details>
           </>
         )}
         {error && (
@@ -1332,7 +1341,7 @@ export default function RegisteredPrint({
         )}
         {pdf && (
           <div className="registered-preview">
-            <PdfPagePreview pdf={pdf} backPdf={backPdf} mode={preparedMode} />
+            <PdfPagePreview pdf={pdf} backPdf={backPdf} mode={preparedMode} backFlip={project.settings.backFlip} />
             <div>
               <strong>
                 {preparedKind === 'alignment'
@@ -1360,7 +1369,7 @@ export default function RegisteredPrint({
                   'Print fronts first, refeed those sheets, then print the matching backs in the same order.'}
                 {preparedMode === 'duplex' &&
                   `Enable duplex with ${project.settings.backFlip === 'long-edge' ? 'long-edge' : 'short-edge'} binding in the system print dialog.`}
-                {' Print the saved PDF from a dedicated PDF application at 100% / Actual size.'}
+                {' Use the Print buttons here, or save the PDF for another application. Print at 100% / Actual size.'}
               </p>
               {preparedMode === 'manual' ? (
                 <>

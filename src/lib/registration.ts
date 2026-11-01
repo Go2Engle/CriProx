@@ -163,8 +163,9 @@ export function detectTemplate(
   pageWidthMm: number,
   pageHeightMm: number,
   settings: Settings,
+  template?: Sheet,
 ): { leftMm: number; topMm: number; contentBoundsMm: ContentBoundsMm } {
-  const sheet = fullTemplate(settings);
+  const sheet = template ?? fullTemplate(settings);
   const sx = width / pageWidthMm,
     sy = height / pageHeightMm;
   const isMarker = (i: number) =>
@@ -279,19 +280,28 @@ export function detectTemplate(
       if (data[i] > 80 || data[i + 1] > 80 || data[i + 2] > 80) continue;
       const mx = x / sx,
         my = y / sy;
-      if (
-        mx > leftMm - guard &&
-        mx < leftMm + sheet.width + guard &&
-        my > topMm - guard &&
-        my < topMm + sheet.height + guard
-      )
+      const touchesReplacement = template
+        ? sheet.placements.some(
+            (p) =>
+              mx > leftMm + p.x - guard &&
+              mx < leftMm + p.x + p.width + guard &&
+              my > topMm + p.y - guard &&
+              my < topMm + p.y + p.height + guard,
+          )
+        : mx > leftMm - guard &&
+          mx < leftMm + sheet.width + guard &&
+          my > topMm - guard &&
+          my < topMm + sheet.height + guard;
+      if (touchesReplacement)
         throw new Error(
           'Dark content touches the artwork replacement area. Recapture with bleed off and no extra shapes or labels.',
         );
-      if (mx < leftMm) sides[0]++;
-      if (mx > leftMm + sheet.width) sides[1]++;
-      if (my < topMm) sides[2]++;
-      if (my > topMm + sheet.height) sides[3]++;
+      // Custom sticker arrangements can leave sensor marks in their empty corner areas.
+      // Those pixels are retained by per-slot replacement in the sticker PDF renderer.
+      if (mx < leftMm + (template ? sheet.width / 2 : 0)) sides[0]++;
+      if (mx > leftMm + (template ? sheet.width / 2 : sheet.width)) sides[1]++;
+      if (my < topMm + (template ? sheet.height / 2 : 0)) sides[2]++;
+      if (my > topMm + (template ? sheet.height / 2 : sheet.height)) sides[3]++;
     }
   if (sides.some((n) => n < 20))
     throw new Error(
