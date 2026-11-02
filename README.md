@@ -1,3 +1,7 @@
+## Skarix — Open Source Cutting Studio
+
+Skarix is based on [CriProx](https://github.com/Go2Engle/CriProx), created by [Chris Engle (Go2Engle)](https://github.com/Go2Engle) and its original contributors. Thank you for the foundation this project builds on. The original copyright notices and GPL-3.0-only license are retained; see [NOTICE](NOTICE) and [LICENSE](LICENSE).
+
 <div align="center">
   <img src="build/icon.png" alt="CriProx icon" width="112" height="112">
   <h1>CriProx</h1>
